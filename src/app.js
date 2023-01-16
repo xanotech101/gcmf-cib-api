@@ -1,10 +1,20 @@
 
-var createError = require("http-errors");
-var express = require("express");
-var cookieParser = require("cookie-parser");
-var logger = require("morgan");
 
-var app = express();
+const express = require("express");
+const app = express();
+
+const createError = require("http-errors");
+const cookieParser = require("cookie-parser");
+const logger = require("morgan");
+
+
+
+mongoose.connect(process.env.DATABASE_URL, { useNewUrlParser: true })
+const db = mongoose.connection
+db.on('error', (error) => console.error(error))
+db.once('open', () => console.log('Connected to Database'))
+
+
 
 app.use(logger("dev"));
 app.use(express.json());
