@@ -18,6 +18,7 @@ const registerUser = async(req, res) => {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     
+    
 };
 
 module.exports = registerUser;
