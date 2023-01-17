@@ -8,6 +8,8 @@ const accountSchema = new mongoose.Schema({
     accountImage: String,
   phone: String,
 address: String,
+}, {
+    timestamps : true
 });
 
 module.exports = mongoose.model("Account", accountSchema);

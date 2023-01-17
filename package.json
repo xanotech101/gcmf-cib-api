@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/xanotech101/gcmf-cib-api#readme",
   "dependencies": {
+    "bcrypt": "^5.1.0",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "debug": "^4.3.4",

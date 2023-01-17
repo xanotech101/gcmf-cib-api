@@ -16,6 +16,8 @@ gender: String,
 organizationId: String,
 image: String,
 privilege: [String],
+}, {
+    timestamps : true
 });
 
 module.exports = mongoose.model("User", userSchema);
