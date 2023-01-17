@@ -14,7 +14,7 @@ const userSchema = new mongoose.Schema({
   phone: String,
   gender: String,
   organizationId: String,
-  image: String,
+  imageUrl: String,
   privilege: [String],
 });
 
