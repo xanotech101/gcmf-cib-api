@@ -5,6 +5,7 @@ const createError = require("http-errors");
 const cookieParser = require("cookie-parser");
 const logger = require("morgan");
 const userRoute = require("./routes/user");
+const accountRoute = require("./routes/user");
 const mongoose = require("mongoose");
 
 
@@ -23,6 +24,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
 app.use("/users", userRoute);
+app.use("/account", accountRoute);
 
 
 
@@ -42,7 +44,7 @@ app.use(function (err, req, res, next) {
 const port = process.env.PORT || 3000;
 
 app.listen(port, () => {
-  console.log(`Listeing on port ${3000}...`);
+  console.log(`Listeing on port ${port}...`);
 });
 
 
