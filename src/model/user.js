@@ -10,12 +10,12 @@ const userSchema = new mongoose.Schema({
     required: true,
   },
   email: { type: String, required: true },
-    designation: String,
+  designation: String,
   phone: String,
-gender: String,
-organizationId: String,
-image: String,
-privilege: [String],
+  gender: String,
+  organizationId: String,
+  image: String,
+  privilege: [String],
 });
 
 module.exports = mongoose.model("User", userSchema);
