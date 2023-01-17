@@ -1,2 +1,2 @@
-const Account = require("../model/user");
+const Account = require("../model/account");
 

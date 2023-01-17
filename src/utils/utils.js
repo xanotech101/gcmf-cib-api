@@ -6,8 +6,12 @@ function validateUser(user) {
       firstName: Joi.string().min(3).max(20).lowercase().required(),
       lastName: Joi.string().min(3).max(20).lowercase().required(),
       email: Joi.string().min(6).max(40).trim().lowercase().required().email(),
-      password: Joi.string().required().min(8),
-      confirm_password: Joi.ref("password").required(),
+      password: Joi.string().min(8).required().label("Password"),
+      confirm_password: Joi.any()
+        .equal(Joi.ref("password"))
+        .required()
+        .label("Confirm password")
+        .messages({ "any.only": "{{#label}} does not match" }),
       designation: Joi.string().required(),
       phone: Joi.string()
         .length(11)
@@ -18,10 +22,10 @@ function validateUser(user) {
       imageUrl: Joi.string(),
       priviledge: Joi.array().items(Joi.string().required()),
     })
-      .with("password", "confirm_password");
-    
+    .with("password", "confirm_password");
 
-  return Joi.validate(user, userSchema);
+    const result = userSchema.validate(user)
+    return result;
 }
 
-exports.validate = validateUser;
+module.exports = validateUser;
