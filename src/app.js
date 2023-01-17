@@ -1,16 +1,19 @@
 const express = require("express");
+const dotenv = require('dotenv').config()
 const app = express();
 const createError = require("http-errors");
 const cookieParser = require("cookie-parser");
 const logger = require("morgan");
 const userRoute = require("./routes/user");
+const mongoose = require("mongoose");
 
 
 
-mongoose.connect(process.env.DATABASE_URL, { useNewUrlParser: true })
-const db = mongoose.connection
-db.on('error', (error) => console.error(error))
-db.once('open', () => console.log('Connected to Database'))
+mongoose
+  .connect("mongodb://localhost/xanotech")
+  .then(console.log("Connected to MongoDB..."))
+  .catch((err) => console.error("Could not connect to MongoDB...", err));
+
 
 
 
