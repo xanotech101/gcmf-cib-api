@@ -34,7 +34,7 @@ const registerUser = async (req, res) => {
   const salt = await bcrypt.genSalt(10);
   user.password = await bcrypt.hash(req.body.password, salt);
   let result = await user.save();
-    console.log("working3")
+
   res
     .status(201)
     .send(
@@ -53,3 +53,6 @@ const registerUser = async (req, res) => {
 };
 
 module.exports = registerUser;
+
+
+
