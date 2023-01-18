@@ -39,9 +39,14 @@ const registerUser = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(user.password, salt);
 
-     await sendEmail(user.firstName, user.email, 456);
+    let code = Math.floor(100000 + Math.random() * 900000);
+
+    await sendEmail(user.firstName, user.email, code);
+    
+    user.confirmationCode = code;
     const result = await user.save();
 
+    
     
 
     return res

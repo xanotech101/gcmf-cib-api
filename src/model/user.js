@@ -22,9 +22,9 @@ const userSchema = new mongoose.Schema(
       required: [true, "Please enter a password"],
       minlength: 8,
     },
-    verified: {
+    isVerified: {
       type: Boolean,
-      defaultValue: false
+      default: false
     },
     designation: String,
     phone: String,

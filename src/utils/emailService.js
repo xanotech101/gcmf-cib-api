@@ -1,14 +1,6 @@
 var nodemailer = require('nodemailer');
 
 function email(userName, email, code) {
-  // var transport = nodemailer.createTransport({
-  //   host: "smtp.mailtrap.io",
-  //   port: 2525,
-  //   auth: {
-  //     user: "1a2b3c4d5e6f7g",
-  //     pass: "1a2b3c4d5e6f7g"
-  //   }
-  // });
 
   	const transporter = nodemailer.createTransport({
       service: "gmail",
@@ -28,12 +20,10 @@ function email(userName, email, code) {
   `;
 
   var mailOptions = {
-    from: '"Microfinance Bank" <otunaiyademilade@gmail.com.com>',
+    from: '"GCMFB" <otunaiyademilade@gmail.com.com>',
     to: email,
     subject: "Welcome on Board",
-    // text: 'Hey there, it’s our first message sent with Nodemailer ',
     html: output,
-    // html: output,
   };
 
   transporter.sendMail(mailOptions, (error, info) => {
