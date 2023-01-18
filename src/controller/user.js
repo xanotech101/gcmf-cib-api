@@ -12,38 +12,38 @@ const registerUser = async (req, res) => {
   try {
     const { error } = validateUserSchema(req.body);
     if (error) return res.status(400).send(error.details[0].message);
+    console.log("heheh")
 
     const userExits = await User.findOne({ email: req.body.email });
     if (userExits)
       res.status(400).json({ message: "User is already registered" });
 
-    let user = new User(
-      _.pick(req.body, [
-        "firstName,",
-        "lastName",
-        "password",
-        "email",
-        "designation",
-        "phone",
-        "gender",
-        "organizationId",
-        "imageUrl",
-        "priviledge",
-      ])
+    let user = new User({
+      firstName : req.body.firstName,
+      lastName: req.body.lastName,
+      password: req.body.password,
+      email: req.body.email,
+      password: req.body.password,
+      designation : req.body.designation,
+      phone: req.body.phone,
+      gender : req.body.gender,
+      organizationId : req.body.organizationId,
+      imageUrl : req.body.imageUrl,
+      priviledge : req.body.priviledge
+    }
     );
+
     //Hash password
     const salt = await bcrypt.genSalt(10);
-    // const hashedPassword = await bcrypt.hash(password, salt);
-    bcrypt.hash(user.password, salt, function (err, hash) {
-      if (err) return next(err);
+    user.password = await bcrypt.hash(user.password, salt);
 
-      user.password = hash;
-    });
+
+    const result = await user.save();
 
     return res
       .status(201)
       .send(
-        _.pick(user, [
+        _.pick(result, [
           "firstName",
           "lastName",
           "email",
@@ -52,11 +52,13 @@ const registerUser = async (req, res) => {
           "gender",
           "organizationId",
           "imageUrl",
-          "privilege",
+          "priviledge",
         ])
       );
   } catch (error) {
+    console.log(error);
     return res.status(500).json({
+      
       status: "Failed",
       Message: "Unable to create a user",
     });
