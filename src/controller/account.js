@@ -10,16 +10,21 @@ const Joi = require("joi");
 //@access   Public
 const registerAccount = async (req, res) => {
   try {
+        console.log(req.body);
     const { error } = validateAccountSignup(req.body);
     if (error) return res.status(400).send(error.details[0].message);
 
-    let account = new Account(_.pick(req.body, ["imageUrl", "address"]));
+    const account = new Account({
+      accountImageUrl: req.body.accountImageUrl,
+      address: req.body.address,
+    });
 
     let result = await account.save();
-
+    
+console.log(result);
     return res
       .status(201)
-      .send(_.pick(result, ["imageUrl", "address"]) );
+      .send(result );
   } catch (error) {
     return res.status(500).json({
       status: "Failed",

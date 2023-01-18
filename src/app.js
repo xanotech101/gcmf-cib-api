@@ -6,7 +6,7 @@ const createError = require("http-errors");
 const cookieParser = require("cookie-parser");
 const logger = require("morgan");
 const userRoute = require("./routes/user");
-const accountRoute = require("./routes/user");
+const accountRoute = require("./routes/account");
 const mongoose = require("mongoose");
 
 

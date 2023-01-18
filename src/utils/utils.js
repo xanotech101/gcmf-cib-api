@@ -4,7 +4,7 @@ const validateAccount = (account) => (payload) =>
   account.validate(payload, { abortEarly: false });
 
 const accountSchema = Joi.object().keys({
-  imageUrl: Joi.string(),
+  accountImageUrl: Joi.string(),
   address: Joi.string().required(),
 });
 
@@ -77,3 +77,7 @@ exports.validateUserSchema = validateUser(userSchema);
 //     },
 //   },
 // };
+
+
+
+
