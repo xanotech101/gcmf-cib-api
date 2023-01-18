@@ -2,12 +2,8 @@ const mongoose = require("mongoose");
 
 const accountSchema = new mongoose.Schema(
   {
-    organizationId: {
-      type: String,
-      required: true,
-    },
-    accountImage: String,
-    phone: String,
+    organizationId: String,
+    accountImageUrl: String,
     address: String,
   },
   {
@@ -16,3 +12,4 @@ const accountSchema = new mongoose.Schema(
 );
 
 module.exports = mongoose.model("Account", accountSchema);
+

@@ -27,7 +27,7 @@ const userSchema = new mongoose.Schema(
     gender: String,
     organizationId: String,
     imageUrl: String,
-    privilege: [String],
+    priviledge: [String],
   },
   {
     timestamps: true,
