@@ -4,6 +4,8 @@ const { validateUserSchema } = require("../utils/utils");
 const jwt = require("jsonwebtoken");
 const _ = require("lodash");
 const Joi = require("joi");
+const { sendEmail } = require("../utils/emailService");
+
 
 //@desc     register a user
 //@route    POST /users/register
@@ -37,8 +39,10 @@ const registerUser = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(user.password, salt);
 
-
+     await sendEmail(user.firstName, user.email, 456);
     const result = await user.save();
+
+    
 
     return res
       .status(201)
