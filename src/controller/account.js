@@ -14,7 +14,9 @@ const registerAccount = async (req, res) => {
     const { error } = validateAccountSignup(req.body);
     if (error) return res.status(400).send(error.details[0].message);
 
+    const { randomUUID } = require("crypto");
     const account = new Account({
+      organizationId: randomUUID(),
       accountImageUrl: req.body.accountImageUrl,
       address: req.body.address,
     });
