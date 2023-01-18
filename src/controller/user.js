@@ -43,27 +43,14 @@ const registerUser = async (req, res) => {
 
     await sendEmail(user.firstName, user.email, code);
     
-    user.confirmationCode = code;
+    user.verificationCode = code;
     const result = await user.save();
-
-    
-    
 
     return res
       .status(201)
-      .send(
-        _.pick(result, [
-          "firstName",
-          "lastName",
-          "email",
-          "designation",
-          "phone",
-          "gender",
-          "organizationId",
-          "imageUrl",
-          "priviledge",
-        ])
-      );
+      .json({
+        message: "Verification code has been sent to your email. To continue, please verify your email."
+      });
   } catch (error) {
     console.log(error);
     return res.status(500).json({

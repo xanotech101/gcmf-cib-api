@@ -24,8 +24,9 @@ const userSchema = new mongoose.Schema(
     },
     isVerified: {
       type: Boolean,
-      default: false
+      default: false,
     },
+    verificationCode: Number,
     designation: String,
     phone: String,
     gender: String,
