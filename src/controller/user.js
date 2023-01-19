@@ -36,9 +36,12 @@ const registerUser = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(user.password, salt);
 
-    let code = Math.floor(100000 + Math.random() * 900000);
+    //Email Details
+    const token = jwt.sign({ user_email: user.email }, process.env.EMAIL_SECRET, {
+      expiresIn: "30m",
+    });
     const link = `${process.env.BASE_URL}/users/confirmation/${token}`;
-    const output = `
+    const message = `
     <h3>You have successfully created your account</h3>
     <p>Dear ${user.firstName}, welcome on board.</p> 
     <p>Kinldy click below to confirm your account.</p> 
@@ -48,8 +51,9 @@ const registerUser = async (req, res) => {
   `;
     const subject = "Welcome on Board";
 
-    await sendEmail(user.email, title, subject);
+    await sendEmail(user.email, subject, message);
 
+    let code = Math.floor(100000 + Math.random() * 900000);
     user.verificationCode = code;
     const result = await user.save();
 

@@ -4,8 +4,6 @@ const jwt = require("jsonwebtoken");
 
 function email(email, title, message) {
 
-	const token = jwt.sign({ user_email: email }, process.env.EMAIL_SECRET, {expiresIn: "30m"});
-
   	const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
