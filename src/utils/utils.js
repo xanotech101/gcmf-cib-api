@@ -46,10 +46,10 @@ const userSchema = Joi.object()
 exports.validateUserSchema = validateUser(userSchema);
 
 
-const validateLogin = (user) => (payload) =>
+const validateUserLogin = (user) => (payload) =>
   user.validate(payload, { abortEarly: false });
 
-const loginSchema = Joi.object()
+const userLoginSchema = Joi.object()
   .keys({
     email: Joi.string().min(6).max(40).trim().lowercase().required().email(),
     password: Joi.string().min(8).required().label("Password"),
@@ -61,4 +61,17 @@ const loginSchema = Joi.object()
   })
   .with("password", "confirm_password");
 
-exports.validateLoginSchema = validateLogin(loginSchema);
+exports.validateUserLoginSchema = validateUserLogin(userLoginSchema);
+
+
+const validateForgetPassword = (user) => (payload) =>
+  user.validate(payload, { abortEarly: false });
+
+const forgetPasswordSchema = Joi.object()
+  .keys({
+    email: Joi.string().min(6).max(40).trim().lowercase().required().email(),
+  })
+
+exports.validateForgetUserPasswordSchema =
+  validateForgetPassword(forgetPasswordSchema);
+

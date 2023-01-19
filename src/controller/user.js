@@ -1,6 +1,9 @@
 const User = require("../model/user");
 const bcrypt = require("bcrypt");
-const { validateUserSchema } = require("../utils/utils");
+const {
+  validateUserSchema,
+  validateForgetUserPasswordSchema,
+} = require("../utils/utils");
 const jwt = require("jsonwebtoken");
 const _ = require("lodash");
 const Joi = require("joi");
@@ -16,7 +19,7 @@ const registerUser = async (req, res) => {
 
     const userExits = await User.findOne({ email: req.body.email });
     if (userExits)
-      res.status(400).json({ message: "User is already registered" });
+     return res.status(400).json({ message: "User is already registered" });
 
     let user = new User({
       firstName: req.body.firstName,
@@ -53,8 +56,6 @@ const registerUser = async (req, res) => {
 
     await sendEmail(user.email, subject, message);
 
-    let code = Math.floor(100000 + Math.random() * 900000);
-    user.verificationCode = code;
     const result = await user.save();
 
     return res.status(201).json({
@@ -69,4 +70,55 @@ const registerUser = async (req, res) => {
     });
   }
 };
-module.exports = registerUser;
+
+
+
+//@desc     forget password
+//@route    POST /users/register
+//@access   Public
+const forgetPassword = async (req, res) => {
+  try {
+    const { error } = validateForgetUserPasswordSchema(req.body);
+    if (error) return res.status(400).send(error.details[0].message);
+
+        const user = await User.findOne({ email: req.body.email });
+        if (!user)
+         return res.status(400).json({ message: "If the mail you inputed is registered on the platform, you will get a mail to change you password" });
+    
+
+      //Email Details
+    const token = jwt.sign({ user_email: user.email }, process.env.EMAIL_SECRET, {
+      expiresIn: "30m",
+    });
+    const link = `${process.env.BASE_URL}/users/forget_password/${token}`;
+
+    const subject = "Password Reset Link";
+    const message = `
+    <h3>Password Reset</h3>
+    <p>Dear ${user.firstName}, There was a request to change your password</p> 
+    <p>We want to be sure you made this request. If you did, kindly click the link below to reset your password.</p> 
+    <a href= ${link}><h4>CLICK HERE TO RESET YOUR PASSWORD</h4></a> 
+    <p>If the above link is not working, You can click the link below.</p>
+    <p>${link}</p>
+  `;
+   
+
+    await sendEmail(user.email, subject, message)
+
+    return res.status(200).json({message :  "If the mail you inputed is registered on the platform, you will get a mail to change you password" });
+    
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      status: "Failed",
+      Message: "Unable to verify email",
+    });
+  }
+
+}
+
+
+module.exports = {
+  registerUser,
+  forgetPassword,
+};
