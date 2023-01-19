@@ -1,6 +1,11 @@
 var nodemailer = require('nodemailer');
+const user = require('../model/user');
+const jwt = require("jsonwebtoken");
 
-function email(userName, email, code) {
+function email(email, id, userName) {
+
+	const token = jwt.sign({ user_email: email }, process.env.EMAIL_SECRET, {expiresIn: "30m"});
+	const link = `${process.env.BASE_URL}/users/confirmation/${token}`;
 
   	const transporter = nodemailer.createTransport({
       service: "gmail",
@@ -15,8 +20,10 @@ function email(userName, email, code) {
   const output = `
     <h3>You have successfully created your account</h3>
     <p>Dear ${userName}, welcome on board.</p> 
-    <p>Kinldy use the code below to activate your account.</p> 
-    <h4>${code}</h4> 
+    <p>Kinldy click below to confirm your account.</p> 
+    <a href= ${link}><h4>CLICK HERE TO CONFIRM YOUR EMAIL</h4></a> 
+    <p>If the above link is not working, You can click the link below.</p>
+    <p>${link}</p>
   `;
 
   var mailOptions = {

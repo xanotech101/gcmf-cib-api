@@ -14,7 +14,6 @@ const registerUser = async (req, res) => {
   try {
     const { error } = validateUserSchema(req.body);
     if (error) return res.status(400).send(error.details[0].message);
-    console.log("heheh")
 
     const userExits = await User.findOne({ email: req.body.email });
     if (userExits)
@@ -41,7 +40,7 @@ const registerUser = async (req, res) => {
 
     let code = Math.floor(100000 + Math.random() * 900000);
 
-    await sendEmail(user.firstName, user.email, code);
+    await sendEmail(user.email, user.id, user.firstName);
     
     user.verificationCode = code;
     const result = await user.save();

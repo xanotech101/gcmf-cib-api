@@ -27,7 +27,8 @@ const registerAccount = async (req, res) => {
     account.password = await bcrypt.hash(account.password, salt);
     let result = await account.save();
 
-    return res.status(201).send(_.pick(result, ["organizationId", "accountImageUrl", "address"]));
+    const token = account.generateAuthToken();
+    return res.status(201).json({ accountDetails : _.pick(result, ["organizationId", "accountImageUrl", "address"]), token });
   } catch (error) {
     console.log(error);
     return res.status(500).json({
