@@ -10,7 +10,7 @@ const verifyUser = async (req, res) => {
     user.isVerified = true;
         await user.save();
         
-        return res.redirect(
+        return res.status(200).redirect(
             `${process.env.BASE_URL}/users/login`);
         
 } catch (error) {
@@ -24,18 +24,16 @@ const verifyUser = async (req, res) => {
 
 
 
-
 const verifyForgetPassword = async (req, res) => {
-  try {
+    try {
+      console.log("hello here", req.params)
     const decoded = jwt.verify(req.params.token, process.env.EMAIL_SECRET);
     const mail = decoded;
     const user = await User.findOne({ email: mail.user_email });
     if (!user) throw "user not found";
 
-      return res.redirect(`${process.env.BASE_URL}/users/change_password`).status(200).json({
-          status: "Success",
-          token: req.params.token
-    });
+       res.header('x-auth-token', req.params.token).send("gone")
+      return res.redirect(`${process.env.BASE_URL}/users/change_password`)
   } catch (error) {
     console.log(error);
     return res.status(500).json({

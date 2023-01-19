@@ -75,3 +75,25 @@ const forgetPasswordSchema = Joi.object()
 exports.validateForgetUserPasswordSchema =
   validateForgetPassword(forgetPasswordSchema);
 
+
+
+
+const validateChangePassword = (user) => (payload) =>
+  user.validate(payload, { abortEarly: false });
+const changePasswordSchema = Joi.object()
+  .keys({
+    password: Joi.string().min(8).required().label("Password"),
+    confirm_password: Joi.any()
+      .equal(Joi.ref("password"))
+      .required()
+      .label("Confirm password")
+      .messages({ "any.only": "{{#label}} does not match" }),
+  })
+  .with("password", "confirm_password");
+
+exports.validateChangePasswordSchema =
+  validateChangePassword(changePasswordSchema);
+
+
+
+

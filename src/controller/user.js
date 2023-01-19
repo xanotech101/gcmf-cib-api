@@ -3,6 +3,7 @@ const bcrypt = require("bcrypt");
 const {
   validateUserSchema,
   validateForgetUserPasswordSchema,
+  validateChangePasswordSchema,
 } = require("../utils/utils");
 const jwt = require("jsonwebtoken");
 const _ = require("lodash");
@@ -44,6 +45,8 @@ const registerUser = async (req, res) => {
       expiresIn: "30m",
     });
     const link = `${process.env.BASE_URL}/users/confirmation/${token}`;
+
+    const subject = "Welcome on Board";
     const message = `
     <h3>You have successfully created your account</h3>
     <p>Dear ${user.firstName}, welcome on board.</p> 
@@ -52,7 +55,7 @@ const registerUser = async (req, res) => {
     <p>If the above link is not working, You can click the link below.</p>
     <p>${link}</p>
   `;
-    const subject = "Welcome on Board";
+   
 
     await sendEmail(user.email, subject, message);
 
@@ -73,8 +76,8 @@ const registerUser = async (req, res) => {
 
 
 
-//@desc     forget password
-//@route    POST /users/register
+//@desc     confirm email inorder to change user password. Send email to user
+//@route    POST /users/password_confirmation"
 //@access   Public
 const forgetPassword = async (req, res) => {
   try {
@@ -88,7 +91,7 @@ const forgetPassword = async (req, res) => {
 
       //Email Details
     const token = jwt.sign({ user_email: user.email }, process.env.EMAIL_SECRET, {
-      expiresIn: "30m",
+      expiresIn: "15m",
     });
     const link = `${process.env.BASE_URL}/users/forget_password/${token}`;
 
@@ -96,7 +99,7 @@ const forgetPassword = async (req, res) => {
     const message = `
     <h3>Password Reset</h3>
     <p>Dear ${user.firstName}, There was a request to change your password</p> 
-    <p>We want to be sure you made this request. If you did, kindly click the link below to reset your password.</p> 
+    <p>We want to be sure you made this request. If you did, kindly click the link below to reset your password. Please note that this link will expire in 15 minutes.</p> 
     <a href= ${link}><h4>CLICK HERE TO RESET YOUR PASSWORD</h4></a> 
     <p>If the above link is not working, You can click the link below.</p>
     <p>${link}</p>
@@ -118,7 +121,41 @@ const forgetPassword = async (req, res) => {
 }
 
 
+
+
+
+const changePassword = async (req, res) => {
+  try {
+    const { error } = validateChangePasswordSchema(req.body);
+    if (error) return res.status(400).send(error.details[0].message);
+
+    const token = req.header('x-auth-token');
+    if (!token) return res.status(401).json({ message: "Access denied. No token provided" });
+    
+   
+      const decoded = jwt.verify(token, process.env.EMAIL_SECRET);
+   const mail = decoded;
+   const user = await User.findOne({ email: mail.user_email });
+   if (!user) throw "user not found";
+
+    user.password = req.body.password;
+    await user.save();
+
+    return res.status(200).send("Password changed successfully")
+
+  
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      status: "Failed",
+      Message: "Unable to change user password",
+    });
+  }
+};
+
+
 module.exports = {
+  changePassword,
   registerUser,
   forgetPassword,
 };
