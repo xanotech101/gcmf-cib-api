@@ -4,11 +4,14 @@ const {
   validateUserSchema,
   validateForgetUserPasswordSchema,
   validateChangePasswordSchema,
+  validateUserLoginSchema,
 } = require("../utils/utils");
 const jwt = require("jsonwebtoken");
 const _ = require("lodash");
 const Joi = require("joi");
 const { sendEmail } = require("../utils/emailService");
+
+
 
 //@desc     register a user
 //@route    POST /users/register
@@ -21,6 +24,20 @@ const registerUser = async (req, res) => {
     const userExits = await User.findOne({ email: req.body.email });
     if (userExits)
       return res.status(400).json({ message: "User is already registered" });
+
+    // let user = new User({
+    //   firstName: req.body.firstName,
+    //   lastName: req.body.lastName,
+    //   password: req.body.password,
+    //   email: req.body.email,
+    //   password: req.body.password,
+    //   designation: req.body.designation,
+    //   phone: req.body.phone,
+    //   gender: req.body.gender,
+    //   organizationId: req.body.organizationId,
+    //   imageUrl: req.body.imageUrl,
+    //   priviledge: req.body.priviledge,
+    // });
 
     let user = new User({
       firstName: req.body.firstName,
@@ -77,8 +94,11 @@ const registerUser = async (req, res) => {
   }
 };
 
+
+
+
 //@desc     confirm email inorder to change user password. Send email to user
-//@route    POST /users/password_confirmation"
+//@route    POST /users/send_password_reset_link"
 //@access   Public
 const forgetPassword = async (req, res) => {
   try {
@@ -127,8 +147,10 @@ const forgetPassword = async (req, res) => {
   }
 };
 
+
+
 //@desc     Reset User's password
-//@route    POST /users/change_password
+//@route    POST /users/reset_password
 //@access   Private
 const changePassword = async (req, res) => {
 
@@ -146,7 +168,7 @@ const changePassword = async (req, res) => {
 
     await user.save();
     return res.status(200).json({ message: "Password changed successfully" });
-    
+
   } catch (error) {
     console.log(error);
     return res.status(500).json({
@@ -156,8 +178,48 @@ const changePassword = async (req, res) => {
   }
 };
 
+
+
+
+
+
+
+//@desc     Reset User's password
+//@route    POST /users/reset_password
+//@access   Private
+const userLogin = async (req, res) => {
+  console.log(req.header);
+  try {
+    const { error } = validateUserLoginSchema(req.body);
+    if (error) return res.status(400).send(error.details[0].message);
+
+      const user = await User.findOne({ email: req.body.email });
+       if (!user)
+           res.status(400).json({ message: "Invalid email or password" });
+        
+        const validPassword = await bcrypt.compare(req.body.password, user.password);
+        if (!validPassword)
+            res.status(400).json({ message: "Invalid email or password" });
+        
+        const token = user.generateAuthToken();
+        res.json({ message: "User Logged in Successfully", accessToken: token });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      status: "Login Failed",
+      Message: "Unable to login user"
+    });
+  }
+};
+
+
+
+
+
+
 module.exports = {
   changePassword,
   registerUser,
   forgetPassword,
+  userLogin,
 };

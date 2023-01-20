@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const jwt = require("jsonwebtoken");
 
 
 const userSchema = new mongoose.Schema(
@@ -11,12 +12,11 @@ const userSchema = new mongoose.Schema(
     },
     email: {
       type: String,
-      // unique: true,
+      unique: true,
       lowercase: true,
     },
     password: {
       type: String,
-      required: [true, "Please enter a password"],
       minlength: 8,
     },
     isVerified: {

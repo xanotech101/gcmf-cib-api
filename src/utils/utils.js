@@ -53,13 +53,7 @@ const userLoginSchema = Joi.object()
   .keys({
     email: Joi.string().min(6).max(40).trim().lowercase().required().email(),
     password: Joi.string().min(8).required().label("Password"),
-    confirm_password: Joi.any()
-      .equal(Joi.ref("password"))
-      .required()
-      .label("Confirm password")
-      .messages({ "any.only": "{{#label}} does not match" }),
   })
-  .with("password", "confirm_password");
 
 exports.validateUserLoginSchema = validateUserLogin(userLoginSchema);
 

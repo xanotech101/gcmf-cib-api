@@ -26,9 +26,10 @@ const getNewPassword = async (req, res) => {
     const mail = decoded;
     const user = await User.findOne({ email: mail.user_email });
     if (!user) return res.status(400).json({ message: "user not found" })
+    if (!user.isVerified) return res.status(400).json({ message: "User is not verified. Kindly verify your account" });
 
     return res.status(200).json({
-      message: user.email
+      userEmail: user.email
     })
 
   } catch (error) {
@@ -44,3 +45,7 @@ module.exports = {
   verifyUser,
   getNewPassword,
 };
+
+
+
+
