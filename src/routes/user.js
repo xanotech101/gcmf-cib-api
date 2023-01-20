@@ -4,11 +4,11 @@ const router = express.Router();
 const { registerUser, forgetPassword, changePassword } = require("../controller/user");
 const { verifyUser, verifyForgetPassword } = require("../controller/emailServices");
 
-router.post("/register", registerUser);
-router.get("/register_confirmation/:token", verifyUser);
-router.post("/password_confirmation", forgetPassword);
-router.get("/forget_password/:token", verifyForgetPassword);
-router.post("/change_password", changePassword);
+router.post("/register", registerUser); //register a user
+router.get("/register_confirmation/:token", verifyUser);  //send email after registration and verifies user
+router.post("/send_password_reset_link", forgetPassword);  
+router.get("/reset_password/:token", verifyForgetPassword);
+router.post("/reset_password/", changePassword);
 
 
 

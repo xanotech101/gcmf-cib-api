@@ -20,7 +20,7 @@ const registerUser = async (req, res) => {
 
     const userExits = await User.findOne({ email: req.body.email });
     if (userExits)
-     return res.status(400).json({ message: "User is already registered" });
+      return res.status(400).json({ message: "User is already registered" });
 
     let user = new User({
       firstName: req.body.firstName,
@@ -41,9 +41,13 @@ const registerUser = async (req, res) => {
     user.password = await bcrypt.hash(user.password, salt);
 
     //Email Details
-    const token = jwt.sign({ user_email: user.email }, process.env.EMAIL_SECRET, {
-      expiresIn: "30m",
-    });
+    const token = jwt.sign(
+      { user_email: user.email },
+      process.env.EMAIL_SECRET,
+      {
+        expiresIn: "30m",
+      }
+    );
     const link = `${process.env.BASE_URL}/users/confirmation/${token}`;
 
     const subject = "Welcome on Board";
@@ -55,7 +59,6 @@ const registerUser = async (req, res) => {
     <p>If the above link is not working, You can click the link below.</p>
     <p>${link}</p>
   `;
-   
 
     await sendEmail(user.email, subject, message);
 
@@ -74,8 +77,6 @@ const registerUser = async (req, res) => {
   }
 };
 
-
-
 //@desc     confirm email inorder to change user password. Send email to user
 //@route    POST /users/password_confirmation"
 //@access   Public
@@ -84,16 +85,24 @@ const forgetPassword = async (req, res) => {
     const { error } = validateForgetUserPasswordSchema(req.body);
     if (error) return res.status(400).send(error.details[0].message);
 
-        const user = await User.findOne({ email: req.body.email });
-        if (!user)
-         return res.status(400).json({ message: "If the mail you inputed is registered on the platform, you will get a mail to change you password" });
-    
+    const user = await User.findOne({ email: req.body.email });
+    if (!user)
+      return res
+        .status(400)
+        .json({
+          message:
+            "If the mail you inputed is registered on the platform, you will get a mail to change you password",
+        });
 
-      //Email Details
-    const token = jwt.sign({ user_email: user.email }, process.env.EMAIL_SECRET, {
-      expiresIn: "15m",
-    });
-    const link = `${process.env.BASE_URL}/users/forget_password/${token}`;
+    //Email Details
+    const token = jwt.sign(
+      { user_email: user.email },
+      process.env.EMAIL_SECRET,
+      {
+        expiresIn: "15m",
+      }
+    );
+    const link = `${process.env.BASE_URL}/users/send_password_reset_link/${token}`;
 
     const subject = "Password Reset Link";
     const message = `
@@ -104,12 +113,15 @@ const forgetPassword = async (req, res) => {
     <p>If the above link is not working, You can click the link below.</p>
     <p>${link}</p>
   `;
-   
 
-    await sendEmail(user.email, subject, message)
+    await sendEmail(user.email, subject, message);
 
-    return res.status(200).json({message :  "If the mail you inputed is registered on the platform, you will get a mail to change you password" });
-    
+    return res
+      .status(200)
+      .json({
+        message:
+          "If the mail you inputed is registered on the platform, you will get a mail to change you password",
+      });
   } catch (error) {
     console.log(error);
     return res.status(500).json({
@@ -117,33 +129,31 @@ const forgetPassword = async (req, res) => {
       Message: "Unable to verify email",
     });
   }
+};
 
-}
-
-
-
-
-
+//@desc     Reset User's password
+//@route    POST /users/change_password
+//@access   Private
 const changePassword = async (req, res) => {
   try {
     const { error } = validateChangePasswordSchema(req.body);
     if (error) return res.status(400).send(error.details[0].message);
 
-    const token = req.header('x-auth-token');
-    if (!token) return res.status(401).json({ message: "Access denied. No token provided" });
-    
-   
-      const decoded = jwt.verify(token, process.env.EMAIL_SECRET);
-   const mail = decoded;
-   const user = await User.findOne({ email: mail.user_email });
-   if (!user) throw "user not found";
+    const token = req.header("x-auth-token");
+    if (!token)
+      return res
+        .status(401)
+        .json({ message: "Access denied. No token provided" });
+
+    const decoded = jwt.verify(token, process.env.EMAIL_SECRET);
+    const mail = decoded;
+    const user = await User.findOne({ email: mail.user_email });
+    if (!user) throw "user not found";
 
     user.password = req.body.password;
     await user.save();
 
-    return res.status(200).send("Password changed successfully")
-
-  
+    return res.status(200).send("Password changed successfully");
   } catch (error) {
     console.log(error);
     return res.status(500).json({
@@ -152,7 +162,6 @@ const changePassword = async (req, res) => {
     });
   }
 };
-
 
 module.exports = {
   changePassword,
