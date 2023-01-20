@@ -20,16 +20,17 @@ const verifyUser = async (req, res) => {
   }
 };
 
-const verifyForgetPassword = async (req, res) => {
+const getNewPassword = async (req, res) => {
   try {
-    console.log("hello here", req.params);
     const decoded = jwt.verify(req.params.token, process.env.EMAIL_SECRET);
     const mail = decoded;
     const user = await User.findOne({ email: mail.user_email });
-    if (!user) throw "user not found";
+    if (!user) return res.status(400).json({ message: "user not found" })
 
-    res.header("x-auth-token", req.params.token).send("gone");
-    return res.redirect(`${process.env.BASE_URL}/users/reset_password`);
+    return res.status(200).json({
+      message: user.email
+    })
+
   } catch (error) {
     console.log(error);
     return res.status(500).json({
@@ -41,5 +42,5 @@ const verifyForgetPassword = async (req, res) => {
 
 module.exports = {
   verifyUser,
-  verifyForgetPassword,
+  getNewPassword,
 };

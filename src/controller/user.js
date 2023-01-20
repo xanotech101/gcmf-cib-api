@@ -87,12 +87,10 @@ const forgetPassword = async (req, res) => {
 
     const user = await User.findOne({ email: req.body.email });
     if (!user)
-      return res
-        .status(400)
-        .json({
-          message:
-            "If the mail you inputed is registered on the platform, you will get a mail to change you password",
-        });
+      return res.status(400).json({
+        message:
+          "If the mail you inputed is registered on the platform, you will get a mail to change you password",
+      });
 
     //Email Details
     const token = jwt.sign(
@@ -102,7 +100,7 @@ const forgetPassword = async (req, res) => {
         expiresIn: "15m",
       }
     );
-    const link = `${process.env.BASE_URL}/users/send_password_reset_link/${token}`;
+    const link = `${process.env.BASE_URL}/users/reset_password/${token}`;
 
     const subject = "Password Reset Link";
     const message = `
@@ -116,12 +114,10 @@ const forgetPassword = async (req, res) => {
 
     await sendEmail(user.email, subject, message);
 
-    return res
-      .status(200)
-      .json({
-        message:
-          "If the mail you inputed is registered on the platform, you will get a mail to change you password",
-      });
+    return res.status(200).json({
+      message:
+        "If the mail you inputed is registered on the platform, you will get a mail to change you password",
+    });
   } catch (error) {
     console.log(error);
     return res.status(500).json({
@@ -135,25 +131,22 @@ const forgetPassword = async (req, res) => {
 //@route    POST /users/change_password
 //@access   Private
 const changePassword = async (req, res) => {
+
   try {
     const { error } = validateChangePasswordSchema(req.body);
     if (error) return res.status(400).send(error.details[0].message);
 
-    const token = req.header("x-auth-token");
-    if (!token)
-      return res
-        .status(401)
-        .json({ message: "Access denied. No token provided" });
+    const { email, password } = req.body;
+    const user = await User.findOne({ email });
 
-    const decoded = jwt.verify(token, process.env.EMAIL_SECRET);
-    const mail = decoded;
-    const user = await User.findOne({ email: mail.user_email });
-    if (!user) throw "user not found";
+    //Hash password
+    const salt = await bcrypt.genSalt(10);
+    console.log(password)
+    user.password = await bcrypt.hash(password, salt);
 
-    user.password = req.body.password;
     await user.save();
-
-    return res.status(200).send("Password changed successfully");
+    return res.status(200).json({ message: "Password changed successfully" });
+    
   } catch (error) {
     console.log(error);
     return res.status(500).json({
