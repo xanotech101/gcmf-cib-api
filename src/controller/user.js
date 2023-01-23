@@ -25,20 +25,6 @@ const registerUser = async (req, res) => {
     if (userExits)
       return res.status(400).json({ message: "User is already registered" });
 
-    // let user = new User({
-    //   firstName: req.body.firstName,
-    //   lastName: req.body.lastName,
-    //   password: req.body.password,
-    //   email: req.body.email,
-    //   password: req.body.password,
-    //   designation: req.body.designation,
-    //   phone: req.body.phone,
-    //   gender: req.body.gender,
-    //   organizationId: req.body.organizationId,
-    //   imageUrl: req.body.imageUrl,
-    //   priviledge: req.body.priviledge,
-    // });
-
     let user = new User({
       firstName: req.body.firstName,
       lastName: req.body.lastName,
@@ -65,7 +51,7 @@ const registerUser = async (req, res) => {
         expiresIn: "30m",
       }
     );
-    const link = `${process.env.BASE_URL}/users/confirmation/${token}`;
+    const link = `${process.env.BASE_URL}/users/register_confirmation/${token}`;
 
     const subject = "Welcome on Board";
     const message = `
@@ -141,7 +127,7 @@ const forgetPassword = async (req, res) => {
   } catch (error) {
     console.log(error);
     return res.status(500).json({
-      status: "Failed",
+      status: "failed",
       Message: "Unable to verify email",
     });
   }
@@ -184,9 +170,9 @@ const changePassword = async (req, res) => {
 
 
 
-//@desc     Reset User's password
-//@route    POST /users/reset_password
-//@access   Private
+//@desc     Login User
+//@route    POST /users/login
+//@access   Public
 const userLogin = async (req, res) => {
   console.log(req.header);
   try {

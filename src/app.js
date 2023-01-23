@@ -7,6 +7,7 @@ const cookieParser = require("cookie-parser");
 const logger = require("morgan");
 const userRoute = require("./routes/user");
 const accountRoute = require("./routes/account");
+const mandateRoute = require("./routes/mandate");
 const mongoose = require("mongoose");
 
 mongoose
@@ -24,6 +25,7 @@ app.use(bodyparser.json());
 
 app.use("/users", userRoute);
 app.use("/account", accountRoute);
+app.use("/mandate", mandateRoute);
 
 app.use(function (req, res, next) {
   next(createError(404));

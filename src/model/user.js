@@ -23,7 +23,7 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    verificationCode: Number,
+
     designation: String,
     phone: String,
     gender: String,

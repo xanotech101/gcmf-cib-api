@@ -2,6 +2,7 @@ const User = require("../model/user");
 const jwt = require("jsonwebtoken");
 
 const verifyUser = async (req, res) => {
+    console.log("user verified");
   try {
     const decoded = jwt.verify(req.params.token, process.env.EMAIL_SECRET);
     const mail = decoded;
@@ -9,7 +10,8 @@ const verifyUser = async (req, res) => {
     if (!user) throw "user not found";
     user.isVerified = true;
     await user.save();
-
+    console.log("user verified");
+    console.log(process.env.BASE_URL);
     return res.status(200).redirect(`${process.env.BASE_URL}/users/login`);
   } catch (error) {
     console.log(error);
@@ -19,6 +21,7 @@ const verifyUser = async (req, res) => {
     });
   }
 };
+
 
 const getNewPassword = async (req, res) => {
   try {
