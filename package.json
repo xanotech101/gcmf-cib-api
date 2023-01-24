@@ -6,6 +6,10 @@
   "scripts": {
     "start": "nodemon src/app.js"
   },
+  "scripts": {
+    "start": "node fileName.js",
+    "start:dev": "nodemon fileName.js"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/xanotech101/gcmf-cib-api.git"
