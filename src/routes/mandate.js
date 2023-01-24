@@ -9,7 +9,7 @@ const {
 
 router.post("/register", registerMandate);
 router.post("/update", updateMandate);
-router.post("/all", updateMandate);
+router.get("/all", updateMandate);
 
 
 
