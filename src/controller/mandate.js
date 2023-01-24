@@ -94,8 +94,6 @@ const updateMandate = async (req, res) => {
          "Mandate amount is overlapping with amount registered in another mandate",
      });
  
-    
-   
           mandate.name = req.body.name
           mandate.minAmount = req.body.minAmount
           mandate.maxAmount =  req.body.maxAmount
@@ -117,7 +115,25 @@ const updateMandate = async (req, res) => {
   }
 };
 
+const getAllMandates = async (req, res) => {
+  try {
+
+    const mandate = await Mandate.find();
+    return res.status(200).json({
+      message: "Request Successfull",
+      mandate,
+    });
+
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: error.message });
+  };
+
+}
+
 module.exports = {
   registerMandate,
   updateMandate,
+  getAllMandates,
 };
