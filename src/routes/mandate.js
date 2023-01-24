@@ -1,7 +1,6 @@
 const express = require("express");
 const router = express.Router();
 const { registerMandate, updateMandate } = require("../controller/mandate");
-const { update } = require("lodash");
 
 
 router.post("/register", registerMandate);

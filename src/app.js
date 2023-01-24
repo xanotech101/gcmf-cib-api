@@ -10,11 +10,30 @@ const accountRoute = require("./routes/account");
 const mandateRoute = require("./routes/mandate");
 const mongoose = require("mongoose");
 
+// mongoose
+//   .set("strictQuery", false)
+//   .connect(
+//     "mongodb+srv://xanotech:<gcmb123>@cluster0.idde9t1.mongodb.net/?retryWrites=true&w=majority",
+//     { useNewUrlParser: true }
+//   )
+//   .then(console.log("Connected to MongoDB..."))
+//   .catch((err) => console.error("Could not connect to MongoDB...", err));
+
+// connect to db
 mongoose
-  .set("strictQuery", false)
-  .connect("mongodb://localhost/xanotech", { useNewUrlParser: true })
-  .then(console.log("Connected to MongoDB..."))
-  .catch((err) => console.error("Could not connect to MongoDB...", err));
+   .set("strictQuery", false)
+  .connect(process.env.MONGO_URI,
+  { useNewUrlParser: true,})
+  .then(() => {
+    console.log('connected to database')
+    // listen to port
+    app.listen(process.env.PORT, () => {
+      console.log('listening for requests on port', process.env.PORT)
+    })
+  })
+  .catch((err) => {
+    console.log(err)
+  }) 
 
 app.use(logger("dev"));
 app.use(express.json());
@@ -38,10 +57,5 @@ app.use(function (err, req, res, next) {
   res.render("error");
 });
 
-const port = process.env.PORT || 3000;
-
-app.listen(port, () => {
-  console.log(`Listeing on port ${port}...`);
-});
 
 module.exports = app;
