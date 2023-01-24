@@ -62,10 +62,10 @@ console.log(mandateCheckFailed);
   }
 };
 
-//@desc     register a mandate
-//@route    POST /mandate/register
+//@desc     update a mandate
+//@route    POST /mandate/update
 //@access   Public
-
+  
 const updateMandate = async (req, res) => {
   try {
     const { error } = validateUpdateMandateSchema(req.body);
@@ -73,23 +73,27 @@ const updateMandate = async (req, res) => {
 
     const mandate = await Mandate.findOne({ name: req.body.name });
 
-     let amount = await Mandate.find({}).select("minAmount maxAmount");
-     mandateCheckFailed = amount.map((item) => {
-       if (!
-         (item.minAmount <= req.body.minAmount && 
-           item.maxAmount >= req.body.minAmount) ||
-         (item.minAmount <= req.body.maxAmount &&
-           item.maxAmount >= req.body.maxAmount)
-       ) {
-         return true;
-       }
-     });
+    let amount = await Mandate.find({}).select("minAmount maxAmount");
 
-     if (mandateCheckFailed)
-       return res.status(400).json({
-         message:
-           "Mandate amount is overlapping with amount registered in another mandate",
-       });
+ let mandateCheckFailed;
+
+   amount.map((item) => {
+     if ( ( item.name !== req.body.name ) &&
+      ( (item.minAmount <= req.body.minAmount &&
+         item.maxAmount >= req.body.minAmount) ||
+       (item.minAmount <= req.body.maxAmount &&
+         item.maxAmount >= req.body.maxAmount) )
+     ) {
+       mandateCheckFailed = true;
+     }
+   });
+   console.log(mandateCheckFailed);
+   if (mandateCheckFailed)
+     return res.status(400).json({
+       message:
+         "Mandate amount is overlapping with amount registered in another mandate",
+     });
+ 
     
    
           mandate.name = req.body.name
