@@ -54,7 +54,7 @@ app.use(bodyparser.json());
 app.use("/api/users", userRoute);
 app.use("/api/account", accountRoute);
 app.use("/api/mandate", mandateRoute);
-app.use("/api/admin", superUserRoute);
+app.use("api/admin", superUserRoute);
 // app.use("/", utilsRoute);
 
 app.use(function (req, res, next) {
