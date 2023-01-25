@@ -133,8 +133,11 @@ const getAllMandates = async (req, res) => {
 
 }
 
+
+
 module.exports = {
   registerMandate,
   updateMandate,
   getAllMandates,
+
 };
