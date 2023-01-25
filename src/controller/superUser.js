@@ -52,7 +52,7 @@ const registerSuperUser = async (req, res) => {
         expiresIn: "30m",
       }
     );
-    const link = `${process.env.BASE_URL}/users/register_confirmation/${token}`;
+    const link = `${process.env.BASE_URL}/admin/register_confirmation/${token}`;
 
     const subject = "Welcome on Board";
     const message = `
