@@ -202,7 +202,7 @@ const userLogin = async (req, res) => {
 
 const getUsersByID = async (req, res) => {
   try {
-    const id = req.params.id
+    const id = Number(req.params.id);
     const user = await User.find({ _id: id });
     return res.status(200).json({
       message: "Request Successfull",
@@ -213,6 +213,8 @@ const getUsersByID = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+
 
 
 module.exports = {
