@@ -202,7 +202,9 @@ const userLogin = async (req, res) => {
 
 const getUsersByID = async (req, res) => {
   try {
-    const id = Number(req.params.id);
+    const paramsId = req.params.id;
+    const id = paramsId.toString()
+
     const user = await User.find({ _id: id });
     return res.status(200).json({
       message: "Request Successfull",
