@@ -7,7 +7,7 @@ const {
 } = require("../controller/mandate");
 
 
-router.post("/register", registerMandate);
+router.post("/create", registerMandate);
 router.post("/update", updateMandate);
 router.get("/all", getAllMandates);
 

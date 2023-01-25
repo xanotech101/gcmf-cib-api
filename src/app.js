@@ -50,10 +50,10 @@ app.use(cookieParser());
 app.use(bodyparser.urlencoded({ extended: false }));
 app.use(bodyparser.json());
 
-app.use("/users", userRoute);
-app.use("/account", accountRoute);
-app.use("/mandate", mandateRoute);
-app.use("/admin", superUserRoute);
+app.use("api/users", userRoute);
+app.use("api/account", accountRoute);
+app.use("api/mandate", mandateRoute);
+app.use("api/admin", superUserRoute);
 
 app.use(function (req, res, next) {
   next(createError(404));
