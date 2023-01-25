@@ -49,6 +49,7 @@ const getNewPassword = async (req, res) => {
 
 const verifySuperUser = async (req, res) => {
   try {
+    console.log("hit here")
     const decoded = jwt.verify(req.params.token, process.env.EMAIL_SECRET);
     const mail = decoded;
     const superUser = await SuperUser.findOne({ email: mail.user_email });

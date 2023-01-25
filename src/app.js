@@ -9,6 +9,7 @@ const userRoute = require("./routes/user");
 const accountRoute = require("./routes/account");
 const mandateRoute = require("./routes/mandate");
 const superUserRoute = require("./routes/superUser");
+const utilsRoute = require("./routes/utils");
 const mongoose = require("mongoose");
 
 // mongoose
@@ -21,17 +22,17 @@ const mongoose = require("mongoose");
 //   .catch((err) => console.error("Could not connect to MongoDB...", err));
 
 // connect to db
-// if (process.env.NODE_ENV === 'development') {
-//   URI = "mongodb://localhost:27017/xanotech";
-// } else  {
+if (process.env.NODE_ENV === 'development') {
+  URI = "mongodb://localhost/xanotech";
+} else  {
 
-//     URI = process.env.MONGO_URI;
-// }
+    URI = process.env.MONGO_URI;
+}
 
 
 
 mongoose
-  .connect(process.env.MONGO_URI)
+  .connect(URI)
   .then(() => {
     console.log("connected to database");
     // listen to port
@@ -50,10 +51,11 @@ app.use(cookieParser());
 app.use(bodyparser.urlencoded({ extended: false }));
 app.use(bodyparser.json());
 
-app.use("api/users", userRoute);
-app.use("api/account", accountRoute);
-app.use("api/mandate", mandateRoute);
-app.use("api/admin", superUserRoute);
+app.use("/api/users", userRoute);
+app.use("/api/account", accountRoute);
+app.use("/api/mandate", mandateRoute);
+app.use("/api/admin", superUserRoute);
+// app.use("/", utilsRoute);
 
 app.use(function (req, res, next) {
   next(createError(404));

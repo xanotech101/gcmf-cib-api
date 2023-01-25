@@ -1,4 +1,4 @@
-const SuperUser = require("../model/user");
+const SuperUser = require("../model/superUser");
 const bcrypt = require("bcrypt");
 const {
   validateSuperUserSchema,
@@ -15,13 +15,11 @@ const { sendEmail } = require("../utils/emailService");
 //@route    POST /super_users/register
 //@access   Public
 const registerSuperUser = async (req, res) => {
-    console.log("I am here")
   try {
     const { error } = validateSuperUserSchema(req.body);
     if (error) return res.status(400).send(error.details[0].message);
 
       const SuperUserExits = await SuperUser.findOne({ email: req.body.email });
-      console.log(SuperUserExits)
     if (SuperUserExits)
       return res.status(400).json({ message: "User is already registered" });
 
@@ -39,7 +37,7 @@ const registerSuperUser = async (req, res) => {
       priviledge: req.body.priviledge,
     });
 
-      console.log(superUser)
+
     //Hash password
     const salt = await bcrypt.genSalt(10);
     superUser.password = await bcrypt.hash(superUser.password, salt);
@@ -52,7 +50,7 @@ const registerSuperUser = async (req, res) => {
         expiresIn: "30m",
       }
     );
-    const link = `${process.env.BASE_URL}/admin/register_confirmation/${token}`;
+    const link = `${process.env.BASE_URL}/api/admin/register_confirmation/${token}`;
 
     const subject = "Welcome on Board";
     const message = `

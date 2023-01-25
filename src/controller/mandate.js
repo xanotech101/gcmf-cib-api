@@ -116,6 +116,7 @@ const updateMandate = async (req, res) => {
 };
 
 const getAllMandates = async (req, res) => {
+  console.log("here")
   try {
 
     const mandate = await Mandate.find();
