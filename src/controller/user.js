@@ -106,7 +106,7 @@ const forgetPassword = async (req, res) => {
         expiresIn: "15m",
       }
     );
-    const link = `${process.env.BASE_URL}/users/reset_password/${token}`;
+    const link = `${process.env.FRONTEND_URL}/users/reset_password/${token}`;
 
     const subject = "Password Reset Link";
     const message = `
