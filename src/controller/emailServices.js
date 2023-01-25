@@ -1,4 +1,5 @@
 const User = require("../model/user");
+const SuperUser = require("../model/superUser");
 const jwt = require("jsonwebtoken");
 
 const verifyUser = async (req, res) => {
@@ -43,7 +44,30 @@ const getNewPassword = async (req, res) => {
   }
 };
 
+
+
+
+const verifySuperUser = async (req, res) => {
+  try {
+    const decoded = jwt.verify(req.params.token, process.env.EMAIL_SECRET);
+    const mail = decoded;
+    const superUser = await SuperUser.findOne({ email: mail.user_email });
+    if (!user) throw "user not found";
+   superUser.isVerified = true;
+    await superUser.save();
+
+    return res.status(200).redirect(`${process.env.FRONTEND_URL}/users/login`);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      status: "Failed",
+      Message: "Unable to verify user",
+    });
+  }
+};
+
 module.exports = {
   verifyUser,
   getNewPassword,
+  verifySuperUser
 };
