@@ -8,6 +8,7 @@ const logger = require("morgan");
 const userRoute = require("./routes/user");
 const accountRoute = require("./routes/account");
 const mandateRoute = require("./routes/mandate");
+const superUserRoute = require("./routes/superUser");
 const mongoose = require("mongoose");
 
 // mongoose
@@ -20,7 +21,16 @@ const mongoose = require("mongoose");
 //   .catch((err) => console.error("Could not connect to MongoDB...", err));
 
 // connect to db
-mongoose.connect(process.env.MONGO_URI)
+if (process.env.NODE_ENV == 'development') {
+  URI = "mongodb://localhost:27017/xanotech";
+} else  {
+
+    URI = process.env.MONGO_URI;
+}
+
+
+
+mongoose.connect(URI)
   .then(() => {
     console.log('connected to database')
     // listen to port
@@ -42,6 +52,7 @@ app.use(bodyparser.json());
 app.use("/users", userRoute);
 app.use("/account", accountRoute);
 app.use("/mandate", mandateRoute);
+app.use("/admin", superUserRoute);
 
 app.use(function (req, res, next) {
   next(createError(404));
