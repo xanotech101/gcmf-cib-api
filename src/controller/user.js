@@ -205,7 +205,7 @@ const getUsersByID = async (req, res) => {
     const paramsId = req.params.id;
     const id = paramsId.toString()
 
-    const user = await User.find({ _id: id });
+    const user = await User.find({ organizationId: id });
     return res.status(200).json({
       message: "Request Successfull",
       user,
