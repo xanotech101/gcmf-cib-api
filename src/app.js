@@ -21,26 +21,27 @@ const mongoose = require("mongoose");
 //   .catch((err) => console.error("Could not connect to MongoDB...", err));
 
 // connect to db
-if (process.env.NODE_ENV == 'development') {
-  URI = "mongodb://localhost:27017/xanotech";
-} else  {
+// if (process.env.NODE_ENV === 'development') {
+//   URI = "mongodb://localhost:27017/xanotech";
+// } else  {
 
-    URI = process.env.MONGO_URI;
-}
+//     URI = process.env.MONGO_URI;
+// }
 
 
 
-mongoose.connect(URI)
+mongoose
+  .connect(process.env.MONGO_URI)
   .then(() => {
-    console.log('connected to database')
+    console.log("connected to database");
     // listen to port
     app.listen(process.env.PORT, () => {
-      console.log('listening for requests on port', process.env.PORT)
-    })
+      console.log("listening for requests on port", process.env.PORT);
+    });
   })
   .catch((err) => {
-    console.log(err)
-  }) 
+    console.log(err);
+  }); 
 
 app.use(logger("dev"));
 app.use(express.json());
