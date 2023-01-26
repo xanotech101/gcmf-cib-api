@@ -138,6 +138,7 @@ const getSingleMandate = async (req, res) => {
   console.log(id);
   try {
     const mandate = await Mandate.findById(id.toString());
+
     return res.status(200).json({
       message: "Request Successfull",
       mandate,
