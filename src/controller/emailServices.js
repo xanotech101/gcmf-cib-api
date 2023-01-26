@@ -53,7 +53,7 @@ const verifySuperUser = async (req, res) => {
     const decoded = jwt.verify(req.params.token, process.env.EMAIL_SECRET);
     const mail = decoded;
     const superUser = await SuperUser.findOne({ email: mail.user_email });
-    if (!user) throw "user not found";
+    if (!superUser) throw "user not found";
    superUser.isVerified = true;
     await superUser.save();
 
