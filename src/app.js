@@ -24,8 +24,8 @@ const mongoose = require("mongoose");
 // connect to db
 
 
-console.log("haha");
-if (process.env.NODE_ENV == 'production') {
+
+if (process.env.NODE_ENV == 'development') {
   
   URI = "mongodb://localhost/xanotech";
 } else  {
