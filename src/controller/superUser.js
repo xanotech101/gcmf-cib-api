@@ -50,6 +50,8 @@ const registerSuperUser = async (req, res) => {
         expiresIn: "30m",
       }
     );
+
+
     const link = `${process.env.BASE_URL}/api/admin/register_confirmation/${token}`;
 
     const subject = "Welcome on Board";
@@ -160,23 +162,24 @@ const changePassword = async (req, res) => {
 //@route    POST /users/login
 //@access   Public
 const superUserLogin = async (req, res) => {
-  console.log(req.header);
   try {
     const { error } = validateUserLoginSchema(req.body);
     if (error) return res.status(400).send(error.details[0].message);
 
-    const superUser = await User.findOne({ email: req.body.email });
-    if (!user) res.status(400).json({ message: "Invalid email or password" });
+    const superUser = await SuperUser.findOne({ email: req.body.email });
+    if (!superUser)
+      res.status(400).json({ message: "Invalid email or password" });
 
     const validPassword = await bcrypt.compare(
       req.body.password,
-      user.password
+      superUser.password
     );
     if (!validPassword)
-      res.status(400).json({ message: "Invalid email or password" });
+     return res.status(400).json({ message: "Invalid email or password" });
 
     const token = superUser.generateAuthToken();
-    res.json({ message: "User Logged in Successfully", accessToken: token });
+        superUser.token = token;
+   return res.json({ message: "User Logged in Successfully", accessToken: token });
   } catch (error) {
     console.log(error);
     return res.status(500).json({

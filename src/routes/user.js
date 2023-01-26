@@ -1,4 +1,5 @@
 const express = require("express");
+const superUserAuth = require("../middleware/auth");
 const router = express.Router();
 const {
   registerUser,
@@ -9,7 +10,7 @@ const {
 } = require("../controller/user");
 const { verifyUser, getNewPassword } = require("../controller/emailServices");
 
-router.post("/register", registerUser); //register a user
+router.post("/register", superUserAuth, registerUser); //register a user
 router.get("/register_confirmation/:token", verifyUser);  //send email after registration and verifies user
 router.post("/send_password_reset_link", forgetPassword);  
 router.get("/reset_password/:token", getNewPassword);
