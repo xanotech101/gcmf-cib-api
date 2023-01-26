@@ -200,30 +200,10 @@ const userLogin = async (req, res) => {
 
 
 
-const getUsersByID = async (req, res) => {
-  try {
-console.log("hh")
-    const id = req.params.id;
-    console.log(id)
-
-    const user = await User.findOne({ organizationId: id.toString() });
-    return res.status(200).json({
-      message: "Request Successfull",
-      user,
-    });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: error.message });
-  }
-};
-
-
-
 
 module.exports = {
   changePassword,
   registerUser,
   forgetPassword,
   userLogin,
-  getUsersByID,
 };

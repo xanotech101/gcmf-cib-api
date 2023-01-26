@@ -9,7 +9,7 @@ const userRoute = require("./routes/user");
 const accountRoute = require("./routes/account");
 const mandateRoute = require("./routes/mandate");
 const superUserRoute = require("./routes/superUser");
-const utilsRoute = require("./routes/utils");
+const generalRoute = require("./routes/general");
 const mongoose = require("mongoose");
 
 // mongoose
@@ -63,7 +63,7 @@ app.use("/api/users", userRoute);
 app.use("/api/account", accountRoute);
 app.use("/api/mandate", mandateRoute);
 app.use("/api/admin", superUserRoute);
-// app.use("/", utilsRoute);
+app.use("/api", generalRoute);
 
 app.use(function (req, res, next) {
   next(createError(404));

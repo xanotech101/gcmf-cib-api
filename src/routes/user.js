@@ -1,5 +1,10 @@
 const express = require("express");
-const superUserAuth = require("../middleware/auth");
+const {
+  superUserAuth,
+  adminAuth,
+  initiatorAuth,
+  verifierAuth,
+} = require("../middleware/auth");
 const router = express.Router();
 const {
   registerUser,
@@ -16,7 +21,7 @@ router.post("/send_password_reset_link", forgetPassword);
 router.get("/reset_password/:token", getNewPassword);
 router.post("/reset_password", changePassword);
 router.post("/login", userLogin);
-router.get("/:id", getUsersByID);
+
 
 
 
