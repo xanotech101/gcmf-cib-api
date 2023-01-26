@@ -1,5 +1,5 @@
 const SuperUser = require("../model/superUser");
-const user = require("../model/user");
+const User = require("../model/user");
 
 
 const getUsersByID = async (req, res) => {
