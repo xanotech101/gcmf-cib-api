@@ -1,4 +1,3 @@
-
 const express = require("express");
 const router = express.Router();
 const {
@@ -13,7 +12,7 @@ const {
 } = require("../controller/emailServices");
 
 router.post("/register", registerSuperUser); //register a user
-// router.get("/register_confirmation/:token", verifySuperUser); 
+// router.get("/register_confirmation/:token", verifySuperUser);
 router.get("/register_confirmation/:token", verifySuperUser);
 router.post("/send_password_reset_link", forgetPassword);
 router.get("/reset_password/:token", getNewPassword);

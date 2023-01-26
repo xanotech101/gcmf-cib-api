@@ -25,7 +25,7 @@ const mongoose = require("mongoose");
 
 
 console.log("haha");
-if (process.env.NODE_ENV == 'development') {
+if (process.env.NODE_ENV == 'production') {
   
   URI = "mongodb://localhost/xanotech";
 } else  {

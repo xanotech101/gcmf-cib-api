@@ -133,11 +133,27 @@ const getAllMandates = async (req, res) => {
 
 }
 
+const getSingleMandate = async (req, res) => {
+  const id = req.params.id
+  console.log(id);
+  try {
+    const mandate = await Mandate.findById(id.toString());
+    return res.status(200).json({
+      message: "Request Successfull",
+      mandate,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
 
 
 module.exports = {
   registerMandate,
   updateMandate,
   getAllMandates,
-
+  getSingleMandate
 };

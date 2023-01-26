@@ -202,10 +202,11 @@ const userLogin = async (req, res) => {
 
 const getUsersByID = async (req, res) => {
   try {
-    const paramsId = req.params.id;
-    const id = paramsId.toString()
+console.log("hh")
+    const id = req.params.id;
+    console.log(id)
 
-    const user = await User.find({ organizationId: id });
+    const user = await User.findOne({ organizationId: id.toString() });
     return res.status(200).json({
       message: "Request Successfull",
       user,

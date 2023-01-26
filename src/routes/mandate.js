@@ -4,12 +4,14 @@ const {
   registerMandate,
   updateMandate,
   getAllMandates,
+  getSingleMandate
 } = require("../controller/mandate");
 
 
 router.post("/create", registerMandate);
 router.post("/update", updateMandate);
 router.get("/all", getAllMandates);
+router.get("/:id", getSingleMandate);
 
 
 
