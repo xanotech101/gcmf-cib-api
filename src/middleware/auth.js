@@ -8,7 +8,7 @@ function superUserAuth(req, res, next) {
       if (token == null)
         return res.sendStatus(401).send("Access denied. No token provided.");
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        console.log(decoded)
+
         if ( !decoded.priviledge.includes("superUser"))
           return res
             .status(403)
@@ -32,17 +32,17 @@ function adminAuth(req, res, next) {
      
     if (token == null)
       return res.sendStatus(401).send("Access denied. No token provided.");
-      console.log("I am here in line 3");
+;
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const arr = decoded.priviledge
-    console.log("I am here in line 4");
+
     if ( !arr.includes("admin") && !arr.includes("superUser"))
       return res
         .status(403)
         .json({message: "Access denied. You are not authorized to perform this action"})
     
     req.user = decoded;
-    console.log("I am here in line 5")
+
     next();
   } catch (ex) {
     console.log(ex);
@@ -58,7 +58,7 @@ function initiatorAuth(req, res, next) {
       return res.sendStatus(401).send("Access denied. No token provided.");
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const arr = decoded.priviledge;
-        console.log("initiator", arr);
+
     if (
       !arr.includes("initiator") &&
       !arr.includes("superUser") &&
@@ -87,7 +87,6 @@ function verifierAuth(req, res, next) {
       return res.sendStatus(401).send("Access denied. No token provided.");
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const arr = decoded.priviledge;
-    console.log("verifier", arr)
     if (
       !arr.includes("verifier") &&
       !arr.includes("superUser") &&
@@ -106,9 +105,38 @@ function verifierAuth(req, res, next) {
   }
 }
 
+
+
+function allUsersAuth(req, res, next) {
+  const authHeader = req.headers.authorization;
+  const token = authHeader && authHeader.split(" ")[1];
+  try {
+    if (token == null)
+      return res.sendStatus(401).send("Access denied. No token provided.");
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const arr = decoded.priviledge;
+    if (
+       !arr.includes("verifier") &&
+      !arr.includes("superUser") &&
+      !arr.includes("admin") &&
+          !arr.includes("initiator")
+    )
+      return res.status(403).json({
+        message: "Access denied. You are not authorized to perform this action",
+      });
+
+    req.user = decoded;
+    next();
+  } catch (ex) {
+    console.log(ex);
+    return res.status(401).send("Invalid token.");
+  }
+}
+
 module.exports = {
   superUserAuth,
   adminAuth,
   initiatorAuth,
-  verifierAuth
+  verifierAuth,
+  allUsersAuth,
 }; 

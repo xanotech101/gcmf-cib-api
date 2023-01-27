@@ -3,10 +3,13 @@ const User = require("../model/user");
 
 
 const getUsersByID = async (req, res) => {
+    console.log("this is the req", req.user)
     let user;
     try {
         if (req.user.priviledge.includes("initiator") || req.user.priviledge.includes("verifier") || req.user.priviledge.includes("admin")) {
+            console.log("this is the ibj", req.user._id)
             user = await User.findById(req.user._id);
+            console.log("hello user", user);
         } else {
             user = await SuperUser.findById(req.user._id);
         }
