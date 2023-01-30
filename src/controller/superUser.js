@@ -52,7 +52,7 @@ const registerSuperUser = async (req, res) => {
     );
 
 
-    const link = `${process.env.BASE_URL}/api/admin/register_confirmation/${token}`;
+    const link = `${process.env.FRONTEND_URL}/verify-account/${token}`;
 
     const subject = "Welcome on Board";
     const message = `

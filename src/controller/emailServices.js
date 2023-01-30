@@ -57,7 +57,9 @@ const verifySuperUser = async (req, res) => {
    superUser.isVerified = true;
     await superUser.save();
 
-    return res.status(200).redirect(`${process.env.FRONTEND_URL}/users/login`);
+    return res.status(200).json({
+      message: "User verified successfully"
+    });
   } catch (error) {
     console.log(error);
     return res.status(500).json({
