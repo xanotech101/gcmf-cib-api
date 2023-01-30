@@ -11,7 +11,9 @@ const verifyUser = async (req, res) => {
     user.isVerified = true;
     await user.save();
 
-    return res.status(200).redirect(`${process.env.FRONTEND_URL}/users/login`);
+    return res.status(200).json({
+      message: "User verified successfully",
+    });
   } catch (error) {
     console.log(error);
     return res.status(500).json({
@@ -49,7 +51,6 @@ const getNewPassword = async (req, res) => {
 
 const verifySuperUser = async (req, res) => {
   try {
-    console.log("hit here")
     const decoded = jwt.verify(req.params.token, process.env.EMAIL_SECRET);
     const mail = decoded;
     const superUser = await SuperUser.findOne({ email: mail.user_email });

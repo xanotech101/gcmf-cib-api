@@ -1,5 +1,6 @@
 const SuperUser = require("../model/superUser");
 const bcrypt = require("bcrypt");
+
 const {
   validateSuperUserSchema,
   validateForgetUserPasswordSchema,
@@ -104,7 +105,7 @@ const forgetPassword = async (req, res) => {
         expiresIn: "15m",
       }
     );
-    const link = `${process.env.BASE_URL}/users/reset_password/${token}`;
+    const link = `${process.env.FRONTEND_URL}/reset-password/${token}`;
 
     const subject = "Password Reset Link";
     const message = `
@@ -139,7 +140,8 @@ const changePassword = async (req, res) => {
     const { error } = validateChangePasswordSchema(req.body);
     if (error) return res.status(400).send(error.details[0].message);
 
-    const { email, password } = req.body;
+    const { password, confirm_password, token } = req.body;
+
     const superUser = await SuperUser.findOne({ email });
 
     //Hash password

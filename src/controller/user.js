@@ -53,7 +53,7 @@ const registerUser = async (req, res) => {
         expiresIn: "30m",
       }
     );
-    const link = `${process.env.BASE_URL}/users/register_confirmation/${token}`;
+    const link = `${process.env.FRONTEND_URL}/verify-account/${token}`;
 
     const subject = "Welcome on Board";
     const message = `
@@ -108,7 +108,7 @@ const forgetPassword = async (req, res) => {
         expiresIn: "15m",
       }
     );
-    const link = `${process.env.FRONTEND_URL}/users/reset_password/${token}`;
+    const link = `${process.env.FRONTEND_URL}/reset-password/${token}`;
 
     const subject = "Password Reset Link";
     const message = `
