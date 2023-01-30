@@ -135,7 +135,7 @@ const initiateRequestSchema = Joi.object().keys({
   customerName: Joi.string().min(3).max(60).lowercase().required(),
   amount: Joi.number().required(),
   bankName: Joi.string().required(),
-  accountNumber: Joi.string().lenght(10).required(),
+  accountNumber: Joi.string().length(10).required(),
   accountName: Joi.string().min(3).max(60).lowercase().required(),
 });
 exports.validateInitiateRequestSchema = validateRequest(initiateRequestSchema);

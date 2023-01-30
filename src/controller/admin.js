@@ -14,7 +14,7 @@ const { sendEmail } = require("../utils/emailService");
 //@desc     register a user
 //@route    POST /users/register
 //@access   Public
-const registerUser = async (req, res) => {
+const registerAdmin = async (req, res) => {
   try {
     const { error } = validateUserSchema(req.body);
     if (error) return res.status(400).send(error.details[0].message);

@@ -208,5 +208,4 @@ module.exports = {
   registerUser,
   forgetPassword,
   userLogin,
-  registerAdmin
 };

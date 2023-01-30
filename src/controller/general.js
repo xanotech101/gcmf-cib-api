@@ -56,7 +56,14 @@ const getUsersByOrgID = async (req, res) => {
 const initiateRequest = async (req, res) => {
 
   try {
-    if (!req.user.priviledge.includes("initiator")) return res.status(403).json({message: "You are unauthorised to make this request."})
+    // if (
+    //   !req.user.priviledge.includes("initiator") ||
+    //   !req.user.priviledge.includes("admin") ||
+    //   req.user.priviledge.includes("superAdmin")
+    // )
+    //   return res
+    //     .status(403)
+    //     .json({ message: "You are unauthorised to make this request." });
     
      const { error } = validateInitiateRequestSchema(req.body);
      if (error) return res.status(400).send(error.details[0].message);
