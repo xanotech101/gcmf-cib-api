@@ -17,5 +17,7 @@ router.get("/register_confirmation/:token", verifySuperUser);
 router.post("/send_password_reset_link", forgetPassword);
 router.post("/reset_password", changePassword);
 router.post("/login", superUserLogin);
+router.post("/admin", superUserLogin);
+
 
 module.exports = router;
