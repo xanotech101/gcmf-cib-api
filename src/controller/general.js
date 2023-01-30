@@ -1,5 +1,6 @@
 const SuperUser = require("../model/superUser");
 const User = require("../model/user");
+const Mandate = require("../model/mandate");
 const InitiateRequest = require("../model/initiateRequest");
 const { validateInitiateRequestSchema } = require("../utils/utils");
 
@@ -87,11 +88,26 @@ const initiateRequest = async (req, res) => {
    "minAmount maxAmount AuthorizerID"
  );
 
-    console.log(request);
-    console.log(mandate);
-//     mandate.map(item => {
-//   if(request.amount)
-// })
+
+    let authorizerID; let emails = [];
+
+    mandate.map(item => {
+      if (
+        request.amount >= item.minAmount &&
+        request.amount <= item.maxAmount
+      ) {
+        authorizerID = item.AuthorizerID;
+      }
+    })
+    
+    // authorizerID.forEach(item => {
+    //   let user = await User.find({ _id: item.authorizerID }).select("email")
+    //   emails.push(user)
+    // })
+    
+
+     
+
   
     let result = await request.save();
 
