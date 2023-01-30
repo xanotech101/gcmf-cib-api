@@ -141,12 +141,13 @@ const changePassword = async (req, res) => {
     if (error) return res.status(400).send(error.details[0].message);
 
     const { password, confirm_password, token } = req.body;
+    const decoded = jwt.verify(token, process.env.EMAIL_SECRET);
+    let userEmail = decoded.user_email
 
-    const superUser = await SuperUser.findOne({ email });
+    const superUser = await SuperUser.findOne({ email: userEmail });
 
     //Hash password
     const salt = await bcrypt.genSalt(10);
-    console.log(password);
     superUser.password = await bcrypt.hash(password, salt);
 
     await superUser.save();
