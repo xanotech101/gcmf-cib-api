@@ -126,3 +126,16 @@ const superUserSchema = Joi.object()
   })
   .with("password", "confirm_password");
 exports.validateSuperUserSchema = validateSuperUser(superUserSchema);
+
+
+
+const validateRequest = (user) => (payload) =>
+  user.validate(payload, { abortEarly: false });
+const initiateRequestSchema = Joi.object().keys({
+  customerName: Joi.string().min(3).max(60).lowercase().required(),
+  amount: Joi.number().required(),
+  bankName: Joi.string().required(),
+  accountNumber: Joi.string().lenght(10).required(),
+  accountName: Joi.string().min(3).max(60).lowercase().required(),
+});
+exports.validateInitiateRequestSchema = validateRequest(initiateRequestSchema);
