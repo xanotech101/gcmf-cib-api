@@ -10,7 +10,6 @@ const accountRoute = require("./routes/account");
 const mandateRoute = require("./routes/mandate");
 const superUserRoute = require("./routes/superUser");
 const generalRoute = require("./routes/general");
-const adminRoute = require("./routes/admin");
 const mongoose = require("mongoose");
 
 // mongoose
@@ -37,6 +36,7 @@ if (process.env.NODE_ENV == 'development') {
 
 
 mongoose
+  .set("strictQuery", false)
   .connect(URI)
   .then(() => {
     console.log("connected to database");

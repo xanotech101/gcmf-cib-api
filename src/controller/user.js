@@ -1,5 +1,4 @@
 const User = require("../model/user");
-const Admin = require("../model/admin");
 const bcrypt = require("bcrypt");
 const {
   validateUserSchema,
@@ -183,7 +182,8 @@ const userLogin = async (req, res) => {
 
       const user = await User.findOne({ email: req.body.email });
        if (!user)
-          return res.status(400).json({ message: "Invalid email or password" });
+         return res.status(400).json({ message: "Invalid email or password" });
+     if(!user.isVerified) return res.status(401).json({message : "User is still yet to be verified on the platform"})
         
         const validPassword = await bcrypt.compare(req.body.password, user.password);
         if (!validPassword)

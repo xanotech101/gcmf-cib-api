@@ -1,6 +1,13 @@
 const User = require("../model/user");
 const SuperUser = require("../model/superUser");
 const jwt = require("jsonwebtoken");
+const {
+  validateChangePasswordSchema,
+} = require("../utils/utils");
+const bcrypt = require("bcrypt");
+
+
+
 
 const verifyUser = async (req, res) => {
   try {
@@ -25,18 +32,21 @@ const verifyUser = async (req, res) => {
 
 const getNewPassword = async (req, res) => {
   try {
-    const decoded = jwt.verify(req.params.token, process.env.EMAIL_SECRET);
-    const mail = decoded;
-    const user = await User.findOne({ email: mail.user_email });
-    if (!user) return res.status(400).json({ message: "user not found" });
-    if (!user.isVerified)
-      return res
-        .status(400)
-        .json({ message: "User is not verified. Kindly verify your account" });
+     const { error } = validateChangePasswordSchema(req.body);
+    if (error) return res.status(400).send(error.details[0].message);
 
-    return res.status(200).json({
-      userEmail: user.email,
-    });
+    const { password, confirm_password, token } = req.body;
+    const decoded = jwt.verify(token, process.env.EMAIL_SECRET);
+    let userEmail = decoded.user_email
+
+    const user = await User.findOne({ email: userEmail });
+
+    //Hash password
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(password, salt);
+
+    await user.save();
+    return res.status(200).json({ message: "Password changed successfully" });
   } catch (error) {
     console.log(error);
     return res.status(500).json({

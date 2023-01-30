@@ -1,6 +1,6 @@
 const SuperUser = require("../model/superUser");
 const User = require("../model/user");
-const InitiateRequest = ("../model/initiateRequest");
+const InitiateRequest = require("../model/initiateRequest");
 const { validateInitiateRequestSchema } = require("../utils/utils");
 
 
@@ -11,7 +11,7 @@ const getUsersByID = async (req, res) => {
     try {
         if (req.user.priviledge.includes("initiator") || req.user.priviledge.includes("verifier") || req.user.priviledge.includes("admin")) {
             user = await User.findById(req.user._id);
-            console.log("hello user", user);
+  
         } else {
             user = await SuperUser.findById(req.user._id);
         }
@@ -73,15 +73,29 @@ const initiateRequest = async (req, res) => {
     // });
     // if (!user) return res.status(404).json({ message: "User not found" });
 
-    let initiateRequest = new InitiateRequest({
+
+    let request = new InitiateRequest({
       customerName: req.body.customerName,
       amount: req.body.amount,
       bankName: req.body.bankName,
       accountNumber: req.body.accountNumber,
-      accountName: req.body.accountName
+      accountName: req.body.accountName,
     });
 
-    let result = await initiateRequest.save();
+    
+ let mandate = await Mandate.find({}).select(
+   "minAmount maxAmount AuthorizerID"
+ );
+
+    console.log(request);
+    console.log(mandate);
+//     mandate.map(item => {
+//   if(request.amount)
+// })
+  
+    let result = await request.save();
+
+
 
     return res.status(201).json({
       message: "Inititate request succesfully sent for approval",

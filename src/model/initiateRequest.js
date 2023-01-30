@@ -3,12 +3,10 @@ const jwt = require("jsonwebtoken");
 
 const initiateRequestSchema = new mongoose.Schema(
   {
-    customerName: {
-      type: String,
-    },
+    customerName: String,
     amount: Number,
     bankName: String,
-    accountNumber: Number,
+    accountNumber: String,
     accountName: String,
   },
   {
