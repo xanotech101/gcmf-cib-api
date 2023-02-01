@@ -1,5 +1,5 @@
 var nodemailer = require('nodemailer');
-const user = require('../model/user');
+const user = require('../model/user.model');
 const jwt = require("jsonwebtoken");
 
 function email(email, title, message) {

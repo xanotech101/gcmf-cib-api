@@ -5,25 +5,14 @@ const app = express();
 const createError = require("http-errors");
 const cookieParser = require("cookie-parser");
 const logger = require("morgan");
-const userRoute = require("./routes/user");
+const userRoute = require("./routes/user.route");
 const accountRoute = require("./routes/account");
 const mandateRoute = require("./routes/mandate");
-const superUserRoute = require("./routes/superUser");
 const generalRoute = require("./routes/general");
 const paystackRoute = require("./routes/paystack.route");
+const authRoute = require("./routes/auth.route");
 const mongoose = require("mongoose");
 const cors = require("cors");
-
-// mongoose
-//   .set("strictQuery", false)
-//   .connect(
-//     "mongodb+srv://xanotech:<gcmb123>@cluster0.idde9t1.mongodb.net/?retryWrites=true&w=majority",
-//     { useNewUrlParser: true }
-//   )
-//   .then(console.log("Connected to MongoDB..."))
-//   .catch((err) => console.error("Could not connect to MongoDB...", err));
-
-// connect to db
 
 
 
@@ -69,11 +58,11 @@ app.use(cookieParser());
 app.use(bodyparser.urlencoded({ extended: false }));
 app.use(bodyparser.json());
 
+
+app.use("/api/auth", authRoute)
 app.use("/api/users", userRoute);
 app.use("/api/account", accountRoute);
 app.use("/api/mandate", mandateRoute);
-app.use("/api/admin", superUserRoute);
-app.use("/api/client", superUserRoute);
 app.use("/api", paystackRoute);
 app.use("/api", generalRoute);
 
