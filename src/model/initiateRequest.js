@@ -3,14 +3,17 @@ const jwt = require("jsonwebtoken");
 
 const initiateRequestSchema = new mongoose.Schema(
   {
+    requestID: String,
     customerName: String,
     amount: Number,
     bankName: String,
     accountNumber: String,
     accountName: String,
+    declineResponse: String,
+    time: Date,
   },
   {
-    timestamps: true,
+    timestamps: { type: Date, required: true, unique: true },
   }
 );
 
