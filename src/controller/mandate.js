@@ -150,8 +150,6 @@ const getSingleMandate = async (req, res) => {
 };
 
 
-
-
 module.exports = {
   registerMandate,
   updateMandate,

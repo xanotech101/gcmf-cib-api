@@ -10,7 +10,9 @@ const accountRoute = require("./routes/account");
 const mandateRoute = require("./routes/mandate");
 const superUserRoute = require("./routes/superUser");
 const generalRoute = require("./routes/general");
+const paystackRoute = require("./routes/paystack.route");
 const mongoose = require("mongoose");
+const cors = require("cors");
 
 // mongoose
 //   .set("strictQuery", false)
@@ -53,6 +55,13 @@ mongoose
     console.log(err);
   }); 
 
+app.use(cors(
+  {
+    origin: "*",
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    preflightContinue: false,
+  }
+));
 app.use(logger("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -65,6 +74,7 @@ app.use("/api/account", accountRoute);
 app.use("/api/mandate", mandateRoute);
 app.use("/api/admin", superUserRoute);
 app.use("/api/client", superUserRoute);
+app.use("/api", paystackRoute);
 app.use("/api", generalRoute);
 
 app.use(function (req, res, next) {
