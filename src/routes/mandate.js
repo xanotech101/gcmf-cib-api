@@ -6,9 +6,12 @@ const {
   getAllMandates,
   getSingleMandate
 } = require("../controller/mandate");
+const { validate, mandateSchemas } = require("../validations");
 
 
-router.post("/create", registerMandate);
+router.post("/create",
+  validate(mandateSchemas.createMandate, "body"),
+  registerMandate);
 router.post("/update", updateMandate);
 router.get("/all", getAllMandates);
 router.get("/:id", getSingleMandate);

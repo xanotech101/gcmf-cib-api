@@ -25,7 +25,7 @@ router.post(
 );
 router.post(
   "/reset_password",
-  validate(authSchemas.resetPassword, "body"),
+validate(authSchemas.resetPassword, "body"),
   resetPassword
 );
 

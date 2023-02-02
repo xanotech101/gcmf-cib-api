@@ -1,7 +1,6 @@
 const Mandate = require("../model/mandate");
 const bcrypt = require("bcrypt");
 const {
-  validateMandateSchema,
   validateUpdateMandateSchema,
 } = require("../utils/utils");
 const jwt = require("jsonwebtoken");
@@ -15,8 +14,6 @@ const Joi = require("joi");
 const registerMandate = async (req, res) => {
 
   try {
-    const { error } = validateMandateSchema(req.body);
-    if (error) return res.status(400).send(error.details[0].message);
 
     const mandateExists = await Mandate.findOne({ name: req.body.name });
     if (mandateExists)

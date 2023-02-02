@@ -1,4 +1,5 @@
 const User = require("../../model/user.model");
+const Priviledge = require("../../model/priviledge");
 const { validateChangePasswordSchema } = require("../../utils/utils");
 
 
@@ -72,8 +73,28 @@ const changePassword = async (req, res) => {
   }
 };
 
+const getAllPriviledges = async (req, res) => {
+  try {
+    const priviledge = await Priviledge.find();
+    res.status(200).json({
+      message: "Successfully fetched priviledges",
+      data: { priviledge },
+      status: "success",
+    });
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: error.message,
+      data: null,
+      status: "failed",
+    });
+  }
+};
+
 module.exports = {
   getOrganizationUsers,
   getUserProfile,
-  changePassword
+  changePassword,
+  getAllPriviledges,
 };
