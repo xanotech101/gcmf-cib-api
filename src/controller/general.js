@@ -7,6 +7,8 @@ const multer = require("multer");
 const jwt = require("jsonwebtoken")
 const { sendEmail } = require("../utils/emailService");
 const uuid = require('uuid');
+let csvToJson = require("convert-csv-to-json");
+const fs = require("fs")
 
 
 const getUsersByID = async (req, res) => {
@@ -164,10 +166,10 @@ const initiateRequest = async (req, res) => {
 const batchUpload = async (req, res) => {
 
   try {
-    console.log(req.file)
-    
+    let data= csvToJson.fieldDelimiter(",").getJsonFromCsv(req.file.path);
 
-   res.status(200).send("File uploaded successfully");
+    fs.unlinkSync(req.file.path);
+    res.status(200).json({ message : "File uploaded successfully", data});
 }catch (error) {
     console.log(error);
     res.status(500).json({ message: error.message });
@@ -181,6 +183,8 @@ const updateRequest = async (req, res) => {
     let request = await InitiateRequestfind({ _id: id.toString });
     request.declineResponse = req.body.declineResponse
     await request.save();
+
+
       
     return res.status(200).json({
       message: "Dissaproval Messaged received",
