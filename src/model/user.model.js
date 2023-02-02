@@ -1,7 +1,9 @@
 const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
+const { string } = require("joi");
 
-const superUserSchema = new mongoose.Schema(
+
+const userSchema = new mongoose.Schema(
   {
     firstName: {
       type: String,
@@ -22,22 +24,30 @@ const superUserSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-
     designation: String,
     phone: String,
     gender: String,
     organizationId: String,
     imageUrl: String,
-    priviledge: [String],
+    privileges: [String],
+    role: {
+      type: String,
+      required: true,
+      enum: ['super-admin', 'admin', 'user']
+    },
   },
   {
     timestamps: true,
   }
 );
 
-superUserSchema.methods.generateAuthToken = function () {
+userSchema.methods.generateAuthToken = function () {
   const token = jwt.sign(
-    { _id: this._id, priviledge: this.priviledge, organizationId: this.organizationId },
+    {
+      _id: this._id,
+      organizationId: this.organizationId,
+      privileges: this.privileges,
+    },
     process.env.JWT_SECRET,
     {
       expiresIn: "1d",
@@ -46,4 +56,10 @@ superUserSchema.methods.generateAuthToken = function () {
   return token;
 };
 
-module.exports = mongoose.model("SuperUser", superUserSchema);
+userSchema.methods.toJSON = function () {
+  const user = this.toObject();
+  delete user.password;
+  return user;
+};
+
+module.exports = mongoose.model("User", userSchema);
