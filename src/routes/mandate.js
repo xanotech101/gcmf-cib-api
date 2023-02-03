@@ -7,12 +7,16 @@ const {
   getSingleMandate
 } = require("../controller/mandate");
 const { validate, mandateSchemas } = require("../validations");
+const {
+  superUserAuth,
+} = require("../middleware/auth");
+
 
 
 router.post("/create",
   validate(mandateSchemas.createMandate, "body"),
   registerMandate);
-router.post("/update", updateMandate);
+router.post("/update", superUserAuth, updateMandate);
 router.get("/all", getAllMandates);
 router.get("/:id", getSingleMandate);
 

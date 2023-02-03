@@ -26,7 +26,8 @@ const initiateRequest = async (req, res) => {
     //   accountNumber: req.user.accountNumber,
     // });
     // if (!user) return res.status(404).json({ message: "User not found" });
-
+    const uniqueRandomID = uuid.v4();
+    console.log(uniqueRandomID);
     let request = new InitiateRequest({
       requestID: uniqueRandomID,
       customerName: req.body.customerName,
