@@ -23,15 +23,14 @@ const validateChangePassword = (user) => (payload) =>
   user.validate(payload, { abortEarly: false });
 const changePasswordSchema = Joi.object()
   .keys({
+    old_password: Joi.string().min(8).required().label("Old Password"),
     password: Joi.string().min(8).required().label("Password"),
     confirm_password: Joi.any()
       .equal(Joi.ref("password"))
       .required()
       .label("Confirm password")
-      .messages({ "any.only": "{{#label}} does not match" }),
-      token: Joi.string()
+      .messages({ "any.only": "{{#label}} does not match" })
   })
-  .with("password", "confirm_password");
 exports.validateChangePasswordSchema =
   validateChangePassword(changePasswordSchema);
 
