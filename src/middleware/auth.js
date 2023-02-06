@@ -42,7 +42,8 @@ function adminAuth(req, res, next) {
       });
     }
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const arr = decoded.priviledge;
+    console.log(decoded)
+    const arr = decoded.privileges;
 
     if (!arr.includes("admin") && !arr.includes("superUser")) {
       return res.status(403).json({
@@ -128,6 +129,44 @@ function verifierAuth(req, res, next) {
   }
 }
 
+
+
+function authoriserAuth(req, res, next) {
+  const authHeader = req.headers.authorization;
+  const token = authHeader && authHeader.split(" ")[1];
+  try {
+    if (!token) {
+      return res.sendStatus(401).send({
+        message: "Access denied. No token provided.",
+        data: null,
+        status: "failed",
+      });
+    }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const arr = decoded.privileges;
+    if (
+      !arr.includes("authoriser") &&
+      !arr.includes("superUser") &&
+      !arr.includes("admin")
+    ) {
+      return res.status(403).json({
+        message: "Access denied. You are not authorized to perform this action",
+        data: null,
+        status: "failed",
+      });
+    }
+    req.user = decoded;
+    console.log("I am here in line 5");
+    next();
+  } catch (ex) {
+    console.log(ex);
+    return res.status(401).send("Invalid token.");
+  }
+}
+
+
+
+
 function allUsersAuth(req, res, next) {
   console.log("This worked");
   const authHeader = req.headers.authorization;
@@ -170,4 +209,5 @@ module.exports = {
   initiatorAuth,
   verifierAuth,
   allUsersAuth,
+  authoriserAuth,
 };

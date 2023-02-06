@@ -8,12 +8,14 @@ const initiateRequestSchema = new mongoose.Schema(
     mandateID: {
       type: mongoose.Schema.Types.ObjectID,
       ref: "Mandate",
-    },
+    }, 
     customerName: String,
     amount: Number,
     bankName: String,
     accountNumber: String,
     accountName: String,
+    transferStatus: String,
+    isApproved: String,
     declineResponse: [
       {
         authorizerID: String,

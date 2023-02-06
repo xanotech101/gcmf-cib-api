@@ -19,7 +19,7 @@ const registerMandate = async (req, res) => {
     if (mandateExists)
       return res.status(400).json({ message: "Mandate name already exists" });
 
-    let amount = await Mandate.find({}).select("minAmount maxAmount -_id");
+    let amount = await Mandate.find({}).select("minAmount maxAmount");
     
     let mandateCheckFailed;
     if (amount.length > 0){
@@ -134,7 +134,8 @@ const getSingleMandate = async (req, res) => {
   const id = req.params.id
   console.log(id);
   try {
-    const mandate = await Mandate.findById(id.toString());
+    const mandate = await Mandate.findById(id.toString())
+      .populate("AuthorizerID");
 
     return res.status(200).json({
       message: "Request Successfull",

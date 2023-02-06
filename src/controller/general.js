@@ -49,9 +49,11 @@ const initiateRequest = async (req, res) => {
         request.amount <= item.maxAmount
       ) {
         authorizerID = item.AuthorizerID;
+        emails.push(authorizerID)
       }
     });
 
+    request.authorizerID = emails;
     let result = await request.save();
 
     // let requester = await InitiateRequest.find({ requestID: result.requestID });
@@ -91,4 +93,43 @@ const updateRequest = async (req, res) => {
   }
 };
 
-module.exports = { initiateRequest, updateRequest };
+
+const getAllRequestByAuthorisersId = async (req, res) => {
+  try {
+    console.log(req.user);
+    let request = await InitiateRequest.find({ authorizerID: req.user._id });
+  
+
+
+       const user = await User.findById(req.user._id);
+    return res.status(200).json({
+      message: "Dissaproval Messaged received",
+      request,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+
+const getAllRequest = async (req, res) => {
+  try {
+    let request = await InitiateRequest.find()
+      .populate("mandateID");
+    request.declineResponse = req.body.declineResponse;
+    await request.save();
+
+    return res.status(200).json({
+      message: "Dissaproval Messaged received",
+      request,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+module.exports = { initiateRequest, updateRequest, getAllRequestByAuthorisersId, getAllRequest };

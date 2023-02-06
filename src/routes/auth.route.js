@@ -14,6 +14,12 @@ const {
 //general route
 router.post("/login", validate(authSchemas.login, "body"), login);
 router.post(
+  "/register",
+  adminAuth,
+  registerUser
+);
+
+router.post(
   "/register_confirmation/:token",
   validate(authSchemas.verifyUser, "params"),
   verifyUser
@@ -35,7 +41,7 @@ router.post(
   adminAuth,
   validate(authSchemas.register, "body"),
   registerUser
-);
+);  
 
 //super admin route
 router.post(
