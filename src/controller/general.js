@@ -26,9 +26,8 @@ const initiateRequest = async (req, res) => {
     // if (!user) return res.status(404).json({ message: "User not found" });
     const uniqueRandomID = uuid.v4();
     console.log(uniqueRandomID);
-    
+      //  requestID: uniqueRandomID,
     let request = new InitiateRequest({
-      requestID: uniqueRandomID,
       customerName: req.body.customerName,
       amount: req.body.amount,
       bankName: req.body.bankName,
@@ -40,20 +39,31 @@ const initiateRequest = async (req, res) => {
       "minAmount maxAmount AuthorizerID"
     );
 
-    let authorizerID;
+    let authorizerIDArr = [];
     let emails = [];
+    let mandateID;
+    let authorizerID;
 
     mandate.map((item) => {
       if (
         request.amount >= item.minAmount &&
         request.amount <= item.maxAmount
       ) {
+        //Send email logic here
+        //.....
         authorizerID = item.AuthorizerID;
-        emails.push(authorizerID)
+        mandateID = item._id
       }
+        authorizerIDArr.push(authorizerID);
     });
 
-    request.authorizerID = emails;
+    console.log("authorizerIDArr", authorizerID);
+    request.authorizerID = authorizerID;
+    request.mandateID = mandateID;
+    request.isApproved = 'active';
+    console.log(request.authorizerID);
+
+
     let result = await request.save();
 
     // let requester = await InitiateRequest.find({ requestID: result.requestID });
@@ -98,12 +108,13 @@ const getAllRequestByAuthorisersId = async (req, res) => {
   try {
     console.log(req.user);
     let request = await InitiateRequest.find({ authorizerID: req.user._id });
+
   
 
 
-       const user = await User.findById(req.user._id);
+      //  const user = await User.findById(req.user._id);
     return res.status(200).json({
-      message: "Dissaproval Messaged received",
+      message: "Request Successful",
       request,
     });
   } catch (error) {
@@ -116,14 +127,13 @@ const getAllRequestByAuthorisersId = async (req, res) => {
 
 const getAllRequest = async (req, res) => {
   try {
-    let request = await InitiateRequest.find()
+    let request = await InitiateRequest.find({})
       .populate("mandateID");
-    request.declineResponse = req.body.declineResponse;
-    await request.save();
+    console.log(request)
 
     return res.status(200).json({
-      message: "Dissaproval Messaged received",
-      request,
+      message: "Request Successful",
+      data: request,
     });
   } catch (error) {
     console.log(error);
