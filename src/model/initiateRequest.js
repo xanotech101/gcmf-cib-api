@@ -1,20 +1,25 @@
 const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
-const Mandate = require("./mandate")
+const Mandate = require("./mandate");
 
 const initiateRequestSchema = new mongoose.Schema(
   {
     requestID: String,
-    mandate: {
+    mandateID: {
       type: mongoose.Schema.Types.ObjectID,
-      ref: 'Mandate'
+      ref: "Mandate",
     },
     customerName: String,
     amount: Number,
     bankName: String,
     accountNumber: String,
     accountName: String,
-    declineResponse: String,
+    declineResponse: [
+      {
+        authorizerID: String,
+        reason: String,
+      },
+    ],
     time: Date,
   },
   {

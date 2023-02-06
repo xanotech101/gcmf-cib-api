@@ -116,7 +116,7 @@ const getAllMandates = async (req, res) => {
   console.log("here")
   try {
 
-    const mandate = await Mandate.find();
+    const mandate = await Mandate.find().populate(["AuthorizerID"]);
     return res.status(200).json({
       message: "Request Successfull",
       mandate,

@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
+const User = require("../model/user.model");
 
 const mandateSchema = new mongoose.Schema(
   {
@@ -7,8 +8,11 @@ const mandateSchema = new mongoose.Schema(
       type: String,
     },
     minAmount:Number,   
-    maxAmount:Number,
-    AuthorizerID: [String],
+    maxAmount: Number,
+    AuthorizerID: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User"
+    }],
   },
   {
     timestamps: true,

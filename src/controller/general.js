@@ -1,12 +1,10 @@
 const Mandate = require("../model/mandate");
 const InitiateRequest = require("../model/initiateRequest");
 const { validateInitiateRequestSchema } = require("../utils/utils");
-const multer = require("multer");
+
 const jwt = require("jsonwebtoken");
 const { sendEmail } = require("../utils/emailService");
 const uuid = require("uuid");
-let csvToJson = require("convert-csv-to-json");
-const fs = require("fs");
 
 const initiateRequest = async (req, res) => {
   try {
@@ -28,6 +26,7 @@ const initiateRequest = async (req, res) => {
     // if (!user) return res.status(404).json({ message: "User not found" });
     const uniqueRandomID = uuid.v4();
     console.log(uniqueRandomID);
+    
     let request = new InitiateRequest({
       requestID: uniqueRandomID,
       customerName: req.body.customerName,
@@ -53,12 +52,15 @@ const initiateRequest = async (req, res) => {
       }
     });
 
-    // authorizerID.forEach(item => {
-    //   let user = await User.find({ _id: item.authorizerID }).select("email")
-    //   emails.push(user)
-    // })
-
     let result = await request.save();
+
+    // let requester = await InitiateRequest.find({ requestID: result.requestID });
+    
+    //  let mandater = await Mandate.find({
+    //    _id: result.requestID,
+    //  });
+    
+    console.log(result)
 
     return res.status(201).json({
       message: "Inititate request succesfully sent for approval",
@@ -70,17 +72,7 @@ const initiateRequest = async (req, res) => {
   }
 };
 
-const batchUpload = async (req, res) => {
-  try {
-    let data = csvToJson.fieldDelimiter(",").getJsonFromCsv(req.file.path);
 
-    fs.unlinkSync(req.file.path);
-    res.status(200).json({ message: "File uploaded successfully", data });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: error.message });
-  }
-};
 
 const updateRequest = async (req, res) => {
   try {
@@ -99,4 +91,4 @@ const updateRequest = async (req, res) => {
   }
 };
 
-module.exports = { initiateRequest, batchUpload, updateRequest };
+module.exports = { initiateRequest, updateRequest };

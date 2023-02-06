@@ -1,26 +1,52 @@
-const multer = require('multer');
-const fs = require('fs');
+const multer = require("multer");
+let csvToJson = require("convert-csv-to-json");
+const fs = require("fs");
+const excelToJson = require("convert-excel-to-json");
 
-// const uploader = multer({
-//     storage: multer.diskStorage({
-//         destination: (req, file, cb) => {
-//             const dir = './uploads';
-//             if (!fs.existsSync(dir)) {
-//                 fs.mkdirSync(dir);
-//             }
-//             cb(null, dir);
-//         }
-//     })
-// });
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "/tmp/my-uploads");
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, file.fieldname + "-" + uniqueSuffix);
-  },
-});
 
-const upload = multer({ storage: storage });
+const batchUpload = async (req, res) => {
+  console.log(req.file)
+  try {
+    let data;
+    let excelDocs = ["xlsx", "xls"];
+    let csvDocs = ["csv"];
+
+
+    if (
+      req.file == null ||
+      req.file?.originalname == "undefined" ||
+      req.file == undefined
+    ) {
+      return res.status(400).json({ message: "No file uploaded. Please upload a file" });
+    }
+
+    let fileExtension = req.file.originalname.split(".")[1];
+    
+    if (excelDocs.includes(fileExtension)) {
+      data = excelToJson({
+        sourceFile: req.file.path,
+        header: {
+          rows: 1,
+        },
+        columnToKey: {
+          "*": "{{columnHeader}}",
+        },
+      });
+    } else if (csvDocs.includes(fileExtension)) {
+      data = csvToJson.fieldDelimiter(",").getJsonFromCsv(req.file.path);
+    } else {
+      return res.status(400).json({ message: "Invalid file type. Please upload a csv or excel file" });
+    };
+
+    fs.unlinkSync(req.file.path);
+    res.status(200).json({ message: "File uploaded successfully", data });
+    
+    
+    }catch (error) {
+    console.log(error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = batchUpload;

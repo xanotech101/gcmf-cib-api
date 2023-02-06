@@ -10,10 +10,9 @@ const upload = require("../middleware/multer");
 const router = express.Router();
 const {
   initiateRequest,
-  batchUpload,
   updateRequest,
 } = require("../controller/general");
-
+const   batchUpload = require('../controller/batchUpload');
 
 router.post("/request", initiatorAuth, initiateRequest);
 router.post("/request/:id", initiatorAuth, updateRequest);
