@@ -1,6 +1,5 @@
 const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
-const Mandate = require("./mandate");
 
 const initiateRequestSchema = new mongoose.Schema(
   {

@@ -26,7 +26,7 @@ const initiateRequest = async (req, res) => {
     // if (!user) return res.status(404).json({ message: "User not found" });
     const uniqueRandomID = uuid.v4();
     console.log(uniqueRandomID);
-      //  requestID: uniqueRandomID,
+    //  requestID: uniqueRandomID,
     let request = new InitiateRequest({
       customerName: req.body.customerName,
       amount: req.body.amount,
@@ -52,27 +52,27 @@ const initiateRequest = async (req, res) => {
         //Send email logic here
         //.....
         authorizerID = item.AuthorizerID;
-        mandateID = item._id
+        mandateID = item._id;
       }
-        authorizerIDArr.push(authorizerID);
+      authorizerIDArr.push(authorizerID);
     });
 
     console.log("authorizerIDArr", authorizerID);
+    //TODO: code duplication, you don't need to save autorizer id here again, all you need is the mandateId
     request.authorizerID = authorizerID;
     request.mandateID = mandateID;
-    request.isApproved = 'active';
+    request.isApproved = "active";
     console.log(request.authorizerID);
-
 
     let result = await request.save();
 
     // let requester = await InitiateRequest.find({ requestID: result.requestID });
-    
+
     //  let mandater = await Mandate.find({
     //    _id: result.requestID,
     //  });
-    
-    console.log(result)
+
+    console.log(result);
 
     return res.status(201).json({
       message: "Inititate request succesfully sent for approval",
@@ -84,17 +84,35 @@ const initiateRequest = async (req, res) => {
   }
 };
 
-
-
 const updateRequest = async (req, res) => {
   try {
-    let id = req.params.id;
-    let request = await InitiateRequestfind({ _id: id.toString });
-    request.declineResponse = req.body.declineResponse;
-    await request.save();
+    const _id = req.params.id;
+    const userId = req.user._id;
+    const request = await InitiateRequest.findOneAndUpdate(
+      {
+        _id,
+        authorizerID: { $in: [userId] },
+      },
+      {
+        $push: {
+          declineResponse: {
+            authorizerID: userId,
+            reason: req.body.reason,
+          }
+        },
+      },
+      { new: true }
+    );
+
+    if (!request) {
+      return res.status(404).json({
+        message: "Request not found",
+        status: "failed",
+      });
+    }
 
     return res.status(200).json({
-      message: "Dissaproval Messaged received",
+      message: "Request declined successfully",
       request,
     });
   } catch (error) {
@@ -103,17 +121,13 @@ const updateRequest = async (req, res) => {
   }
 };
 
-
 const getAllRequestByAuthorisersId = async (req, res) => {
   try {
-    console.log(req.user);
-    let request = await InitiateRequest.find({ authorizerID: req.user._id });
+    const request = await InitiateRequest.find({
+      authorizerID: { $in: [req.user._id] },
+    });
 
-  
-
-
-      //  const user = await User.findById(req.user._id);
-    return res.status(200).json({
+    res.status(200).json({
       message: "Request Successful",
       request,
     });
@@ -123,15 +137,12 @@ const getAllRequestByAuthorisersId = async (req, res) => {
   }
 };
 
-
-
 const getAllRequest = async (req, res) => {
   try {
-    let request = await InitiateRequest.find({})
-      .populate("mandateID");
-    console.log(request)
+    const request = await InitiateRequest.find().populate("mandateID");
+    console.log(request);
 
-    return res.status(200).json({
+    res.status(200).json({
       message: "Request Successful",
       data: request,
     });
@@ -141,5 +152,41 @@ const getAllRequest = async (req, res) => {
   }
 };
 
+const getRequestById = async (req, res) => {
+  try {
+    const _id = req.params.id;
 
-module.exports = { initiateRequest, updateRequest, getAllRequestByAuthorisersId, getAllRequest };
+    const request = await InitiateRequest.findOne({ _id })
+      .populate("mandateID")
+      .populate({
+        path: "authorizerID",
+        model: "User",
+        select: "firstName lastName email",
+      });
+
+    if (!request) {
+      return res.status(404).json({
+        message: "Request not found",
+        status: "success",
+      });
+    }
+    res.status(200).json({
+      message: "Request Successful",
+      data: request,
+      status: "success",
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+      status: "error",
+    });
+  }
+};
+
+module.exports = {
+  initiateRequest,
+  updateRequest,
+  getAllRequestByAuthorisersId,
+  getAllRequest,
+  getRequestById,
+};

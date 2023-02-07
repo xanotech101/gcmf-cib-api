@@ -7,7 +7,6 @@ class PaystackService {
       const { data } = await axios.get(config.bank_list);
       return data;
     } catch (error) {
-      // TODO: log error
       return null;
     }
   }
@@ -21,7 +20,6 @@ class PaystackService {
       });
       return data;
     } catch (error) {
-      // TODO: log error
       return null;
     }
   }
