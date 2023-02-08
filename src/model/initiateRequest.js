@@ -15,7 +15,10 @@ const initiateRequestSchema = new mongoose.Schema(
     accountName: String,
     transferStatus: String,
     authorizerID: [String],
-    initiatorID: String,
+    initiatorID: {
+       type: mongoose.Schema.Types.ObjectID,
+      ref: "User",
+    },
     isApproved: {
       type: String,
       enum: ["active", "approved", "decline"],

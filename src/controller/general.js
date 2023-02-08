@@ -124,19 +124,11 @@ const updateRequest = async (req, res) => {
   }
 };
 
-const getMyRequests = async (req, res) => {
+const getAllAuthoriserRequests = async (req, res) => {
   try {
-    let request;
-    if (req.user.privileges.includes("initiator")) {
-      request = await InitiateRequest.find({
-        initiatorID:req.user._id,
-      });
-    } else {
-       request = await InitiateRequest.find({
-         authorizerID: { $in: [req.user._id] },
-       });
-    }
-   
+    const request = await InitiateRequest.find({
+      authorizerID: { $in: [req.user._id] },
+    });
 
     res.status(200).json({
       message: "Request Successful",
@@ -196,6 +188,24 @@ const getRequestById = async (req, res) => {
 
 
 
+const getAllInitiatorRequests = async (req, res) => {
+  try {
+
+    const request = await InitiateRequest.find({
+      initiatorID: req.user._id,
+    });
+
+    res.status(200).json({
+      message: "Request Successful",
+      request,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
 
 
 
@@ -205,7 +215,8 @@ const getRequestById = async (req, res) => {
 module.exports = {
   initiateRequest,
   updateRequest,
- getMyRequests,
+  getAllInitiatorRequests,
   getAllRequest,
   getRequestById,
+  getAllAuthoriserRequests,
 };
