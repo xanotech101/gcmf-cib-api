@@ -15,6 +15,7 @@ const initiateRequestSchema = new mongoose.Schema(
     accountName: String,
     transferStatus: String,
     authorizerID: [String],
+    initiatorID: String,
     isApproved: {
       type: String,
       enum: ["active", "approved", "decline"],

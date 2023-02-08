@@ -11,19 +11,19 @@ const router = express.Router();
 const {
   initiateRequest,
   updateRequest,
-  getAllRequestByAuthorisersId,
+getMyRequests,
   getAllRequest,
-  getSingleRequestByID,
-  getRequestById
+  getRequestById,
 } = require("../controller/general");
 const batchUpload = require("../controller/batchUpload");
-
+s
 router.get("/request/:id", authoriserAuth, getRequestById);
 router.post("/request", initiatorAuth, initiateRequest);
+router.get("/myrequests", initiatorAuth, getMyRequests);
 router.put("/request/:id", authoriserAuth, updateRequest);
 router.post("/upload", upload.single("file"), initiatorAuth, batchUpload);
-router.get("/myrequests", authoriserAuth, getAllRequestByAuthorisersId);
 router.get("/allrequests", adminAuth, getAllRequest);
+
 
 
 
