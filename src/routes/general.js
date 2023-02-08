@@ -11,7 +11,7 @@ const router = express.Router();
 const {
   initiateRequest,
   updateRequest,
-  getAllAuthoriserRequests,
+  getAllAuthorizerRequests,
   getAllRequest,
   getAllInitiatorRequests,
   getRequestById,
@@ -22,7 +22,7 @@ router.post("/request", initiatorAuth, initiateRequest);
 router.get("/myrequests/", initiatorAuth, getAllInitiatorRequests);
 router.put("/request/:id", authoriserAuth, updateRequest);
 router.post("/upload", upload.single("file"), initiatorAuth, batchUpload);
-router.get("/myrequests/authoriser", authoriserAuth, getAllAuthoriserRequests);
+router.get("/myrequests/authoriser", authoriserAuth, getAllAuthorizerRequests);
 router.get("/allrequests", adminAuth, getAllRequest);
 
 

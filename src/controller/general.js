@@ -1,11 +1,11 @@
 const Mandate = require("../model/mandate");
-const User = require("../model/user.model");
 const InitiateRequest = require("../model/initiateRequest");
 const { validateInitiateRequestSchema } = require("../utils/utils");
 
 const jwt = require("jsonwebtoken");
 const { sendEmail } = require("../utils/emailService");
 const uuid = require("uuid");
+const { PER_PAGE } = require("../utils/constants");
 
 const initiateRequest = async (req, res) => {
   try {
@@ -53,16 +53,12 @@ const initiateRequest = async (req, res) => {
         //Send email logic here
         //.....
 
-
         // await sendEmail()
         authorizerID = item.AuthorizerID;
         mandateID = item._id;
-        
-
       }
       authorizerIDArr.push(authorizerID);
     });
-
 
     console.log("authorizerIDArr", authorizerID);
     //TODO: code duplication, you don't need to save autorizer id here again, all you need is the mandateId
@@ -101,7 +97,7 @@ const updateRequest = async (req, res) => {
           declineResponse: {
             authorizerID: userId,
             reason: req.body.reason,
-          }
+          },
         },
       },
       { new: true }
@@ -124,15 +120,67 @@ const updateRequest = async (req, res) => {
   }
 };
 
-const getAllAuthoriserRequests = async (req, res) => {
+const getAllAuthorizerRequests = async (req, res) => {
+  const { perPage, page } = req.query;
+
+  const options = {
+    page: page || 1,
+    limit: perPage || PER_PAGE,
+    sort: { createdAt: -1 },
+  };
+
   try {
-    const request = await InitiateRequest.find({
-      authorizerID: { $in: [req.user._id] },
-    });
+    const requests = await InitiateRequest.aggregate([
+      {
+        $match: {
+          authorizerID: { $in: [req.user._id] },
+        },
+      },
+      {
+        $lookup: {
+          from: "mandates",
+          localField: "mandateID",
+          foreignField: "_id",
+          as: "mandate",
+        },
+      },
+      {
+        $unwind: "$mandate",
+      },
+      {
+        $facet: {
+          data: [
+            {
+              $sort: { ...options.sort },
+            },
+            {
+              $skip: options.limit * (options.page - 1),
+            },
+            {
+              $limit: options.limit * 1,
+            },
+          ],
+          meta: [
+            {
+              $count: "total",
+            },
+            {
+              $addFields: {
+                page: options.page,
+                perPage: options.limit,
+              },
+            }
+          ],
+        },
+      },
+    ]);
 
     res.status(200).json({
       message: "Request Successful",
-      request,
+      data: {
+        request: requests[0].data,
+        meta: requests[0].meta[0],
+      },
     });
   } catch (error) {
     console.log(error);
@@ -141,13 +189,61 @@ const getAllAuthoriserRequests = async (req, res) => {
 };
 
 const getAllRequest = async (req, res) => {
+  const { page, perPage } = req.query;
+
+  const options = {
+    page: page || 1,
+    limit: perPage || PER_PAGE,
+    sort: { createdAt: -1 },
+  };
+
   try {
-    const request = await InitiateRequest.find().populate("mandateID");
-    console.log(request);
+    const request = await InitiateRequest.aggregate([
+      {
+        $lookup: {
+          from: "mandates",
+          localField: "mandateID",
+          foreignField: "_id",
+          as: "mandate",
+        },
+      },
+      {
+        $unwind: "$mandate",
+      },
+      {
+        $facet: {
+          data: [
+            {
+              $sort: { ...options.sort },
+            },
+            {
+              $skip: options.limit * (options.page - 1),
+            },
+            {
+              $limit: options.limit * 1,
+            },
+          ],
+          meta: [
+            {
+              $count: "total",
+            },
+            {
+              $addFields: {
+                page: options.page,
+                perPage: options.limit,
+              },
+            }
+          ],
+        },
+      },
+    ]);
 
     res.status(200).json({
       message: "Request Successful",
-      data: request,
+      data: {
+        requests: request[0].data,
+        meta: request[0].meta[0],
+      },
     });
   } catch (error) {
     console.log(error);
@@ -186,18 +282,67 @@ const getRequestById = async (req, res) => {
   }
 };
 
-
-
 const getAllInitiatorRequests = async (req, res) => {
-  try {
+  const { perPage, page } = req.query;
 
-    const request = await InitiateRequest.find({
-      initiatorID: req.user._id,
-    });
+  const options = {
+    page: page || 1,
+    limit: perPage || PER_PAGE,
+    sort: { createdAt: -1 },
+  };
+
+  try {    
+    const requests = await InitiateRequest.aggregate([
+      {
+        $match: {
+          initiatorID: req.user._id,
+        },
+      },
+      {
+        $lookup: {
+          from: "mandates",
+          localField: "mandateID",
+          foreignField: "_id",
+          as: "mandate",
+        },
+      },
+      {
+        $unwind: "$mandate",
+      },
+      {
+        $facet: {
+          data: [
+            {
+              $sort: { ...options.sort },
+            },
+            {
+              $skip: options.limit * (options.page - 1),
+            },
+            {
+              $limit: options.limit * 1,
+            },
+          ],
+          meta: [
+            {
+              $count: "total",
+            },
+            {
+              $addFields: {
+                page: options.page,
+                perPage: options.limit,
+              },
+            }
+          ],
+        },
+      },
+    ]);
 
     res.status(200).json({
       message: "Request Successful",
-      request,
+      data: {
+        requests: requests[0].data,
+        meta: requests[0].meta[0],
+      },
     });
   } catch (error) {
     console.log(error);
@@ -205,18 +350,11 @@ const getAllInitiatorRequests = async (req, res) => {
   }
 };
 
-
-
-
-
-
-
-
 module.exports = {
   initiateRequest,
   updateRequest,
   getAllInitiatorRequests,
   getAllRequest,
   getRequestById,
-  getAllAuthoriserRequests,
+  getAllAuthorizerRequests,
 };
