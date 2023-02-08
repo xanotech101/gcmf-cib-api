@@ -41,6 +41,7 @@ const batchUpload = async (req, res) => {
 
     fs.unlinkSync(req.file.path);
     res.status(200).json({ message: "File uploaded successfully", data });
+
     
     
     }catch (error) {

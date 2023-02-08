@@ -13,13 +13,18 @@ const {
   updateRequest,
   getAllRequestByAuthorisersId,
   getAllRequest,
+  getSingleRequestByID,
 } = require("../controller/general");
 const batchUpload = require("../controller/batchUpload");
 
 router.post("/request", initiatorAuth, initiateRequest);
-router.post("/request/:id", initiatorAuth, updateRequest);
+router.put("/request/:id", authoriserAuth, updateRequest);
 router.post("/upload", upload.single("file"), initiatorAuth, batchUpload);
 router.get("/myrequests", authoriserAuth, getAllRequestByAuthorisersId);
 router.get("/allrequests", adminAuth, getAllRequest);
+router.get("/request/:id",  getSingleRequestByID);
+
+
+getSingleRequestByID;
 
 module.exports = router;

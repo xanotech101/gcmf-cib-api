@@ -1,4 +1,5 @@
 const Mandate = require("../model/mandate");
+const User = require("../model/user.model");
 const InitiateRequest = require("../model/initiateRequest");
 const { validateInitiateRequestSchema } = require("../utils/utils");
 
@@ -57,22 +58,17 @@ const initiateRequest = async (req, res) => {
         authorizerIDArr.push(authorizerID);
     });
 
+
     console.log("authorizerIDArr", authorizerID);
     request.authorizerID = authorizerID;
     request.mandateID = mandateID;
     request.isApproved = 'active';
-    console.log(request.authorizerID);
+
 
 
     let result = await request.save();
-
-    // let requester = await InitiateRequest.find({ requestID: result.requestID });
     
-    //  let mandater = await Mandate.find({
-    //    _id: result.requestID,
-    //  });
-    
-    console.log(result)
+    // console.log(result)
 
     return res.status(201).json({
       message: "Inititate request succesfully sent for approval",
@@ -83,8 +79,6 @@ const initiateRequest = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
-
 
 const updateRequest = async (req, res) => {
   try {
@@ -109,8 +103,6 @@ const getAllRequestByAuthorisersId = async (req, res) => {
     console.log(req.user);
     let request = await InitiateRequest.find({ authorizerID: req.user._id });
 
-  
-
 
       //  const user = await User.findById(req.user._id);
     return res.status(200).json({
@@ -128,8 +120,7 @@ const getAllRequestByAuthorisersId = async (req, res) => {
 const getAllRequest = async (req, res) => {
   try {
     let request = await InitiateRequest.find({})
-      .populate("mandateID");
-    console.log(request)
+      .populate("mandateID")
 
     return res.status(200).json({
       message: "Request Successful",
@@ -141,5 +132,25 @@ const getAllRequest = async (req, res) => {
   }
 };
 
+const getSingleRequestByID = async (req, res) => {
+  try {
+    let request = await InitiateRequest.find({_id: req.params.id.toString()})
+      .populate("mandateID")
 
-module.exports = { initiateRequest, updateRequest, getAllRequestByAuthorisersId, getAllRequest };
+    return res.status(200).json({
+      message: "Request Successful",
+      data: request,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = {
+  initiateRequest,
+  updateRequest,
+  getAllRequestByAuthorisersId,
+  getAllRequest,
+  getSingleRequestByID,
+};
