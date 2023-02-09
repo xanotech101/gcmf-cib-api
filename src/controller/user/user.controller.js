@@ -5,29 +5,29 @@ const bcrypt = require("bcrypt");
 
 const getOrganizationUsers = async (req, res) => {
   const { organizationId } =  req.user
-  try {
+  const { privilege } = req.query
 
-    const user = await User.find({ organizationId });
-    
-    if (!user) {
-      res.status(404).json({ 
-        message: "User not found",
-        data: null,
-        status: "failed"
-      })
-    }
+  try {
+    const users = await User.find({ 
+      organizationId,
+      privileges: privilege ? { $in: [privilege] } : { $exists: true }
+    });
 
     res.status(200).json({
       message: "Successfully fetched user",
-      data: {
-        user
-      },
+      data: users ?? [],
     });
+    
   } catch (error) {
     console.log(error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ 
+      message: error.message,
+      status: "failed"
+    });
   }
 };
+
+
 
 const getUserProfile = async (req, res) => {
   try {
