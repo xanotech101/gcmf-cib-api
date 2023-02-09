@@ -47,6 +47,36 @@ const getUserProfile = async (req, res) => {
   }
 };
 
+const updateUserProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    const { firstName, lastName, phoneNumber, imageUrl } = req.body;
+
+    user.firstName = firstName;
+    user.lastName = lastName;
+    user.phoneNumber = phoneNumber;
+    user.imageUrl = imageUrl;
+
+    await user.save();
+
+
+    res.status(200).json({
+      message: "Successfully updated your profile",
+      data: { user },
+      status: "success",
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: error.message,
+      data: null,
+      status: "failed",
+    });
+  }
+};
+
+
 const changePassword = async (req, res) => {
   const { _id } = req.user;
   try {
@@ -117,9 +147,29 @@ const getAllPriviledges = async (req, res) => {
   }
 };
 
+const getAllUsers = async (req, res) => {
+  try {
+    const user = await User.find();
+    res.status(200).json({
+      message: "Successfully fetched all users",
+      data: { user },
+      status: "success",
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: error.message,
+      data: null,
+      status: "failed",
+    });
+  }
+};
+
 module.exports = {
   getOrganizationUsers,
   getUserProfile,
   changePassword,
   getAllPriviledges,
+  updateUserProfile,
+  getAllUsers
 };
