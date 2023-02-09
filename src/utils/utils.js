@@ -40,7 +40,7 @@ const mandateSchema = Joi.object().keys({
   name: Joi.string().lowercase().required(),
   minAmount: Joi.number().required(),
   maxAmount: Joi.number().required(),
-  AuthorizerID: Joi.array().items(Joi.string().length(24).trim().required()),
+  authorizers: Joi.array().items(Joi.string().length(24).trim().required()),
 });
 exports.validateMandateSchema = validateMandate(mandateSchema);
 
@@ -51,7 +51,7 @@ const updatemandateSchema = Joi.object().keys({
   name: Joi.string().lowercase(),
   minAmount: Joi.number(),
   maxAmount: Joi.number(),
-  AuthorizerID: Joi.array().items(Joi.string().length(24).trim()),
+  authorizers: Joi.array().items(Joi.string().length(24).trim()),
 });
 exports.validateUpdateMandateSchema = updateMandate(updatemandateSchema);
 
