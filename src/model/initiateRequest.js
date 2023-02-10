@@ -1,9 +1,7 @@
 const mongoose = require("mongoose");
-const jwt = require("jsonwebtoken");
 
 const initiateRequestSchema = new mongoose.Schema(
   {
-    requestID: String,
     mandateID: {
       type: mongoose.Schema.Types.ObjectID,
       ref: "Mandate",
@@ -16,7 +14,7 @@ const initiateRequestSchema = new mongoose.Schema(
     transferStatus: String,
     authorizerID: [String],
     initiatorID: {
-       type: mongoose.Schema.Types.ObjectID,
+      type: mongoose.Schema.Types.ObjectID,
       ref: "User",
     },
     isApproved: {
@@ -35,12 +33,5 @@ const initiateRequestSchema = new mongoose.Schema(
     timestamps: { type: Date, required: true, unique: true },
   }
 );
-
-initiateRequestSchema.methods.generateAuthToken = function () {
-  const token = jwt.sign({ _id: this._id }, process.env.JWT_SECRET, {
-    expiresIn: "1d",
-  });
-  return token;
-};
 
 module.exports = mongoose.model("InitiateRequest", initiateRequestSchema);

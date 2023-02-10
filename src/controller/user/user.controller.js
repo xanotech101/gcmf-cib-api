@@ -14,10 +14,14 @@ const getOrganizationUsers = async (req, res) => {
         sort: { createdAt: -1 },
       };
 
-    const user = await User.find({ organizationId });
-
+    // const user = await User.find({ organizationId });
+      const { privilege } = req.query;
+  const users = await User.find({
+    organizationId,
+    privileges: privilege ? { $in: [privilege] } : { $exists: true },
+  });
     
-    if (!user) {
+    if (!users) {
       res.status(404).json({ 
         message: "User not found",
         data: null,
@@ -25,17 +29,22 @@ const getOrganizationUsers = async (req, res) => {
       })
     }
 
+
     res.status(200).json({
       message: "Successfully fetched user",
-      data: {
-        user
-      },
+      data: users ?? [],
     });
+    
   } catch (error) {
     console.log(error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ 
+      message: error.message,
+      status: "failed"
+    });
   }
 };
+
+
 
 const getUserProfile = async (req, res) => {
   try {
