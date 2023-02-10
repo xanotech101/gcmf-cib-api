@@ -1,10 +1,10 @@
 const Mandate = require("../model/mandate.model");
 const { validateUpdateMandateSchema } = require("../utils/utils");
+const { PER_PAGE } = require("../utils/constants");
 
 //@desc     register a mandate
 //@route    POST /mandate/register
 //@access   Public
-
 const registerMandate = async (req, res) => {
   try {
     const mandateExists = await Mandate.findOne({ name: req.body.name });
@@ -64,7 +64,6 @@ const registerMandate = async (req, res) => {
 //@desc     update a mandate
 //@route    POST /mandate/update
 //@access   Public
-
 const updateMandate = async (req, res) => {
   try {
     const { error } = validateUpdateMandateSchema(req.body);
@@ -115,12 +114,61 @@ const updateMandate = async (req, res) => {
 };
 
 const getAllMandates = async (req, res) => {
+  const { perPage, page } = req.query;
+
+  const options = {
+    page: page || 1,
+    limit: perPage || PER_PAGE,
+    sort: { createdAt: -1 },
+  };
+
   try {
+    const mandates = await Mandate.aggregate([
+      {
+        $lookup: {
+          from: "users",
+          localField: "authorizers",
+          foreignField: "_id",
+          as: "authorizers",
+        },
+      },
+      {
+        $facet: {
+          data: [
+            {
+              $sort: { ...options.sort },
+            },
+            {
+              $skip: options.limit * (options.page - 1),
+            },
+            {
+              $limit: options.limit * 1,
+            },
+          ],
+          meta: [
+            {
+              $count: "total",
+            },
+            {
+              $addFields: {
+                page: options.page,
+                perPage: options.limit,
+              },
+            }
+          ],
+        },
+      }
+    ]);
+
     const mandate = await Mandate.find().populate(["authorizers"]);
     return res.status(200).json({
       message: "Request Successful",
-      mandate,
+      data: {
+        mandates: mandates[0].data,
+        meta: mandates[0].meta[0],
+      },
     });
+
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: error.message });
