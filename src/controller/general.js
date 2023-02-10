@@ -222,13 +222,20 @@ console.log()
       },
     ]);
 
-    res.status(200).json({
-      message: "Request Successful",
-      data: {
-        requests: request[0].data,
-        meta: request[0].meta[0],
-      },
-    });
+    // res.status(200).json({
+    //   message: "Request Successful",
+    //   data: {
+    //     requests: request[0].data,
+    //     meta: request[0].meta[0],
+    //   },
+    // });
+
+
+       res.status(200).json({
+         message: "Successfully fetched all users",
+         data: { user },
+         status: "success",
+       });
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: error.message });

@@ -129,7 +129,7 @@ const getAllMandates = async (req, res) => {
           from: "users",
           localField: "authorizers",
           foreignField: "_id",
-          as: "authorizers",
+          as: "authorizer",
         },
       },
       {
@@ -154,13 +154,13 @@ const getAllMandates = async (req, res) => {
                 page: options.page,
                 perPage: options.limit,
               },
-            }
+            },
           ],
         },
-      }
+      },
     ]);
 
-    const mandate = await Mandate.find().populate(["authorizers"]);
+    // const mandate = await Mandate.find().populate(["authorizers"]);
     return res.status(200).json({
       message: "Request Successful",
       data: {
