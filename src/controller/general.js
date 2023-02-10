@@ -1,4 +1,4 @@
-const Mandate = require("../model/mandate");
+const Mandate = require("../model/mandate.model");
 const InitiateRequest = require("../model/initiateRequest");
 const { validateInitiateRequestSchema } = require("../utils/utils");
 
