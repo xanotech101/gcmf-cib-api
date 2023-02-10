@@ -51,9 +51,7 @@ app.use(cors(
     preflightContinue: false,
   }
 ));
-app.use((req, res, next) => {
-  res.status(404).json({message: "404 error! The endpoint is not available on the server. Kindly cross check the url"})
-});
+
 app.use(logger("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -79,6 +77,10 @@ app.use(function (err, req, res, next) {
   res.status(err.status || 500);
   res.render("error");
 });
+
+// app.use((req, res, next) => {
+//   res.status(404).json({message: "404 error! The endpoint is not available on the server. Kindly cross check the url"})
+// });
 
 // const port = process.env.PORT || 3000;
 
