@@ -6,8 +6,16 @@ const bcrypt = require("bcrypt");
 const getOrganizationUsers = async (req, res) => {
   const { organizationId } =  req.user
   try {
+      const { perPage, page } = req.query;
+
+      const options = {
+        page: page || 1,
+        limit: perPage || PER_PAGE,
+        sort: { createdAt: -1 },
+      };
 
     const user = await User.find({ organizationId });
+
     
     if (!user) {
       res.status(404).json({ 
