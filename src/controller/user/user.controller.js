@@ -3,7 +3,7 @@ const Priviledge = require("../../model/priviledge");
 const { validateChangePasswordSchema } = require("../../utils/utils");
 const bcrypt = require("bcrypt");
 
-const getOrganizationUsers = async (req, res) => {
+  const getOrganizationUsers = async (req, res) => {
   const { organizationId } =  req.user
   try {
       const { perPage, page } = req.query;

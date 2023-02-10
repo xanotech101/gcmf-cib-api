@@ -26,3 +26,4 @@ router.get("/priviledges", superUserAuth, getAllPriviledges);
 router.get("/all", adminAuth, getAllUsers);
 // router.post("/priviledges", superUserAuth, createPriviledges);
 module.exports = router;
+ 
