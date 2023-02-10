@@ -2,6 +2,7 @@ const User = require("../../model/user.model");
 const Priviledge = require("../../model/priviledge");
 const { validateChangePasswordSchema } = require("../../utils/utils");
 const bcrypt = require("bcrypt");
+const { PER_PAGE } = require("../../utils/constants");
 
   const getOrganizationUsers = async (req, res) => {
   const { organizationId } =  req.user
@@ -166,7 +167,50 @@ const getAllPriviledges = async (req, res) => {
 
 const getAllUsers = async (req, res) => {
   try {
-    const user = await User.find();
+
+
+    const { page, perPage } = req.query;
+    console.log(req.query)
+
+    const options = {
+      limit: perPage || PER_PAGE,
+      page: page || 1,
+      sort: { createdAt: -1 }
+    };
+
+    const user = await User.aggregate([
+{
+      $facet: {
+        data: [
+          {
+            $sort: { ...options.sort },
+          },
+          {
+            $skip: options.limit * (options.page - 1),
+          },
+          {
+            $limit: options.limit * 1,
+          },
+        ],
+        meta: [
+          {
+            $count: "total",
+          },
+          {
+            $addFields: {
+              page: options.page,
+              perPage: options.limit,
+            },
+          }
+
+        ],
+      },
+    }
+
+      ])
+
+
+
     res.status(200).json({
       message: "Successfully fetched all users",
       data: { user },

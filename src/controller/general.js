@@ -9,22 +9,11 @@ const { PER_PAGE } = require("../utils/constants");
 
 const initiateRequest = async (req, res) => {
   try {
-    // if (
-    //   !req.user.priviledge.includes("initiator") ||
-    //   !req.user.priviledge.includes("admin") ||
-    //   req.user.priviledge.includes("superAdmin")
-    // )
-    //   return res
-    //     .status(403)
-    //     .json({ message: "You are unauthorised to make this request." });
+
 
     const { error } = validateInitiateRequestSchema(req.body);
     if (error) return res.status(400).send(error.details[0].message);
 
-    // let initiateRequest = await InitiateRequest.find({
-    //   accountNumber: req.user.accountNumber,
-    // });
-    // if (!user) return res.status(404).json({ message: "User not found" });
     const uniqueRandomID = uuid.v4();
     console.log(uniqueRandomID);
     //  requestID: uniqueRandomID,
@@ -68,11 +57,6 @@ const initiateRequest = async (req, res) => {
 
     let result = await request.save();
 
-    // let requester = await InitiateRequest.find({ requestID: result.requestID });
-
-    //  let mandater = await Mandate.find({
-    //    _id: result.requestID,
-    //  });
     return res.status(201).json({
       message: "Inititate request succesfully sent for approval",
       "Request Details": result,
@@ -190,7 +174,7 @@ const getAllAuthorizerRequests = async (req, res) => {
 
 const getAllRequest = async (req, res) => {
   const { page, perPage } = req.query;
-
+console.log()
   const options = {
     page: page || 1,
     limit: perPage || PER_PAGE,

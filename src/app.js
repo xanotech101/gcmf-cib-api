@@ -87,9 +87,9 @@ app.use((req, res, next) => {
         "404 error! The endpoint is not available on the server. Kindly cross check the url",
     });
 });
-// app.use((req, res, next) => {
-//   res.status(404).json({message: "404 error! The endpoint is not available on the server. Kindly cross check the url"})
-// });
+app.use((req, res, next) => {
+  res.status(404).json({message: "404 error! The endpoint is not available on the server. Kindly cross check the url"})
+});
 
 // const port = process.env.PORT || 3000;
 
