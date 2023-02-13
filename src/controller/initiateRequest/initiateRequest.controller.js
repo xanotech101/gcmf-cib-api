@@ -1,17 +1,20 @@
 const Mandate = require("../../model/mandate.model");
-const InitiateRequest = require("../../model/initiateRequest");
+const InitiateRequest = require("../../model/initiateRequest.model");
+const AuditTrail = require("../../model/auditTrail");
 const { validateInitiateRequestSchema } = require("../../utils/utils");
 const { sendEmail } = require("../../utils/emailService");
-const { PER_PAGE } = require("../utils/constants");
+const { PER_PAGE } = require("../../utils/constants");
+const mongoose = require("mongoose");
 
 const initiateRequest = async (req, res) => {
   try {
     const { error } = validateInitiateRequestSchema(req.body);
-    if (error) return res.status(400).json({
-      message: error.details[0].message,
-      status: "failed"
-    });
-   
+    if (error)
+      return res.status(400).json({
+        message: error.details[0].message,
+        status: "failed",
+      });
+
     const request = new InitiateRequest({
       customerName: req.body.customerName,
       amount: req.body.amount,
@@ -20,45 +23,53 @@ const initiateRequest = async (req, res) => {
       accountName: req.body.accountName,
     });
 
-    const mandate = await Mandate.find({}).select(
-      "minAmount maxAmount authorizers"
-    );
-
-    let emails = [];
-    let mandateID;
-    let authorizerID;
-
-    // find a way to query the mandate db where the amount provided falls within the min and max amount
-    mandate.map((item) => {
-      if (
-        request.amount >= item.minAmount &&
-        request.amount <= item.maxAmount
-      ) {
-        //Send email logic here
-        //.....
-
-        // await sendEmail()
-        authorizerID = item.authorizers;
-        mandateID = item._id;
-      }
+    const mandate = await Mandate.findOne({
+      minAmount: { $lte: request.amount },
+      maxAmount: { $gte: request.amount },
+    }).populate({
+      path: "authorizers",
+      select: "firstName lastName email",
     });
 
+    if (!mandate) {
+      return res.status(404).json({
+        message: "No mandate found",
+        status: "failed",
+      });
+    }
 
-    request.authorizerID = authorizerID;
-    request.mandateID = mandateID;
-    request.isApproved = "active";
+    request.mandate = mandate._id;
+    request.initiator = req.user._id;
 
     const result = await request.save();
 
+    for (let i = 0; i < mandate.authorizers; i++) {
+      const authorizer = mandate.authorizers[i];
+      const subject = "Loan Request Initiated";
+      const message = `
+          <h3>Loan Request Initiated</h3>
+          <p> Dear ${authorizer.firstName}. A request was initiated.</p>
+          <p>Kindly login to your account to view</p>
+        `;
+      await sendEmail(authorizer.email, subject, message);
+    }
+
+    const auditTrail = new AuditTrail({
+      type: "transaction",
+      transactionID: result._id,
+    });
+
+    await auditTrail.save();
+
     res.status(201).json({
       message: "Initiate request successfully sent for approval",
-      data: result
+      data: result,
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ 
+    res.status(500).json({
       message: error.message,
-      status: "failed"
+      status: "failed",
     });
   }
 };
@@ -67,11 +78,9 @@ const updateRequest = async (req, res) => {
   try {
     const _id = req.params.id;
     const userId = req.user._id;
+
     const request = await InitiateRequest.findOneAndUpdate(
-      {
-        _id,
-        authorizerID: { $in: [userId] },
-      },
+      { _id },
       {
         $push: {
           declineResponse: {
@@ -79,6 +88,7 @@ const updateRequest = async (req, res) => {
             reason: req.body.reason,
           },
         },
+        isApproved: "declined",
       },
       { new: true }
     );
@@ -100,8 +110,9 @@ const updateRequest = async (req, res) => {
   }
 };
 
-const getAllAuthorizerRequests = async (req, res) => {
+const getAllInitiatorRequests = async (req, res) => {
   const { perPage, page } = req.query;
+  console.log(req.user)
 
   const options = {
     page: page || 1,
@@ -113,13 +124,13 @@ const getAllAuthorizerRequests = async (req, res) => {
     const requests = await InitiateRequest.aggregate([
       {
         $match: {
-          authorizerID: { $in: [req.user._id] },
+          initiator: mongoose.Types.ObjectId(req.user._id),
         },
       },
       {
         $lookup: {
           from: "mandates",
-          localField: "mandateID",
+          localField: "mandate",
           foreignField: "_id",
           as: "mandate",
         },
@@ -149,7 +160,7 @@ const getAllAuthorizerRequests = async (req, res) => {
                 page: options.page,
                 perPage: options.limit,
               },
-            }
+            },
           ],
         },
       },
@@ -158,7 +169,76 @@ const getAllAuthorizerRequests = async (req, res) => {
     res.status(200).json({
       message: "Request Successful",
       data: {
-        request: requests[0].data,
+        requests: requests[0].data,
+        meta: requests[0].meta[0],
+      },
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+const getAllAuthorizerRequests = async (req, res) => {
+  const { perPage, page } = req.query;
+
+  const options = {
+    page: page || 1,
+    limit: perPage || PER_PAGE,
+    sort: { createdAt: -1 },
+  };
+
+  try {
+    const requests = await InitiateRequest.aggregate([
+      {
+        $lookup: {
+          from: "mandates",
+          localField: "mandateID",
+          foreignField: "_id",
+          as: "mandate",
+        },
+      },
+      {
+        $unwind: "$mandate",
+      },
+      {
+        $match: {
+          "mandate.authorizers": { $in: [mongoose.Types.ObjectId(req.user._id)] },
+        },
+      },
+      {
+        $facet: {
+          data: [
+            {
+              $sort: { ...options.sort },
+            },
+            {
+              $skip: options.limit * (options.page - 1),
+            },
+            {
+              $limit: options.limit * 1,
+            },
+          ],
+          meta: [
+            {
+              $count: "total",
+            },
+            {
+              $addFields: {
+                page: options.page,
+                perPage: options.limit,
+              },
+            },
+          ],
+        },
+      },
+    ]);
+
+    res.status(200).json({
+      message: "Request Successful",
+      data: {
+        requests: requests[0].data,
         meta: requests[0].meta[0],
       },
     });
@@ -182,7 +262,7 @@ const getAllRequest = async (req, res) => {
       {
         $lookup: {
           from: "mandates",
-          localField: "mandateID",
+          localField: "mandate",
           foreignField: "_id",
           as: "mandate",
         },
@@ -212,7 +292,7 @@ const getAllRequest = async (req, res) => {
                 page: options.page,
                 perPage: options.limit,
               },
-            }
+            },
           ],
         },
       },
@@ -231,18 +311,27 @@ const getAllRequest = async (req, res) => {
   }
 };
 
+
 const getRequestById = async (req, res) => {
   try {
     const _id = req.params.id;
-
     const request = await InitiateRequest.findOne({ _id })
-      .populate("mandateID")
       .populate({
-        path: "authorizerID",
+        path: "mandate",
+        select: "maxAmount minAmount authorizers",
+        populate: {
+          path: "authorizers",
+          model: "User",
+          select: "firstName lastName email",
+        },
+      })
+      .populate({
+        path: "initiator",
         model: "User",
         select: "firstName lastName email",
-      });
-
+      })
+      
+      
     if (!request) {
       return res.status(404).json({
         message: "Request not found",
@@ -262,73 +351,6 @@ const getRequestById = async (req, res) => {
   }
 };
 
-const getAllInitiatorRequests = async (req, res) => {
-  const { perPage, page } = req.query;
-
-  const options = {
-    page: page || 1,
-    limit: perPage || PER_PAGE,
-    sort: { createdAt: -1 },
-  };
-
-  try {    
-    const requests = await InitiateRequest.aggregate([
-      {
-        $match: {
-          initiatorID: req.user._id,
-        },
-      },
-      {
-        $lookup: {
-          from: "mandates",
-          localField: "mandateID",
-          foreignField: "_id",
-          as: "mandate",
-        },
-      },
-      {
-        $unwind: "$mandate",
-      },
-      {
-        $facet: {
-          data: [
-            {
-              $sort: { ...options.sort },
-            },
-            {
-              $skip: options.limit * (options.page - 1),
-            },
-            {
-              $limit: options.limit * 1,
-            },
-          ],
-          meta: [
-            {
-              $count: "total",
-            },
-            {
-              $addFields: {
-                page: options.page,
-                perPage: options.limit,
-              },
-            }
-          ],
-        },
-      },
-    ]);
-
-    res.status(200).json({
-      message: "Request Successful",
-      data: {
-        requests: requests[0].data,
-        meta: requests[0].meta[0],
-      },
-    });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: error.message });
-  }
-};
 
 module.exports = {
   initiateRequest,

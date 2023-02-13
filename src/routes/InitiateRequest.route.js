@@ -14,15 +14,15 @@ const {
   getAllRequest,
   getAllInitiatorRequests,
   getRequestById,
-} = require("../controller/general");
+} = require("../controller/initiateRequest/initiateRequest.controller");
 const batchUpload = require("../controller/batchUpload");
 
 
 // initiate request
-router.post("/", initiatorAuth, initiateRequest);
+router.post("/initiate", initiatorAuth, initiateRequest);
 
 // get all request for initiator
-router.get("/mine", initiatorAuth, getAllInitiatorRequests);
+router.get("/initiator", initiatorAuth, getAllInitiatorRequests);
 
 // update request
 router.put("/:id", authoriserAuth, updateRequest);
