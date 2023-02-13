@@ -19,7 +19,7 @@ const initiateRequestSchema = new mongoose.Schema(
     },
     isApproved: {
       type: String,
-      enum: ["active", "approved", "decline"],
+      enum: ["active", "approved", "declined"],
     },
     declineResponse: [
       {

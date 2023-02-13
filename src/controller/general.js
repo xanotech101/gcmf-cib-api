@@ -1,4 +1,5 @@
 const Mandate = require("../model/mandate.model");
+const User = require("../model/user.model");
 const InitiateRequest = require("../model/initiateRequest");
 const { validateInitiateRequestSchema } = require("../utils/utils");
 
@@ -9,8 +10,6 @@ const { PER_PAGE } = require("../utils/constants");
 
 const initiateRequest = async (req, res) => {
   try {
-
-
     const { error } = validateInitiateRequestSchema(req.body);
     if (error) return res.status(400).send(error.details[0].message);
 
@@ -26,40 +25,52 @@ const initiateRequest = async (req, res) => {
     });
 
     let mandate = await Mandate.find({}).select(
-      "minAmount maxAmount AuthorizerID"
+      "minAmount maxAmount authorizers"
     );
+
+    console.log(mandate);
 
     let authorizerIDArr = [];
     let emails = [];
     let mandateID;
     let authorizerID;
 
-    mandate.map((item) => {
+    console.log("mandate", mandate);
+    mandate.forEach((item) => {
       if (
         request.amount >= item.minAmount &&
         request.amount <= item.maxAmount
       ) {
-        //Send email logic here
-        //.....
-
-        // await sendEmail()
-        authorizerID = item.AuthorizerID;
+        request.authorizerID = item.authorizers;
         mandateID = item._id;
       }
-      authorizerIDArr.push(authorizerID);
+      request.mandateID = item.AuthorizerID;
     });
 
-    console.log("authorizerIDArr", authorizerID);
+
+    for (let i = 0; i < request.authorizerID.length; i++) {
+let user = await User.findById(request.authorizerID[i]);
+
+      const subject = "Loan Request Initiated";
+      const message = `
+          <h3>Loan Request Initiated</h3>
+          <p> Dear ${user.firstName}. Dear A request was initiated.</p>
+          <p>Kindly login to your account to view</p>
+        `;
+      await sendEmail(user.email, subject, message);
+    }
+
+    console.log("authorizerIDs", request.authorizerID);
     //TODO: code duplication, you don't need to save autorizer id here again, all you need is the mandateId
-    request.authorizerID = authorizerID;
+    // request.authorizerID = authorizerID;
     request.mandateID = mandateID;
     request.isApproved = "active";
 
-    let result = await request.save();
+    // let result = await request.save();
 
     return res.status(201).json({
       message: "Inititate request succesfully sent for approval",
-      "Request Details": result,
+      "Request Details": request,
     });
   } catch (error) {
     console.log(error);
@@ -84,7 +95,13 @@ const updateRequest = async (req, res) => {
           },
         },
       },
+      {
+        $set: {
+          isApproved: "declined",
+        }
+      },
       { new: true }
+    
     );
 
     if (!request) {
