@@ -129,7 +129,7 @@ const getAllMandates = async (req, res) => {
           from: "users",
           localField: "authorizers",
           foreignField: "_id",
-          as: "authorizer",
+          as: "authorizers",
         },
       },
       {
