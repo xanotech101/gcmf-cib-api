@@ -1,20 +1,18 @@
-const Mandate = require("../model/mandate.model");
-const AuditTrail = require("../model/auditTrail");
-const User = require("../model/user.model");
-const InitiateRequest = require("../model/initiateRequest");
-const { validateInitiateRequestSchema } = require("../utils/utils");
-const { sendEmail } = require("../utils/emailService");
+const Mandate = require("../../model/mandate.model");
+const InitiateRequest = require("../../model/initiateRequest");
+const { validateInitiateRequestSchema } = require("../../utils/utils");
+const { sendEmail } = require("../../utils/emailService");
 const { PER_PAGE } = require("../utils/constants");
 
 const initiateRequest = async (req, res) => {
   try {
     const { error } = validateInitiateRequestSchema(req.body);
-    if (error) return res.status(400).send(error.details[0].message);
-
-    const uniqueRandomID = uuid.v4();
-    console.log(uniqueRandomID);
-    //  requestID: uniqueRandomID,
-    let request = new InitiateRequest({
+    if (error) return res.status(400).json({
+      message: error.details[0].message,
+      status: "failed"
+    });
+   
+    const request = new InitiateRequest({
       customerName: req.body.customerName,
       amount: req.body.amount,
       bankName: req.body.bankName,
@@ -22,57 +20,39 @@ const initiateRequest = async (req, res) => {
       accountName: req.body.accountName,
     });
 
-    let mandate = await Mandate.find({}).select(
+    const mandate = await Mandate.find({}).select(
       "minAmount maxAmount authorizers"
     );
 
+    let emails = [];
     let mandateID;
+    let authorizerID;
 
-    mandate.forEach((item) => {
+    // find a way to query the mandate db where the amount provided falls within the min and max amount
+    mandate.map((item) => {
       if (
         request.amount >= item.minAmount &&
         request.amount <= item.maxAmount
       ) {
-        request.authorizerID = item.authorizers;
+        //Send email logic here
+        //.....
+
+        // await sendEmail()
+        authorizerID = item.authorizers;
         mandateID = item._id;
       }
-      request.mandateID = item.AuthorizerID;
     });
 
 
-    for (let i = 0; i < request.authorizerID.length; i++) {
-let user = await User.findById(request.authorizerID[i]);
-
-      const subject = "Loan Request Initiated";
-      const message = `
-          <h3>Loan Request Initiated</h3>
-          <p> Dear ${user.firstName}. A request was initiated.</p>
-          <p>Kindly login to your account to view</p>
-        `;
-      await sendEmail(user.email, subject, message);
-    }
-
-    //TODO: code duplication, you don't need to save autorizer id here again, all you need is the mandateId
-    // request.authorizerID = authorizerID;
+    request.authorizerID = authorizerID;
     request.mandateID = mandateID;
     request.isApproved = "active";
 
-    let result = await request.save();
-    
-    let ress = await InitiateRequest.find().sort({ _id: -1 }).limit(1);
-    console.log(ress);
-      const auditTrail = new AuditTrail({
-        type: "transaction",
-        transactionID: ress[0]._id,
-      });
+    const result = await request.save();
 
-      console.log(auditTrail)
-      await auditTrail.save();
-    
-
-    return res.status(201).json({
-      message: "Inititate request succesfully sent for approval",
-      "Request Details": request,
+    res.status(201).json({
+      message: "Initiate request successfully sent for approval",
+      data: result
     });
   } catch (error) {
     console.log(error);
@@ -100,13 +80,7 @@ const updateRequest = async (req, res) => {
           },
         },
       },
-      {
-        $set: {
-          isApproved: "declined",
-        }
-      },
       { new: true }
-    
     );
 
     if (!request) {
@@ -196,7 +170,7 @@ const getAllAuthorizerRequests = async (req, res) => {
 
 const getAllRequest = async (req, res) => {
   const { page, perPage } = req.query;
-console.log()
+
   const options = {
     page: page || 1,
     limit: perPage || PER_PAGE,
@@ -244,20 +218,13 @@ console.log()
       },
     ]);
 
-    // res.status(200).json({
-    //   message: "Request Successful",
-    //   data: {
-    //     requests: request[0].data,
-    //     meta: request[0].meta[0],
-    //   },
-    // });
-
-
-       res.status(200).json({
-         message: "Successfully fetched all users",
-         result: request[0],
-         status: "success",
-       });
+    res.status(200).json({
+      message: "Request Successful",
+      data: {
+        requests: request[0].data,
+        meta: request[0].meta[0],
+      },
+    });
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: error.message });

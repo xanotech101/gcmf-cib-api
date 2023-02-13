@@ -1,6 +1,6 @@
-const Mandate = require("../model/mandate.model");
-const { validateUpdateMandateSchema } = require("../utils/utils");
-const { PER_PAGE } = require("../utils/constants");
+const Mandate = require("../../model/mandate.model");
+const { validateUpdateMandateSchema } = require("../../utils/utils");
+const { PER_PAGE } = require("../../utils/constants");
 
 //@desc     register a mandate
 //@route    POST /mandate/register
