@@ -1,7 +1,7 @@
-const Mandate = require("../model/mandate.model");
-const InitiateRequest = require("../model/initiateRequest");
-const { validateInitiateRequestSchema } = require("../utils/utils");
-const { sendEmail } = require("../utils/emailService");
+const Mandate = require("../../model/mandate.model");
+const InitiateRequest = require("../../model/initiateRequest");
+const { validateInitiateRequestSchema } = require("../../utils/utils");
+const { sendEmail } = require("../../utils/emailService");
 const { PER_PAGE } = require("../utils/constants");
 
 const initiateRequest = async (req, res) => {
