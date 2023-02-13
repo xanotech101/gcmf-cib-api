@@ -1,4 +1,5 @@
 const Mandate = require("../model/mandate.model");
+const AuditTrail = require("../model/auditTrail");
 const User = require("../model/user.model");
 const InitiateRequest = require("../model/initiateRequest");
 const { validateInitiateRequestSchema } = require("../utils/utils");
@@ -28,14 +29,8 @@ const initiateRequest = async (req, res) => {
       "minAmount maxAmount authorizers"
     );
 
-    console.log(mandate);
-
-    let authorizerIDArr = [];
-    let emails = [];
     let mandateID;
-    let authorizerID;
 
-    console.log("mandate", mandate);
     mandate.forEach((item) => {
       if (
         request.amount >= item.minAmount &&
@@ -54,19 +49,29 @@ let user = await User.findById(request.authorizerID[i]);
       const subject = "Loan Request Initiated";
       const message = `
           <h3>Loan Request Initiated</h3>
-          <p> Dear ${user.firstName}. Dear A request was initiated.</p>
+          <p> Dear ${user.firstName}. A request was initiated.</p>
           <p>Kindly login to your account to view</p>
         `;
       await sendEmail(user.email, subject, message);
     }
 
-    console.log("authorizerIDs", request.authorizerID);
     //TODO: code duplication, you don't need to save autorizer id here again, all you need is the mandateId
     // request.authorizerID = authorizerID;
     request.mandateID = mandateID;
     request.isApproved = "active";
 
-    // let result = await request.save();
+    let result = await request.save();
+    
+    let ress = await InitiateRequest.find().sort({ _id: -1 }).limit(1);
+    console.log(ress);
+      const auditTrail = new AuditTrail({
+        type: "transaction",
+        transactionID: ress[0]._id,
+      });
+
+      console.log(auditTrail)
+      await auditTrail.save();
+    
 
     return res.status(201).json({
       message: "Inititate request succesfully sent for approval",
@@ -250,7 +255,7 @@ console.log()
 
        res.status(200).json({
          message: "Successfully fetched all users",
-         data: { user },
+         result: request[0],
          status: "success",
        });
   } catch (error) {

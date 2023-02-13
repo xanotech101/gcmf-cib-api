@@ -1,4 +1,5 @@
 const User = require("../../model/user.model");
+const AuditTrail = require("../../model/auditTrail");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
@@ -39,6 +40,13 @@ const login = async (req, res) => {
     }
 
     const token = user.generateAuthToken();
+
+    const auditTrail = new AuditTrail({
+      type: "authentication",
+      userID: user._id,
+    });
+
+    await auditTrail.save();
 
     res.json({
       message: "User Logged in Successfully",
