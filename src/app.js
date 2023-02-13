@@ -9,6 +9,7 @@ const userRoute = require("./routes/user.route");
 const accountRoute = require("./routes/account");
 const mandateRoute = require("./routes/mandate");
 const generalRoute = require("./routes/general");
+const initiateRoute = require("./routes/initiateRequest");
 const paystackRoute = require("./routes/paystack.route");
 const authRoute = require("./routes/auth.route");
 const mongoose = require("mongoose");
@@ -67,6 +68,7 @@ app.use("/api/account", accountRoute);
 app.use("/api/mandate", mandateRoute);
 app.use("/api", paystackRoute);
 app.use("/api", generalRoute);
+app.use("/api", initiateRoute);
 
 app.use(function (req, res, next) {
   next(createError(404));
