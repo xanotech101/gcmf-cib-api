@@ -4,7 +4,7 @@ const fs = require("fs");
 const excelToJson = require("convert-excel-to-json");
 const Mandate = require("../model/mandate.model");
 const User = require("../model/user.model");
-const InitiateRequest = require("../model/initiateRequest");
+const InitiateRequest = require("../model/initiateRequest.model");
 const { validateInitiateRequestSchema } = require("../utils/utils");
 
 const batchUpload = async (req, res) => {

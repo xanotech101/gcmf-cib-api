@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const initiateRequestSchema = new mongoose.Schema(
   {
-    mandateID: {
+    mandate: {
       type: mongoose.Schema.Types.ObjectID,
       ref: "Mandate",
     },
@@ -12,14 +12,14 @@ const initiateRequestSchema = new mongoose.Schema(
     accountNumber: String,
     accountName: String,
     transferStatus: String,
-    authorizerID: [String],
-    initiatorID: {
+    initiator: {
       type: mongoose.Schema.Types.ObjectID,
       ref: "User",
     },
     isApproved: {
       type: String,
       enum: ["active", "approved", "declined"],
+      default: "active",
     },
     declineResponse: [
       {

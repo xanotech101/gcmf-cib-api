@@ -5,7 +5,7 @@ const {
   updateMandate,
   getAllMandates,
   getSingleMandate
-} = require("../controller/mandate");
+} = require("../controller/mandate/mandate.controller");
 const { validate, mandateSchemas } = require("../validations");
 const {
   superUserAuth,

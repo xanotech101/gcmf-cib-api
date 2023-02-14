@@ -2,7 +2,6 @@ const express = require("express");
 const {
   adminAuth,
   initiatorAuth,
-  allUsersAuth,
   authoriserAuth,
 } = require("../middleware/auth");
 
@@ -15,14 +14,28 @@ const {
   getAllRequest,
   getAllInitiatorRequests,
   getRequestById,
-} = require("../controller/initiateRequest");
+} = require("../controller/initiateRequest/initiateRequest.controller");
 const batchUpload = require("../controller/batchUpload");
-router.get("/request/:id", authoriserAuth, getRequestById);
-router.post("/request", initiatorAuth, initiateRequest);
-router.get("/myrequests/", initiatorAuth, getAllInitiatorRequests);
-router.put("/request/:id", authoriserAuth, updateRequest);
+
+// initiate request
+router.post("/initiate", initiatorAuth, initiateRequest);
+
+// get all request for initiator
+router.get("/initiator", initiatorAuth, getAllInitiatorRequests);
+
+// update request
+router.put("/:id", authoriserAuth, updateRequest);
+
+// bulk upload request
 router.post("/upload", upload.single("file"), initiatorAuth, batchUpload);
-router.get("/myrequests/authoriser", authoriserAuth, getAllAuthorizerRequests);
+
+// get all request for authorizer
+router.get("/authorizer", authoriserAuth, getAllAuthorizerRequests);
+
+// get all request for admin
 router.get("/allrequests", adminAuth, getAllRequest);
+
+// get request by id
+router.get("/:id", authoriserAuth, getRequestById);
 
 module.exports = router;
