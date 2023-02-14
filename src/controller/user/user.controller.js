@@ -226,11 +226,59 @@ const getAllUsers = async (req, res) => {
   }
 };
 
+
+const deleteNonAdminUsers = async (req, res) => {
+  try {
+   const { name, id } = req.body;
+    const user = await User.findById(id);
+    if (user.privileges.includes("superUser") || user.privileges.includes("admin"))
+      return res.status(401).json({
+        message: "You cannot delete a user with admin role",
+        data: null,
+        status: "failed",
+      });
+    
+    const result = await User.findByIdAndDelete(id);
+    res.status(200).json({
+      message: "User Deleted Successfully",
+      status: "success",
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: error.message,
+      data: null,
+      status: "failed",
+    });
+  }
+};
+
+const deleteAnyUser = async (req, res) => {
+  try {
+    const { name, id } = req.body;
+
+    const result = await User.findByIdAndDelete(id);
+    res.status(200).json({
+      message: "User Deleted Successfully",
+      status: "success",
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: error.message,
+      data: null,
+      status: "failed",
+    });
+  }
+};
+
 module.exports = {
   getOrganizationUsers,
   getUserProfile,
   changePassword,
   getAllPriviledges,
   updateUserProfile,
-  getAllUsers
+  getAllUsers,
+  deleteNonAdminUsers,
+  deleteAnyUser
 };

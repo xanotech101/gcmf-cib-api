@@ -190,7 +190,6 @@ const getAllAuthorizerRequests = async (req, res) => {
 
 const getAllRequest = async (req, res) => {
   const { page, perPage } = req.query;
-  console.log();
   const options = {
     page: page || 1,
     limit: perPage || PER_PAGE,
