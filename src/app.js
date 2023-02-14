@@ -12,6 +12,7 @@ const requestRoute = require("./routes/initiateRequest.route");
 const paystackRoute = require("./routes/paystack.route");
 const trailRoute = require("./routes/auditTrail");
 const authRoute = require("./routes/auth.route");
+const notificationRoute = require("./routes/notification");
 const mongoose = require("mongoose");
 const cors = require("cors");
 
@@ -69,6 +70,7 @@ app.use("/api/mandate", mandateRoute);
 app.use("/api", paystackRoute);
 app.use("/api", trailRoute);
 app.use("/api/requests", requestRoute);
+app.use("/api/notification", notificationRoute);
 
 
 app.use(function (req, res, next) {

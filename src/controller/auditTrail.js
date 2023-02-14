@@ -1,16 +1,15 @@
 const AuditTrail = require("../model/auditTrail");
-const { PER_PAGE } = require('../utils/constants')
+const { PER_PAGE } = require("../utils/constants");
 
 const getAllAuditTrail = async (req, res) => {
+  const { page, perPage } = req.query;
 
-    const { page, perPage } = req.query;
+  const options = {
+    page: page || 1,
+    limit: perPage || PER_PAGE,
+    sort: { createdAt: -1 },
+  };
 
-    const options = {
-      page: page || 1,
-      limit: perPage || PER_PAGE,
-      sort: { createdAt: -1 },
-    };
-  
   try {
     let trails = await AuditTrail.aggregate([
       {
@@ -49,7 +48,6 @@ const getAllAuditTrail = async (req, res) => {
   }
 };
 
-
 module.exports = {
-  getAllAuditTrail
+  getAllAuditTrail,
 };

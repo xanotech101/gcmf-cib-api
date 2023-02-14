@@ -1,6 +1,7 @@
 const Mandate = require("../../model/mandate.model");
 const InitiateRequest = require("../../model/initiateRequest.model");
 const AuditTrail = require("../../model/auditTrail");
+const Notification = require("../../model/notification");
 const { validateInitiateRequestSchema } = require("../../utils/utils");
 const { sendEmail } = require("../../utils/emailService");
 const { PER_PAGE } = require("../../utils/constants");
@@ -61,6 +62,17 @@ const initiateRequest = async (req, res) => {
     });
 
     await auditTrail.save();
+console.log("this is me", mandate.authorizers)
+    const notification = new Notification({
+      status: "active",
+      userID: req.user._id,
+         initiator: req.user._id,
+      transaction: result._id,
+      authorizers: mandate.authorizers,
+         organization: req.user.organizationID,
+       });
+console.log("notification", notification.authorizers)
+       await notification.save();
 
     res.status(201).json({
       message: "Initiate request successfully sent for approval",
