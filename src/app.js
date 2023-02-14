@@ -67,7 +67,7 @@ app.use("/api/users", userRoute);
 app.use("/api/account", accountRoute);
 app.use("/api/mandate", mandateRoute);
 app.use("/api", paystackRoute);
-app.use("/api", trailRoute);
+app.use("/api/audit_trails", trailRoute);
 app.use("/api/requests", requestRoute);
 
 

@@ -43,7 +43,7 @@ const login = async (req, res) => {
 
     const auditTrail = new AuditTrail({
       type: "authentication",
-      userID: user._id,
+      user: user._id,
     });
 
     await auditTrail.save();

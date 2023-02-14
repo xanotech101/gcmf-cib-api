@@ -1,12 +1,19 @@
 const mongoose = require("mongoose");
-const jwt = require("jsonwebtoken");
-const { PER_PAGE } = require("../../utils/constants");
 
 const auditTrailSchema = new mongoose.Schema(
   {
     type: String,
-    userID: String,
-    transactionID: String
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+    transaction: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "InitiateRequest",
+    },
+    organization: {
+      type: String
+    }
   },
   {
     timestamps: true,
