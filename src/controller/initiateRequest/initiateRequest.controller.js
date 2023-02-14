@@ -57,8 +57,7 @@ const initiateRequest = async (req, res) => {
 
     const auditTrail = new AuditTrail({
       type: "transaction",
-      userID: req.user._id,
-      transactionID: result._id,
+      transaction: result._id,
     });
 
     await auditTrail.save();
