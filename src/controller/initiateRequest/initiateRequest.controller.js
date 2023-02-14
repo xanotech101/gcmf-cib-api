@@ -56,6 +56,7 @@ const initiateRequest = async (req, res) => {
 
     const auditTrail = new AuditTrail({
       type: "transaction",
+      userID: req.user._id,
       transactionID: result._id,
     });
 
@@ -112,7 +113,7 @@ const updateRequest = async (req, res) => {
 
 const getAllInitiatorRequests = async (req, res) => {
   const { perPage, page } = req.query;
-  console.log(req.user)
+  console.log(req.user);
 
   const options = {
     page: page || 1,
@@ -179,7 +180,6 @@ const getAllInitiatorRequests = async (req, res) => {
   }
 };
 
-
 const getAllAuthorizerRequests = async (req, res) => {
   const { perPage, page } = req.query;
 
@@ -204,7 +204,9 @@ const getAllAuthorizerRequests = async (req, res) => {
       },
       {
         $match: {
-          "mandate.authorizers": { $in: [mongoose.Types.ObjectId(req.user._id)] },
+          "mandate.authorizers": {
+            $in: [mongoose.Types.ObjectId(req.user._id)],
+          },
         },
       },
       {
@@ -311,7 +313,6 @@ const getAllRequest = async (req, res) => {
   }
 };
 
-
 const getRequestById = async (req, res) => {
   try {
     const _id = req.params.id;
@@ -329,9 +330,8 @@ const getRequestById = async (req, res) => {
         path: "initiator",
         model: "User",
         select: "firstName lastName email",
-      })
-      
-      
+      });
+
     if (!request) {
       return res.status(404).json({
         message: "Request not found",
@@ -350,7 +350,6 @@ const getRequestById = async (req, res) => {
     });
   }
 };
-
 
 module.exports = {
   initiateRequest,
