@@ -1,4 +1,5 @@
 const AuditTrail = require("../model/auditTrail");
+const { PER_PAGE } = require('../utils/constants')
 
 const getAllAuditTrail = async (req, res) => {
 
