@@ -9,7 +9,8 @@ const upload = require("../middleware/multer");
 const router = express.Router();
 const {
   initiateRequest,
-  updateRequest,
+  declineRequest,
+  approveRequest,
   getAllAuthorizerRequests,
   getAllRequest,
   getAllInitiatorRequests,
@@ -24,7 +25,8 @@ router.post("/initiate", initiatorAuth, initiateRequest);
 router.get("/initiator", initiatorAuth, getAllInitiatorRequests);
 
 // update request
-router.put("/:id", authoriserAuth, updateRequest);
+router.put("approve/:id", authoriserAuth, approveRequest);
+router.put("decline/:id", authoriserAuth, declineRequest);
 
 // bulk upload request
 router.post("/upload", upload.single("file"), initiatorAuth, batchUpload);

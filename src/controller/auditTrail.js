@@ -62,6 +62,7 @@ const getOrganizationAuditTrail = async (req, res) => {
     sort: { createdAt: -1 },
   };
 
+
   try {
     const result = await AuditTrail.aggregate([
       {

@@ -61,19 +61,19 @@ const initiateRequest = async (req, res) => {
     });
 
     await auditTrail.save();
-console.log("this is me", mandate.authorizers)
+
     const notification = new Notification({
       status: "active",
       userID: req.user._id,
-         initiator: req.user._id,
+      initiator: req.user._id,
       transaction: result._id,
       authorizers: mandate.authorizers,
-         organization: req.user.organizationID,
-       });
-console.log("notification", notification.authorizers)
-       await notification.save();
+      organization: req.user.organizationID,
+    });
 
-    res.status(201).json({
+    await notification.save();
+
+    return res.status(201).json({
       message: "Initiate request successfully sent for approval",
       data: result,
     });
@@ -86,7 +86,7 @@ console.log("notification", notification.authorizers)
   }
 };
 
-const updateRequest = async (req, res) => {
+const declineRequest = async (req, res) => {
   try {
     const _id = req.params.id;
     const userId = req.user._id;
@@ -95,7 +95,7 @@ const updateRequest = async (req, res) => {
       { _id },
       {
         $push: {
-          declineResponse: {
+          decline: {
             authorizerID: userId,
             reason: req.body.reason,
           },
@@ -112,9 +112,63 @@ const updateRequest = async (req, res) => {
       });
     }
 
+    console.log("request", request);
+
+    const notification = new Notification({
+      status: "declined",
+      userID: req.user._id,
+      // initiator: req.user._id,
+      transaction: request._id,
+      authorizers: [userId],
+      organization: req.user.organizationID,
+    });
+
+    await notification.save();
+
     return res.status(200).json({
       message: "Request declined successfully",
-      request,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const approveRequest = async (req, res) => {
+  try {
+    const _id = req.params.id;
+    const userId = req.user._id;
+
+    const request = await InitiateRequest.findById(_id);
+    const user = await User.findById(userId);
+
+    request.isApproved = "approved";
+    request.approval.push(userId);
+
+    // if (req.approval.length => 1 && req.approval) {
+
+    await request.save();
+
+    if (!request) {
+      return res.status(404).json({
+        message: "Request not found",
+        status: "failed",
+      });
+    }
+
+    const notification = new Notification({
+      status: "approved",
+      userID: req.user._id,
+      // initiator: req.user._id,
+      transaction: request._id,
+      authorizers: [userId],
+      organization: req.user.organizationID,
+    });
+
+    await notification.save();
+
+    return res.status(200).json({
+      message: "Request declined successfully",
     });
   } catch (error) {
     console.log(error);
@@ -364,7 +418,8 @@ const getRequestById = async (req, res) => {
 
 module.exports = {
   initiateRequest,
-  updateRequest,
+  declineRequest,
+  approveRequest,
   getAllInitiatorRequests,
   getAllRequest,
   getRequestById,

@@ -21,7 +21,12 @@ const initiateRequestSchema = new mongoose.Schema(
       enum: ["active", "approved", "declined"],
       default: "active",
     },
-    declineResponse: [
+    approval: [
+      {
+         authorizerID: String,
+      }
+    ],
+    decline: [
       {
         authorizerID: String,
         reason: String,
