@@ -2,9 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const {
-  getAllNotifiactionForInitiator,
-  getAllNotifiactionForAuthoriser,
-  getAllNotifiactionForVerifier,
+  getAllNotifiactions,
 } = require("../controller/notification");
 const { allUsersAuth,
     initiatorAuth,
@@ -12,9 +10,8 @@ const { allUsersAuth,
     verifierAuth
 } = require("../middleware/auth");
 
-router.get("/initiator", initiatorAuth, getAllNotifiactionForInitiator);
-router.get("/authoriser", authoriserAuth, getAllNotifiactionForAuthoriser);
-router.get("/verifier", verifierAuth, getAllNotifiactionForVerifier);
+router.get("/:id", initiatorAuth, getAllNotifiactions);
+
 
 module.exports = router;
 

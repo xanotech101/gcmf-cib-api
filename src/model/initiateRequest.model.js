@@ -18,13 +18,19 @@ const initiateRequestSchema = new mongoose.Schema(
     },
     isApproved: {
       type: String,
-      enum: ["active", "approved", "declined"],
-      default: "active",
+      enum: [
+        "pending",
+        "in progress",
+        "awaiting verification",
+        "approved",
+        "declined",
+      ],
+      default: "pending",
     },
     approval: [
       {
-         authorizerID: String,
-      }
+        authorizerID: String,
+      },
     ],
     decline: [
       {
