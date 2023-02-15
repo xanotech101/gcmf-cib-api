@@ -1,11 +1,13 @@
 const Notification = require("../model/notification");
 const { PER_PAGE } = require("../utils/constants");
+const mongoose = require("mongoose");
 
 
 const getAllNotifiactions= async (req, res) => {
   try {
       
-    let id = req.params.id;
+    const id = req.params.id;
+    console.log(id)
         const { perPage, page } = req.query;
     
         const options = {
@@ -18,9 +20,7 @@ const getAllNotifiactions= async (req, res) => {
         const notifications = await Notification.aggregate([
           {
             $match: {
-              "userID": {
-                $in: ["id"],
-              },
+              userID: mongoose.Types.ObjectId(id),
             },
           },
 
@@ -40,9 +40,9 @@ const getAllNotifiactions= async (req, res) => {
               as: "transaction",
             },
           },
-            // {
-            //   $unwind: "$verifier",
-            // },
+          // {
+          //   $unwind: "$verifier",
+          // },
 
           {
             $facet: {
