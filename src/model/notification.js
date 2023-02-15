@@ -13,6 +13,7 @@ const notificationSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "InitiateRequest",
     },
+    message: String,
   },
   {
     timestamps: true,

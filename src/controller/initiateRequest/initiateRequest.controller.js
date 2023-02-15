@@ -43,17 +43,34 @@ const initiateRequest = async (req, res) => {
     request.initiator = req.user._id;
 
     const result = await request.save();
-
+    let notice;
     for (let i = 0; i < mandate.authorizers; i++) {
       const authorizer = mandate.authorizers[i];
+      
+      
       const subject = "Loan Request Initiated";
       const message = `
           <h3>Loan Request Initiated</h3>
           <p> Dear ${authorizer.firstName}. A request was initiated.</p>
           <p>Kindly login to your account to view</p>
         `;
+      
+           
       await sendEmail(authorizer.email, subject, message);
+
+     
     }
+
+     
+        let notify = new Notification({
+          // userID: authorizer._id,
+          userID: req.user._id,
+          transaction: result._id,
+          message: "A request has been initiated. Kindly review",
+        });
+     notice = await notify.save();
+
+     console.log("notice", notice);
 
     const auditTrail = new AuditTrail({
       type: "transaction",
@@ -61,17 +78,6 @@ const initiateRequest = async (req, res) => {
     });
 
     await auditTrail.save();
-
-    const notification = new Notification({
-      status: "active",
-      userID: req.user._id,
-      initiator: req.user._id,
-      transaction: result._id,
-      authorizers: mandate.authorizers,
-      organization: req.user.organizationID,
-    });
-
-    await notification.save();
 
     return res.status(201).json({
       message: "Initiate request successfully sent for approval",
