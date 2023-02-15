@@ -5,10 +5,10 @@ const jwt = require("jsonwebtoken");
 const notificationSchema = new mongoose.Schema(
   {
     userID: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: mongoose.Schema.Types.ObjectID,
       ref: "User",
     },
-    
+
     transaction: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "InitiateRequest",
