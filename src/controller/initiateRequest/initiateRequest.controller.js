@@ -41,17 +41,19 @@ const initiateRequest = async (req, res) => {
 
     request.mandate = mandate._id;
     request.initiator = req.user._id;
+    request.verifier = mandate.verifier;
 
+    request.numberOfAuthorisers = mandate.authorizers.length;
     const result = await request.save();
 
     const notificationsToCreate = [];
     for (const authorizer of mandate.authorizers) {
-
       const notification = {
         title: "Transaction request Initiated",
         transaction: result._id,
         user: authorizer._id,
-        message: "A transaction request was initiated and is awaiting your approval",
+        message:
+          "A transaction request was initiated and is awaiting your approval",
       };
 
       notificationsToCreate.push(notification);
@@ -63,7 +65,6 @@ const initiateRequest = async (req, res) => {
           <p> Dear ${authorizer.firstName}. A request was initiated.</p>
           <p>Kindly login to your account to view</p>
         `;
-       
 
       await sendEmail(authorizer.email, subject, message);
     }
@@ -81,7 +82,6 @@ const initiateRequest = async (req, res) => {
       message: "Request initiated successfully and sent for approval",
       data: result,
     });
-
   } catch (error) {
     res.status(500).json({
       message: error.message,
@@ -92,12 +92,11 @@ const initiateRequest = async (req, res) => {
 
 const declineRequest = async (req, res) => {
   try {
-
     const _id = req.params.id;
     const userId = req.user._id;
 
-  const request = await InitiateRequest.findById(_id);
- 
+    const request = await InitiateRequest.findById(_id);
+
     if (!request) {
       return res.status(404).json({
         message: "Request not found",
@@ -105,9 +104,13 @@ const declineRequest = async (req, res) => {
       });
     }
 
-   for (let i = 0; i < request.authorizersAction.length; i++) {
+    let duplicate = false;
+    for (let i = 0; i < request.authorizersAction.length; i++) {
       let transaction = request.authorizersAction[i];
-      if (transaction.authorizerID == req.user._id && transaction.status === "rejected") {
+      if (
+        transaction.authorizerID == req.user._id &&
+        transaction.status === "rejected"
+      ) {
         return res.status(404).json({
           message: "You have already rejected this request",
           status: "failed",
@@ -118,25 +121,19 @@ const declineRequest = async (req, res) => {
       ) {
         transaction.status = "rejected";
         transaction.reason = req.body.reason;
+        duplicate = true;
       }
-   }
-    
-    request.authorizersAction.push(
-      {
-        status: "rejected",
+    }
+
+    if (duplicate === false) {
+      request.authorizersAction.push({
+        status: "authorised",
         authorizerID: userId,
-        reason: req.body.reason
-      }
-    )
+        reason: req.body.reason,
+      });
+    }
 
     await request.save();
-    //In-app authorizers
-    const notification = new Notification({
-      transaction: request._id,
-      user: request.initiator,
-      message: "A request has been initiated. Kindly review",
-    });
-    await notification.save();
 
     await notificationService.createNotifications([
       {
@@ -144,10 +141,20 @@ const declineRequest = async (req, res) => {
         user: request.initiator,
         title: "Transaction Request Initiated",
         message: "Your request has been approved",
-    
-      }
-    ])
+      },
+    ]);
+    await notification.save();
 
+    if (request.authorizersAction.length === request.numberOfAuthorisers) {
+      await notificationService.createNotifications([
+        {
+          transaction: request._id,
+          user: request.verifier,
+          title: "Verification Required",
+          message: "New request require your review",
+        },
+      ]);
+    }
 
     return res.status(200).json({
       message: "Request declined successfully",
@@ -155,9 +162,9 @@ const declineRequest = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ 
+    res.status(500).json({
       message: error.message,
-      status: "failed"
+      status: "failed",
     });
   }
 };
@@ -169,16 +176,20 @@ const approveRequest = async (req, res) => {
 
     const request = await InitiateRequest.findById(_id);
 
-        if (!request) {
-          return res.status(404).json({
-            message: "Request not found",
-            status: "failed",
-          });
-        }
-    
+    if (!request) {
+      return res.status(404).json({
+        message: "Request not found",
+        status: "failed",
+      });
+    }
+
+    let duplicate = false;
     for (let i = 0; i < request.authorizersAction.length; i++) {
       let transaction = request.authorizersAction[i];
-      if (transaction.authorizerID == req.user._id && transaction.status === "authorised") {
+      if (
+        transaction.authorizerID == req.user._id &&
+        transaction.status === "authorised"
+      ) {
         return res.status(404).json({
           message: "You have already approved this transaction",
           status: "failed",
@@ -188,48 +199,49 @@ const approveRequest = async (req, res) => {
         transaction.status === "rejected"
       ) {
         transaction.status = "authorised";
-        delete transaction.reason
+        delete transaction.reason;
+        duplicate = true;
       }
     }
 
-<<<<<<< HEAD
-  request.authorizersAction.push({
-    status: "authorised",
-    authorizerID: userId,
-    reason: ""
-  });
-    
- await request.save();
-    //In-app authorizers
-    const notification = new Notification({
-      transaction: request._id,
-      userID: request.initiator,
-      message: "A request has been initiated. Kindly review",
-    });
-    await notification.save();
+    if (duplicate === false) {
+      request.authorizersAction.push({
+        status: "authorised",
+        authorizerID: userId,
+      });
+    }
 
-    return res.status(200).json({
-      message: "Request approved successfully",
-=======
-    // TODO: confirm who gets notified when a request is declined
+    await request.save();
+
     await notificationService.createNotifications([
       {
         transaction: request._id,
-        user: req.initiator,
-        message: "Your request has been approved",
-      }
-    ])
+        user: request.initiator,
+        title: "Request Approved",
+        message: "An authoriser has approved your request",
+      },
+    ]);
+
+    if (request.authorizersAction.length === request.numberOfAuthorisers) {
+      await notificationService.createNotifications([
+        {
+          transaction: request._id,
+          user: request.verifier,
+          title: "Verification Required",
+          message: "New request require your review",
+        },
+      ]);
+    }
 
     return res.status(200).json({
-      message: "Request declined successfully",
+      message: "Request approved successfully",
       status: "success",
->>>>>>> 24f3fd0d5d7d397a19e74e6ae06e7e96fccf228b
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ 
+    res.status(500).json({
       message: error.message,
-      status: "failed"
+      status: "failed",
     });
   }
 };

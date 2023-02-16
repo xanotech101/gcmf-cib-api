@@ -16,6 +16,10 @@ const initiateRequestSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectID,
       ref: "User",
     },
+    verifier: {
+      type: mongoose.Schema.Types.ObjectID,
+      ref: "User",
+    },
     status: {
       type: String,
       enum: [
@@ -27,20 +31,20 @@ const initiateRequestSchema = new mongoose.Schema(
       ],
       default: "pending",
     },
-
+    numberOfAuthorisers: Number,
     authorizersAction: [
       {
         status: {
           type: String,
-          enum: ["authorised", "rejected"]
-          },
-          authorizerID: {
-            type: mongoose.Schema.Types.ObjectID,
-            ref: "User",
+          enum: ["authorised", "rejected"],
         },
-          reason: String,
+        authorizerID: {
+          type: mongoose.Schema.Types.ObjectID,
+          ref: "User",
         },
-      ],
+        reason: String,
+      },
+    ],
     time: Date,
   },
   {

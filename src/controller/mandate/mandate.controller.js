@@ -46,6 +46,8 @@ const registerMandate = async (req, res) => {
       minAmount: req.body.minAmount,
       maxAmount: req.body.maxAmount,
       authorizers: req.body.authorizers,
+      ff: req.body.ff,
+      verifier: req.body.verifier,
     });
 
     const result = await mandate.save();
