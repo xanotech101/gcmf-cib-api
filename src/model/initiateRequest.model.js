@@ -16,7 +16,7 @@ const initiateRequestSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectID,
       ref: "User",
     },
-    isApproved: {
+    status: {
       type: String,
       enum: [
         "pending",
@@ -27,17 +27,19 @@ const initiateRequestSchema = new mongoose.Schema(
       ],
       default: "pending",
     },
-    approval: [
+
+    authorizersAction: [
       {
-        authorizerID: String,
-      },
-    ],
-    decline: [
-      {
-        authorizerID: String,
-        reason: String,
-      },
-    ],
+        status: {
+          type: String,
+          enum: ["authorised", "rejected"]
+          },
+          authorizerID: {
+            type: mongoose.Schema.Types.ObjectID,
+            ref: "User",
+          },
+        },
+      ],
     time: Date,
   },
   {
@@ -46,3 +48,7 @@ const initiateRequestSchema = new mongoose.Schema(
 );
 
 module.exports = mongoose.model("InitiateRequest", initiateRequestSchema);
+
+
+
+status: ap

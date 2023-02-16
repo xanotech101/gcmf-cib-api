@@ -69,14 +69,6 @@ const initiateRequest = async (req, res) => {
 
     }
    
-
-      
- 
- 
-
-    
-
-
     const auditTrail = new AuditTrail({
       type: "transaction",
       transaction: result._id,
@@ -106,12 +98,13 @@ const declineRequest = async (req, res) => {
       { _id },
       {
         $push: {
-          decline: {
+          authorizersAction: {
+            status: "rejected",
             authorizerID: userId,
             reason: req.body.reason,
           },
         },
-        isApproved: "declined",
+        status: "in progress",
       },
       { new: true }
     );
