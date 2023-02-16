@@ -1,19 +1,24 @@
 
 const mongoose = require("mongoose");
-const jwt = require("jsonwebtoken");
 
 const notificationSchema = new mongoose.Schema(
   {
-    userID: {
+    user: {
       type: mongoose.Schema.Types.ObjectID,
       ref: "User",
     },
-
     transaction: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "InitiateRequest",
     },
     message: String,
+    title: {
+      type: String,
+    },
+    read: {
+      type: Boolean,
+      default: false,
+    }
   },
   {
     timestamps: true,

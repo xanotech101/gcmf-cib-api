@@ -1,10 +1,10 @@
 const Mandate = require("../../model/mandate.model");
 const InitiateRequest = require("../../model/initiateRequest.model");
 const AuditTrail = require("../../model/auditTrail");
-const Notification = require("../../model/notification");
 const { validateInitiateRequestSchema } = require("../../utils/utils");
 const { sendEmail } = require("../../utils/emailService");
 const { PER_PAGE } = require("../../utils/constants");
+const notificationService = require("../../services/notification.service");
 const mongoose = require("mongoose");
 
 const initiateRequest = async (req, res) => {
@@ -44,19 +44,18 @@ const initiateRequest = async (req, res) => {
 
     const result = await request.save();
 
+    const notificationsToCreate = [];
+    for (const authorizer of mandate.authorizers) {
 
-    for (let i = 0; i < mandate.authorizers.length; i++) {
-      const authorizer = mandate.authorizers[i];
+      const notification = {
+        title: "Transaction request Initiated",
+        transaction: result._id,
+        user: authorizer._id,
+        message: "A transaction request was initiated and is awaiting your approval",
+      };
 
-      //In-app authorizers
-    let notification = new Notification({
-      transaction: result._id,
-      userID : authorizer._id,
-      message: "A request has been initiated. Kindly review",
-    });
-      
-      await notification.save();
-      
+      notificationsToCreate.push(notification);
+
       //Mail notification
       const subject = "Loan Request Initiated";
       const message = `
@@ -65,22 +64,25 @@ const initiateRequest = async (req, res) => {
           <p>Kindly login to your account to view</p>
         `;
        
+
       await sendEmail(authorizer.email, subject, message);
     }
-   
-    const auditTrail = new AuditTrail({
+
+    // create all the notifications at once
+    await notificationService.createNotifications(notificationsToCreate);
+
+    // create audit trail
+    await AuditTrail.create({
       type: "transaction",
       transaction: result._id,
     });
 
-    await auditTrail.save();
-
     return res.status(201).json({
-      message: "Initiate request successfully sent for approval",
+      message: "Request initiated successfully and sent for approval",
       data: result,
     });
+
   } catch (error) {
-    console.log(error);
     res.status(500).json({
       message: error.message,
       status: "failed",
@@ -131,18 +133,32 @@ const declineRequest = async (req, res) => {
     //In-app authorizers
     const notification = new Notification({
       transaction: request._id,
-      userID: request.initiator,
+      user: request.initiator,
       message: "A request has been initiated. Kindly review",
     });
     await notification.save();
 
+    await notificationService.createNotifications([
+      {
+        transaction: request._id,
+        user: request.initiator,
+        title: "Transaction Request Initiated",
+        message: "Your request has been approved",
+    
+      }
+    ])
+
 
     return res.status(200).json({
       message: "Request declined successfully",
+      status: "success",
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ 
+      message: error.message,
+      status: "failed"
+    });
   }
 };
 
@@ -176,6 +192,7 @@ const approveRequest = async (req, res) => {
       }
     }
 
+<<<<<<< HEAD
   request.authorizersAction.push({
     status: "authorised",
     authorizerID: userId,
@@ -193,10 +210,27 @@ const approveRequest = async (req, res) => {
 
     return res.status(200).json({
       message: "Request approved successfully",
+=======
+    // TODO: confirm who gets notified when a request is declined
+    await notificationService.createNotifications([
+      {
+        transaction: request._id,
+        user: req.initiator,
+        message: "Your request has been approved",
+      }
+    ])
+
+    return res.status(200).json({
+      message: "Request declined successfully",
+      status: "success",
+>>>>>>> 24f3fd0d5d7d397a19e74e6ae06e7e96fccf228b
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ 
+      message: error.message,
+      status: "failed"
+    });
   }
 };
 

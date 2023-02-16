@@ -12,7 +12,7 @@ const requestRoute = require("./routes/initiateRequest.route");
 const paystackRoute = require("./routes/paystack.route");
 const trailRoute = require("./routes/auditTrail");
 const authRoute = require("./routes/auth.route");
-const notificationRoute = require("./routes/notification");
+const notificationRoute = require("./routes/notification.route");
 const mongoose = require("mongoose");
 const cors = require("cors");
 
@@ -70,7 +70,7 @@ app.use("/api/mandate", mandateRoute);
 app.use("/api", paystackRoute);
 app.use("/api/audit_trails", trailRoute);
 app.use("/api/requests", requestRoute);
-app.use("/api/notification", notificationRoute);
+app.use("/api/notifications", notificationRoute);
 
 
 app.use(function (req, res, next) {
@@ -84,14 +84,7 @@ app.use(function (err, req, res, next) {
   res.render("error");
 });
 
-app.use((req, res, next) => {
-  res
-    .status(404)
-    .json({
-      message:
-        "404 error! The endpoint is not available on the server. Kindly cross check the url",
-    });
-});
+
 app.use((req, res, next) => {
   if (res.headersSent) {
     return next()
