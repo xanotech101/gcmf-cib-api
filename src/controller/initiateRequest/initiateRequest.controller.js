@@ -1,10 +1,10 @@
 const Mandate = require("../../model/mandate.model");
 const InitiateRequest = require("../../model/initiateRequest.model");
 const AuditTrail = require("../../model/auditTrail");
-const Notification = require("../../model/notification");
 const { validateInitiateRequestSchema } = require("../../utils/utils");
 const { sendEmail } = require("../../utils/emailService");
 const { PER_PAGE } = require("../../utils/constants");
+const notificationService = require("../../services/notification.service");
 const mongoose = require("mongoose");
 
 const initiateRequest = async (req, res) => {
@@ -44,19 +44,18 @@ const initiateRequest = async (req, res) => {
 
     const result = await request.save();
 
+    const notificationsToCreate = [];
+    for (const authorizer of mandate.authorizers) {
 
-    for (let i = 0; i < mandate.authorizers.length; i++) {
-      const authorizer = mandate.authorizers[i];
+      const notification = {
+        title: "Transaction request Initiated",
+        transaction: result._id,
+        user: authorizer._id,
+        message: "A transaction request was initiated and is awaiting your approval",
+      };
 
-      //In-app authorizers
-    let notification = new Notification({
-      transaction: result._id,
-      userID : authorizer._id,
-      message: "A request has been initiated. Kindly review",
-    });
-      
-      await notification.save();
-      
+      notificationsToCreate.push(notification);
+
       //Mail notification
       const subject = "Loan Request Initiated";
       const message = `
@@ -64,24 +63,25 @@ const initiateRequest = async (req, res) => {
           <p> Dear ${authorizer.firstName}. A request was initiated.</p>
           <p>Kindly login to your account to view</p>
         `;
-       
-      await sendEmail(authorizer.email, subject, message);
 
+      await sendEmail(authorizer.email, subject, message);
     }
-   
-    const auditTrail = new AuditTrail({
+
+    // create all the notifications at once
+    await notificationService.createNotifications(notificationsToCreate);
+
+    // create audit trail
+    await AuditTrail.create({
       type: "transaction",
       transaction: result._id,
     });
 
-    await auditTrail.save();
-
     return res.status(201).json({
-      message: "Initiate request successfully sent for approval",
+      message: "Request initiated successfully and sent for approval",
       data: result,
     });
+
   } catch (error) {
-    console.log(error);
     res.status(500).json({
       message: error.message,
       status: "failed",
@@ -116,25 +116,25 @@ const declineRequest = async (req, res) => {
       });
     }
 
-    console.log("request", request);
-
-    const notification = new Notification({
-      status: "declined",
-      userID: req.user._id,
-      // initiator: req.user._id,
-      transaction: request._id,
-      authorizers: [userId],
-      organization: req.user.organizationID,
-    });
-
-    await notification.save();
+    // TODO: confirm who gets notified when a request is declined
+    await notificationService.createNotifications([
+      {
+        transaction: request._id,
+        user: req.initiator,
+        message: "Your request has been declined",
+      }
+    ])
 
     return res.status(200).json({
       message: "Request declined successfully",
+      status: "success",
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ 
+      message: error.message,
+      status: "failed"
+    });
   }
 };
 
@@ -160,23 +160,25 @@ const approveRequest = async (req, res) => {
       });
     }
 
-    const notification = new Notification({
-      status: "approved",
-      userID: req.user._id,
-      // initiator: req.user._id,
-      transaction: request._id,
-      authorizers: [userId],
-      organization: req.user.organizationID,
-    });
-
-    await notification.save();
+    // TODO: confirm who gets notified when a request is declined
+    await notificationService.createNotifications([
+      {
+        transaction: request._id,
+        user: req.initiator,
+        message: "Your request has been approved",
+      }
+    ])
 
     return res.status(200).json({
       message: "Request declined successfully",
+      status: "success",
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ 
+      message: error.message,
+      status: "failed"
+    });
   }
 };
 
