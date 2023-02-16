@@ -66,7 +66,6 @@ const initiateRequest = async (req, res) => {
         `;
        
       await sendEmail(authorizer.email, subject, message);
-
     }
    
     const auditTrail = new AuditTrail({
@@ -91,24 +90,12 @@ const initiateRequest = async (req, res) => {
 
 const declineRequest = async (req, res) => {
   try {
+
     const _id = req.params.id;
     const userId = req.user._id;
 
-    const request = await InitiateRequest.findOneAndUpdate(
-      { _id },
-      {
-        $push: {
-          authorizersAction: {
-            status: "rejected",
-            authorizerID: userId,
-            reason: req.body.reason,
-          },
-        },
-        status: "in progress",
-      },
-      { new: true }
-    );
-
+  const request = await InitiateRequest.findById(_id);
+ 
     if (!request) {
       return res.status(404).json({
         message: "Request not found",
@@ -116,18 +103,39 @@ const declineRequest = async (req, res) => {
       });
     }
 
-    console.log("request", request);
+   for (let i = 0; i < request.authorizersAction.length; i++) {
+      let transaction = request.authorizersAction[i];
+      if (transaction.authorizerID == req.user._id && transaction.status === "rejected") {
+        return res.status(404).json({
+          message: "You have already rejected this request",
+          status: "failed",
+        });
+      } else if (
+        transaction.authorizerID == req.user._id &&
+        transaction.status === "authorised"
+      ) {
+        transaction.status = "rejected";
+        transaction.reason = req.body.reason;
+      }
+   }
+    
+    request.authorizersAction.push(
+      {
+        status: "rejected",
+        authorizerID: userId,
+        reason: req.body.reason
+      }
+    )
 
+    await request.save();
+    //In-app authorizers
     const notification = new Notification({
-      status: "declined",
-      userID: req.user._id,
-      // initiator: req.user._id,
       transaction: request._id,
-      authorizers: [userId],
-      organization: req.user.organizationID,
+      userID: request.initiator,
+      message: "A request has been initiated. Kindly review",
     });
-
     await notification.save();
+
 
     return res.status(200).json({
       message: "Request declined successfully",
@@ -144,35 +152,47 @@ const approveRequest = async (req, res) => {
     const userId = req.user._id;
 
     const request = await InitiateRequest.findById(_id);
-    const user = await User.findById(userId);
 
-    request.isApproved = "approved";
-    request.approval.push(userId);
-
-    // if (req.approval.length => 1 && req.approval) {
-
-    await request.save();
-
-    if (!request) {
-      return res.status(404).json({
-        message: "Request not found",
-        status: "failed",
-      });
+        if (!request) {
+          return res.status(404).json({
+            message: "Request not found",
+            status: "failed",
+          });
+        }
+    
+    for (let i = 0; i < request.authorizersAction.length; i++) {
+      let transaction = request.authorizersAction[i];
+      if (transaction.authorizerID == req.user._id && transaction.status === "authorised") {
+        return res.status(404).json({
+          message: "You have already approved this transaction",
+          status: "failed",
+        });
+      } else if (
+        transaction.authorizerID == req.user._id &&
+        transaction.status === "rejected"
+      ) {
+        transaction.status = "authorised";
+        delete transaction.reason
+      }
     }
 
+  request.authorizersAction.push({
+    status: "authorised",
+    authorizerID: userId,
+    reason: ""
+  });
+    
+ await request.save();
+    //In-app authorizers
     const notification = new Notification({
-      status: "approved",
-      userID: req.user._id,
-      // initiator: req.user._id,
       transaction: request._id,
-      authorizers: [userId],
-      organization: req.user.organizationID,
+      userID: request.initiator,
+      message: "A request has been initiated. Kindly review",
     });
-
     await notification.save();
 
     return res.status(200).json({
-      message: "Request declined successfully",
+      message: "Request approved successfully",
     });
   } catch (error) {
     console.log(error);

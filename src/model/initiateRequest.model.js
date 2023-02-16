@@ -37,7 +37,8 @@ const initiateRequestSchema = new mongoose.Schema(
           authorizerID: {
             type: mongoose.Schema.Types.ObjectID,
             ref: "User",
-          },
+        },
+          reason: String,
         },
       ],
     time: Date,
@@ -51,4 +52,3 @@ module.exports = mongoose.model("InitiateRequest", initiateRequestSchema);
 
 
 
-status: ap
