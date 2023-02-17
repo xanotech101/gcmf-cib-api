@@ -148,8 +148,6 @@ const declineRequest = async (req, res) => {
       });
     }
 
-
-
     await notificationService.createNotifications([
       {
         transaction: request._id,
@@ -172,7 +170,6 @@ const declineRequest = async (req, res) => {
 
       request.status = "awaiting verification";
     }
-
 
         await request.save();
     return res.status(200).json({

@@ -22,7 +22,6 @@ if (process.env.NODE_ENV == 'development') {
   
   URI = "mongodb://localhost/xanotech";
 } else  {
-
     URI = process.env.MONGO_URI;
 }
 
