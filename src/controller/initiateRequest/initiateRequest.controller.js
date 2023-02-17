@@ -133,7 +133,7 @@ const declineRequest = async (req, res) => {
       });
     }
 
-    await request.save();
+
 
     await notificationService.createNotifications([
       {
@@ -154,8 +154,12 @@ const declineRequest = async (req, res) => {
           message: "New request require your review",
         },
       ]);
+
+      request.status = "awaiting verification";
     }
 
+
+        await request.save();
     return res.status(200).json({
       message: "Request declined successfully",
       status: "success",
@@ -211,7 +215,7 @@ const approveRequest = async (req, res) => {
       });
     }
 
-    await request.save();
+  
 
     await notificationService.createNotifications([
       {
@@ -231,7 +235,11 @@ const approveRequest = async (req, res) => {
           message: "New request require your review",
         },
       ]);
+
+request.status = "awaiting verification";
     }
+
+      await request.save();
 
     return res.status(200).json({
       message: "Request approved successfully",
@@ -486,6 +494,92 @@ const getRequestById = async (req, res) => {
   }
 };
 
+
+
+
+const verifierApprovalRequest = async (req, res) => {
+  try {
+    const _id = req.params.id;
+    const userId = req.user._id;
+
+    const request = await InitiateRequest.findById(_id);
+
+    if (!request) {
+      return res.status(404).json({
+        message: "Request not found",
+        status: "failed",
+      });
+    }
+
+    request.status = "approved";
+
+    await request.save();
+
+    await notificationService.createNotifications([
+      {
+        transaction: request._id,
+        user: request.initiator,
+        title: "Request Verified",
+        message: "Your request has been verified",
+      },
+    ]);
+
+    return res.status(200).json({
+      message: "Request verified successfully",
+      status: "success",
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: error.message,
+      status: "failed",
+    });
+  }
+};
+
+
+
+
+const verifierDeclineRequest = async (req, res) => {
+  try {
+    const _id = req.params.id;
+    const userId = req.user._id;
+
+    const request = await InitiateRequest.findById(_id);
+
+    if (!request) {
+      return res.status(404).json({
+        message: "Request not found",
+        status: "failed",
+      });
+    }
+
+    request.status = "declined";
+
+    await request.save();
+
+    await notificationService.createNotifications([
+      {
+        transaction: request._id,
+        user: request.initiator,
+        title: "Request not Verified",
+        message: "Your request has been declined",
+      },
+    ]);
+
+    return res.status(200).json({
+      message: "Request declined successfully",
+      status: "success",
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: error.message,
+      status: "failed",
+    });
+  }
+};
+
 module.exports = {
   initiateRequest,
   declineRequest,
@@ -494,4 +588,6 @@ module.exports = {
   getAllRequest,
   getRequestById,
   getAllAuthorizerRequests,
+  verifierDeclineRequest,
+  verifierApprovalRequest,
 };

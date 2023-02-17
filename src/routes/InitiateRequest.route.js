@@ -3,6 +3,7 @@ const {
   adminAuth,
   initiatorAuth,
   authoriserAuth,
+  verifierAuth,
 } = require("../middleware/auth");
 
 const upload = require("../middleware/multer");
@@ -15,6 +16,8 @@ const {
   getAllRequest,
   getAllInitiatorRequests,
   getRequestById,
+  verifierApprovalRequest,
+  verifierDeclineRequest,
 } = require("../controller/initiateRequest/initiateRequest.controller");
 const batchUpload = require("../controller/batchUpload");
 
@@ -25,8 +28,11 @@ router.post("/initiate", initiatorAuth, initiateRequest);
 router.get("/initiator", initiatorAuth, getAllInitiatorRequests);
 
 // update request
-router.put("/approve/:id", authoriserAuth, approveRequest);
-router.put("/decline/:id", authoriserAuth, declineRequest);
+router.put("authoriser/approve/:id", authoriserAuth, approveRequest);
+router.put("authoriser/decline/:id", authoriserAuth, declineRequest);
+
+router.put("verifier/decline/:id", verifierAuth, verifierApprovalRequest);
+router.put("verifier/approve/:id", verifierAuth, verifierDeclineRequest);
 
 // bulk upload request
 router.post("/upload", upload.single("file"), initiatorAuth, batchUpload);
@@ -41,3 +47,5 @@ router.get("/allrequests", adminAuth, getAllRequest);
 router.get("/:id", authoriserAuth, getRequestById);
 
 module.exports = router;
+
+
