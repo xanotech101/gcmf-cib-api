@@ -1,4 +1,5 @@
 const express = require("express");
+const router = express.Router();
 const {
   adminAuth,
   initiatorAuth,
@@ -7,7 +8,7 @@ const {
 } = require("../middleware/auth");
 
 const upload = require("../middleware/multer");
-const router = express.Router();
+
 const {
   initiateRequest,
   declineRequest,
