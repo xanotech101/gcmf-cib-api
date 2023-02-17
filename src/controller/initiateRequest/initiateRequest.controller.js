@@ -158,7 +158,6 @@ const declineRequest = async (req, res) => {
         message: "Your request has been approved",
       },
     ]);
-    await notification.save();
 
     if (request.authorizersAction.length === request.numberOfAuthorisers) {
       await notificationService.createNotifications([
@@ -477,12 +476,19 @@ const getRequestById = async (req, res) => {
     const request = await InitiateRequest.findOne({ _id })
       .populate({
         path: "mandate",
-        select: "maxAmount minAmount authorizers",
-        populate: {
-          path: "authorizers",
-          model: "User",
-          select: "firstName lastName email",
-        },
+        select: "maxAmount minAmount authorizers verifier",
+        populate: [
+          {
+            path: "authorizers",
+            model: "User",
+            select: "firstName lastName",
+          },
+          {
+            path: "verifier",
+            model: "User",
+            select: "firstName lastName",
+          },
+        ],
       })
       .populate({
         path: "initiator",
