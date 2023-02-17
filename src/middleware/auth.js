@@ -185,7 +185,8 @@ function allUsersAuth(req, res, next) {
       !arr.includes("verifier") &&
       !arr.includes("superUser") &&
       !arr.includes("admin") &&
-      !arr.includes("initiator")
+      !arr.includes("initiator") &&
+      !arr.includes("authoriser")
     ) {
       return res.status(403).json({
         message: "Access denied. You are not authorized to perform this action",
