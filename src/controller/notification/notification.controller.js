@@ -130,7 +130,7 @@ const markNotificationsAsRead = async (req, res) => {
   try {
     await Notification.updateMany(
       {
-        user:mongoose.Types.ObjectId(user),
+        user: mongoose.Types.ObjectId(user),
         _id: { $in: notifications },
       },
       { read: true }

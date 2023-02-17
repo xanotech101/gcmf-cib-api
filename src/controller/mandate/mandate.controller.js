@@ -180,9 +180,13 @@ const getAllMandates = async (req, res) => {
 const getSingleMandate = async (req, res) => {
   const id = req.params.id;
   try {
-    const mandate = await Mandate.findById(id.toString()).populate(
-      "authorizers"
-    );
+    const mandate = await Mandate.findById(id.toString()).populate({
+      path: "authorizers",
+      select: "firstName lastName email",
+    }).populate({
+      path: "verifier",
+      select: "firstName lastName email",
+    })
 
     return res.status(200).json({
       message: "Request Successful",
