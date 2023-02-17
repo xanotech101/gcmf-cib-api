@@ -6,6 +6,9 @@ const { sendEmail } = require("../../utils/emailService");
 const { PER_PAGE } = require("../../utils/constants");
 const notificationService = require("../../services/notification.service");
 const mongoose = require("mongoose");
+const { sendSMS } = require("../../services/sms.service");
+
+
 
 const initiateRequest = async (req, res) => {
   try {
@@ -29,7 +32,7 @@ const initiateRequest = async (req, res) => {
       maxAmount: { $gte: request.amount },
     }).populate({
       path: "authorizers",
-      select: "firstName lastName email",
+      select: "firstName lastName email phone",
     });
 
     if (!mandate) {
@@ -65,9 +68,21 @@ const initiateRequest = async (req, res) => {
           <p> Dear ${authorizer.firstName}. A request was initiated.</p>
           <p>Kindly login to your account to view</p>
         `;
-
+      const smsBody = `Dear ${authorizer.firstName}. A request has been sent for your authorization.`;
       await sendEmail(authorizer.email, subject, message);
+console.log("phone", `${authorizer.phone}`);
+
+      
+      let numWithCountryCode;
+      const num = `${authorizer.phone}`;
+      if (num.startsWith("0")) {
+        numWithCountryCode = num.replace("0", "+234");
+      }
+
+      console.log(numWithCountryCode);
+      await sendSMS(numWithCountryCode, smsBody);
     }
+
 
     // create all the notifications at once
     await notificationService.createNotifications(notificationsToCreate);
