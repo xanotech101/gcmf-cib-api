@@ -8,8 +8,6 @@ const notificationService = require("../../services/notification.service");
 const mongoose = require("mongoose");
 const { sendSMS } = require("../../services/sms.service");
 
-
-
 const initiateRequest = async (req, res) => {
   try {
     const { error } = validateInitiateRequestSchema(req.body);
@@ -62,17 +60,18 @@ const initiateRequest = async (req, res) => {
       notificationsToCreate.push(notification);
 
       //Mail notification
-      const subject = "Loan Request Initiated";
+      const subject = "Transaction Request Initiated";
       const message = `
-          <h3>Loan Request Initiated</h3>
-          <p> Dear ${authorizer.firstName}. A request was initiated.</p>
-          <p>Kindly login to your account to view</p>
+          <h3>Transaction Request Initiated</h3>
+          <p> Dear ${authorizer.firstName}. The below request was initiated for your authorization.</p>
+          <p>TransactionID: ${result._id}</p>
+          <p>Amount: ${result.amount}</p>
+          <p>Kindly login to your account to review</p>
         `;
       const smsBody = `Dear ${authorizer.firstName}. A request has been sent for your authorization.`;
       await sendEmail(authorizer.email, subject, message);
-console.log("phone", `${authorizer.phone}`);
+      console.log("phone", `${authorizer.phone}`);
 
-      
       let numWithCountryCode;
       const num = `${authorizer.phone}`;
       if (num.startsWith("0")) {
@@ -82,7 +81,6 @@ console.log("phone", `${authorizer.phone}`);
       console.log(numWithCountryCode);
       await sendSMS(numWithCountryCode, smsBody);
     }
-
 
     // create all the notifications at once
     await notificationService.createNotifications(notificationsToCreate);
@@ -170,7 +168,7 @@ const declineRequest = async (req, res) => {
       request.status = "awaiting verification";
     }
 
-        await request.save();
+    await request.save();
     return res.status(200).json({
       message: "Request declined successfully",
       status: "success",
@@ -226,8 +224,6 @@ const approveRequest = async (req, res) => {
       });
     }
 
-  
-
     await notificationService.createNotifications([
       {
         transaction: request._id,
@@ -247,10 +243,10 @@ const approveRequest = async (req, res) => {
         },
       ]);
 
-request.status = "awaiting verification";
+      request.status = "awaiting verification";
     }
 
-      await request.save();
+    await request.save();
 
     return res.status(200).json({
       message: "Request approved successfully",
@@ -512,9 +508,6 @@ const getRequestById = async (req, res) => {
   }
 };
 
-
-
-
 const verifierApprovalRequest = async (req, res) => {
   try {
     const _id = req.params.id;
@@ -554,9 +547,6 @@ const verifierApprovalRequest = async (req, res) => {
     });
   }
 };
-
-
-
 
 const verifierDeclineRequest = async (req, res) => {
   try {
