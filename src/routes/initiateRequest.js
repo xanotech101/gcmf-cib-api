@@ -29,8 +29,8 @@ router.post("/initiate", initiatorAuth, initiateRequest);
 router.get("/initiator", initiatorAuth, getAllInitiatorRequests);
 
 // update request
-router.put("authoriser/approve/:id", authoriserAuth, approveRequest);
-router.put("authoriser/decline/:id", authoriserAuth, declineRequest);
+router.put("/authoriser/approve/:id", authoriserAuth, approveRequest);
+router.put("/authoriser/decline/:id", authoriserAuth, declineRequest);
 
 router.put("verifier/decline/:id", verifierAuth, verifierApprovalRequest);
 router.put("verifier/approve/:id", verifierAuth, verifierDeclineRequest);

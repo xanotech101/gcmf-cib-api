@@ -344,7 +344,7 @@ const getAllAuthorizerRequests = async (req, res) => {
       {
         $lookup: {
           from: "mandates",
-          localField: "mandateID",
+          localField: "mandate",
           foreignField: "_id",
           as: "mandate",
         },

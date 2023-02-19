@@ -135,6 +135,17 @@ const getAllMandates = async (req, res) => {
         },
       },
       {
+        $lookup: {
+          from: "users",
+          localField: "verifier",
+          foreignField: "_id",
+          as: "verifier",
+        },
+      },
+      {
+        $unwind: "$verifier",
+      },
+      {
         $facet: {
           data: [
             {
@@ -180,13 +191,16 @@ const getAllMandates = async (req, res) => {
 const getSingleMandate = async (req, res) => {
   const id = req.params.id;
   try {
-    const mandate = await Mandate.findById(id.toString()).populate({
-      path: "authorizers",
-      select: "firstName lastName email",
-    }).populate({
-      path: "verifier",
-      select: "firstName lastName email",
-    })
+    const mandate = await Mandate.findById(id.toString()).populate([
+      {
+        path: "authorizers",
+        select: "firstName lastName",
+      }, 
+      {
+        path: "verifier",
+        select: "firstName lastName"
+      }
+    ])
 
     return res.status(200).json({
       message: "Request Successful",

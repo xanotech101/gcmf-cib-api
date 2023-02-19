@@ -13,6 +13,12 @@ const getAllAuditTrail = async (req, res) => {
   try {
     const result = await AuditTrail.aggregate([
       {
+        $lookup: {
+          from: "users",
+          localField: "user",
+          foreignField: "_id",
+          as: "user",
+        },
         $facet: {
           data: [
             {
@@ -67,6 +73,27 @@ const getOrganizationAuditTrail = async (req, res) => {
     const result = await AuditTrail.aggregate([
       {
         $match: { organization: req.user.organization }
+      },
+      {
+        
+        $lookup: {
+          from: "users",
+          localField: "user",
+          foreignField: "_id",
+          as: "user",
+          pipeline: [
+            {
+              $project: {
+                _id: 1,
+                firstName: 1,
+                lastName: 1,
+              }
+            }
+          ]
+        },
+      },
+      {
+        $unwind: "$user"
       },
       {
         $facet: {
