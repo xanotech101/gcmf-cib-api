@@ -68,18 +68,9 @@ const initiateRequest = async (req, res) => {
           <p>Amount: ${result.amount}</p>
           <p>Kindly login to your account to review</p>
         `;
-      const smsBody = `Dear ${authorizer.firstName}. A request has been sent for your authorization.`;
+
       await sendEmail(authorizer.email, subject, message);
-      console.log("phone", `${authorizer.phone}`);
-
-      let numWithCountryCode;
-      const num = `${authorizer.phone}`;
-      if (num.startsWith("0")) {
-        numWithCountryCode = num.replace("0", "+234");
-      }
-
-      console.log(numWithCountryCode);
-      await sendSMS(numWithCountryCode, smsBody);
+      
     }
 
     // create all the notifications at once
@@ -195,6 +186,17 @@ const approveRequest = async (req, res) => {
         status: "failed",
       });
     }
+
+  const smsBody = `Dear ${authorizer.firstName}. A request has been sent for your authorization.`;
+  console.log("phone", `${authorizer.phone}`);
+
+  let numWithCountryCode;
+  const num = `${authorizer.phone}`;
+  if (num.startsWith("0")) {
+    numWithCountryCode = num.replace("0", "+234");
+  }
+
+  await sendSMS(numWithCountryCode, smsBody);
 
     let duplicate = false;
     for (let i = 0; i < request.authorizersAction.length; i++) {
