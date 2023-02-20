@@ -2,6 +2,7 @@ const { sendSMS } = require("../../services/sms.service");
 const crypto = require("crypto");
 const User = require("../../model/user.model");
 const { sendEmail } = require("../../utils/emailService");
+const Otp = require("../../model/otp.model");
 
 const generateOTP = async (req, res) => {
   try {
@@ -16,15 +17,21 @@ const generateOTP = async (req, res) => {
     if (num.startsWith("0")) {
       num = num.replace("0", "+234");
     }
-    console.log("num", num, typeof num);
     await sendSMS(num, smsBody);
+
+    const newOtp = new Otp({
+      user: id,
+      isActive: false,
+      context: "authorise-request",
+    });
+
+    await newOtp.save();
+
 
     const subject = "Verification Code";
     const message = `${user.firstName}, Your GCMB confirmation OTP code is ${otp}.`;
-    
-    console.log("sms sent");
+
     await sendEmail(user.email, subject, message);
-    console.log("email sent");
     res.status(200).json({
       message: "Successfully sent otp code",
       data: otp,
