@@ -7,7 +7,7 @@ const Otp = require("../../model/otp.model");
 const generateOTP = async (req, res) => {
   try {
     const id = req.user._id;
-    const user = await User.findById(id);
+    const user = await User.findById(id)
     console.log(user);
 
     const otp = crypto.randomBytes(3).toString("hex");
@@ -21,8 +21,8 @@ const generateOTP = async (req, res) => {
 
     const newOtp = new Otp({
       user: id,
-      isActive: false,
-      context: "authorise-request",
+      context: 'transaction-request',
+      otp
     });
 
     await newOtp.save();

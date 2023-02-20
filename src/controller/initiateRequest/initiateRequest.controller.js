@@ -6,6 +6,8 @@ const { sendEmail } = require("../../utils/emailService");
 const { PER_PAGE } = require("../../utils/constants");
 const notificationService = require("../../services/notification.service");
 const mongoose = require("mongoose");
+const Otp = require("../../model/otp.model");
+
 
 const initiateRequest = async (req, res) => {
   try {
@@ -107,6 +109,20 @@ const declineRequest = async (req, res) => {
       });
     }
 
+          const otpDetails = await Otp.findOne({
+            otp: req.body.otp,
+            user: userId,
+          });
+          if (!otpDetails) {
+            return res.status(404).json({
+              message: "OTP is incorrect or used",
+              status: "failed",
+            });
+          }
+
+          otpDetails.otp = null;
+    await otpDetails.save();
+    
     let duplicate = false;
     for (let i = 0; i < request.authorizersAction.length; i++) {
       let transaction = request.authorizersAction[i];
@@ -177,6 +193,7 @@ const approveRequest = async (req, res) => {
     const _id = req.params.id;
     const userId = req.user._id;
 
+
     const request = await InitiateRequest.findById(_id);
 
     if (!request) {
@@ -186,7 +203,18 @@ const approveRequest = async (req, res) => {
       });
     }
 
-
+      const otpDetails = await Otp.findOne({ otp: req.body.otp, user: userId });
+    if (!otpDetails) {
+        return res.status(404).json({
+          message: "OTP is incorrect or used",
+          status: "failed",
+         
+        });
+    }
+    
+    otpDetails.otp = null;
+    await otpDetails.save();
+    
     let duplicate = false;
     for (let i = 0; i < request.authorizersAction.length; i++) {
       let transaction = request.authorizersAction[i];
@@ -214,6 +242,9 @@ const approveRequest = async (req, res) => {
         authorizerID: userId,
       });
     }
+
+  
+
 
     await notificationService.createNotifications([
       {

@@ -6,8 +6,12 @@ const otpSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectID,
       ref: "User",
     },
-    isActive: Boolean,
-    context: Srting,
+    transaction: {
+      type: mongoose.Schema.Types.ObjectID,
+      ref: "InitiateRequest",
+    },
+    context: String,
+    otp: String,
   },
   {
     timestamps: true,

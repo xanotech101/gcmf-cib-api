@@ -35,6 +35,7 @@ const userSchema = new mongoose.Schema(
       required: true,
       enum: ['super-admin', 'admin', 'user']
     },
+    token : String,
   },
   {
     timestamps: true,

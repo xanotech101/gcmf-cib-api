@@ -132,6 +132,7 @@ const verifyUser = async (req, res) => {
       });
     }
 
+    
     const user = await User.findOne({ email: mail.user_email });
 
     if (!user) {
@@ -143,9 +144,11 @@ const verifyUser = async (req, res) => {
     }
 
     if (user.isVerified) return res.status(400).json({ message: "User is already verified on the platform" });
+    if (user.token == null) return res.status(400).json({ message: "Invalid token" });
       
       
     user.isVerified = true;
+    user.token = null;
     await user.save();
 
     return res.status(200).json({
@@ -240,6 +243,8 @@ const registerUser = async (req, res) => {
         expiresIn: "30m",
       }
     );
+
+    user.token = token;
 
     const link = `${process.env.FRONTEND_URL}/verify-account/${token}`;
 
