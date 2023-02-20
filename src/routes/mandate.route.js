@@ -21,9 +21,9 @@ router.post(
   superUserAuth,
   registerMandate
 );
-router.post("/update", superUserAuth, updateMandate);
-router.get("/all", allUsersAuth, getAllMandates);
-router.get("/:id", getSingleMandate);
+router.put("/update", adminAuth, updateMandate);
+router.get("/all", adminAuth, getAllMandates);
+router.get("/:id", adminAuth);
 
 
 

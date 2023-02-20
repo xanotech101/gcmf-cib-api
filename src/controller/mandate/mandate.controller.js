@@ -18,6 +18,7 @@ const registerMandate = async (req, res) => {
     let amount = await Mandate.find({}).select("minAmount maxAmount");
 
     let mandateCheckFailed;
+    let overlap = {};
 
     if (amount.length > 0) {
       amount.map((item) => {
@@ -28,6 +29,9 @@ const registerMandate = async (req, res) => {
             item.maxAmount >= req.body.maxAmount)
         ) {
           mandateCheckFailed = true;
+            overlap.minAmount = item.minAmount;
+            overlap.maxAmount = item.maxAmount;
+            overlap.name = item.name;
         }
       });
       console.log(mandateCheckFailed);
@@ -35,7 +39,7 @@ const registerMandate = async (req, res) => {
       if (mandateCheckFailed) {
         return res.status(400).json({
           message:
-            "Mandate amount is overlapping with amount registered in another mandate",
+                `Mandate amount is overlapping an already registered mandate which is ${overlap.name} with minimum amount of ${overlap.minAmount} and maximum amount of ${overlap.maxAmount}`,
           status: "failed",
         });
       }
@@ -73,9 +77,11 @@ const updateMandate = async (req, res) => {
 
     const mandate = await Mandate.findOne({ name: req.body.name });
 
-    let amount = await Mandate.find({}).select("minAmount maxAmount");
+    let amount = await Mandate.find({}).select("minAmount maxAmount name");
 
     let mandateCheckFailed;
+
+    let overlap = {};
 
     amount.map((item) => {
       if (
@@ -85,14 +91,18 @@ const updateMandate = async (req, res) => {
           (item.minAmount <= req.body.maxAmount &&
             item.maxAmount >= req.body.maxAmount))
       ) {
+
         mandateCheckFailed = true;
+        overlap.minAmount = item.minAmount;
+        overlap.maxAmount = item.maxAmount;
+        overlap.name = item.name;
       }
     });
-    console.log(mandateCheckFailed);
+
     if (mandateCheckFailed)
       return res.status(400).json({
         message:
-          "Mandate amount is overlapping with amount registered in another mandate",
+          `Mandate amount is overlapping an already registered mandate which is ${overlap.name} with minimum amount of ${overlap.minAmount} and maximum amount of ${overlap.maxAmount}` 
       });
 
     mandate.name = req.body.name;

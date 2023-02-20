@@ -6,7 +6,6 @@ const { sendEmail } = require("../../utils/emailService");
 const { PER_PAGE } = require("../../utils/constants");
 const notificationService = require("../../services/notification.service");
 const mongoose = require("mongoose");
-const { sendSMS } = require("../../services/sms.service");
 
 const initiateRequest = async (req, res) => {
   try {
@@ -187,16 +186,6 @@ const approveRequest = async (req, res) => {
       });
     }
 
-  const smsBody = `Dear ${authorizer.firstName}. A request has been sent for your authorization.`;
-  console.log("phone", `${authorizer.phone}`);
-
-  let numWithCountryCode;
-  const num = `${authorizer.phone}`;
-  if (num.startsWith("0")) {
-    numWithCountryCode = num.replace("0", "+234");
-  }
-
-  await sendSMS(numWithCountryCode, smsBody);
 
     let duplicate = false;
     for (let i = 0; i < request.authorizersAction.length; i++) {

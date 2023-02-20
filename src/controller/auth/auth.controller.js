@@ -83,10 +83,10 @@ const forgetPassword = async (req, res) => {
 
     //Email Details
     const token = jwt.sign(
-      { user_email: user.email },
+      { user_email: user.email, user_password : user.password },
       process.env.EMAIL_SECRET,
       {
-        expiresIn: "15m",
+        expiresIn: "10m",
       }
     );
 
@@ -142,6 +142,9 @@ const verifyUser = async (req, res) => {
       });
     }
 
+    if (user.isVerified) return res.status(400).json({ message: "User is already verified on the platform" });
+      
+      
     user.isVerified = true;
     await user.save();
 
@@ -165,8 +168,11 @@ const resetPassword = async (req, res) => {
     const { password, token } = req.body;
     const decoded = jwt.verify(token, process.env.EMAIL_SECRET);
     let userEmail = decoded.user_email;
+    let userPassword = decoded.user_password;
 
     const user = await User.findOne({ email: userEmail });
+    const validPassword = await bcrypt.compare(password, userPassword);
+    if (!validPassword) return res.status(400).json({ message: "Invalid token. Kindly use the reset link again" });
 
     //Hash password
     const salt = await bcrypt.genSalt(10);
