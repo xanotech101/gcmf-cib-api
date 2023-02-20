@@ -99,6 +99,7 @@ const declineRequest = async (req, res) => {
   try {
     const _id = req.params.id;
     const userId = req.user._id;
+    console.log(req.user);
 
     const request = await InitiateRequest.findById(_id);
 
@@ -156,10 +157,19 @@ const declineRequest = async (req, res) => {
       {
         transaction: request._id,
         user: request.initiator,
-        title: "Transaction Request Initiated",
-        message: "Your request has been approved",
+        title: "Transaction Request Declined",
+        message:
+          `An authoriser has declined your transaction request for ${request.customerName}`,
+      },
+      {
+        transaction: request._id,
+        user: request.verifier,
+        title: "Transaction Request Declined",
+        message: `An authoriser declined transaction request for ${request.customerName}`,
       },
     ]);
+
+        request.status = "pending";
 
     if (request.authorizersAction.length === request.numberOfAuthorisers) {
       await notificationService.createNotifications([
@@ -167,7 +177,7 @@ const declineRequest = async (req, res) => {
           transaction: request._id,
           user: request.verifier,
           title: "Verification Required",
-          message: "New request require your review",
+          message: "New transaction request require your review",
         },
       ]);
 
@@ -246,27 +256,36 @@ const approveRequest = async (req, res) => {
   
 
 
-    await notificationService.createNotifications([
+       await notificationService.createNotifications([
       {
         transaction: request._id,
         user: request.initiator,
-        title: "Request Approved",
-        message: "An authoriser has approved your request",
+        title: "Transaction Request Approved",
+        message:
+          `An authoriser has approved your transaction request for ${request.customerName}`,
+      },
+      {
+        transaction: request._id,
+        user: request.verifier,
+        title: "Transaction Request Approved",
+        message: `An authoriser approved transaction request for ${request.customerName}`,
       },
     ]);
 
-    if (request.authorizersAction.length === request.numberOfAuthorisers) {
-      await notificationService.createNotifications([
-        {
-          transaction: request._id,
-          user: request.verifier,
-          title: "Verification Required",
-          message: "New request require your review",
-        },
-      ]);
+    request.status = "pending";
+    
+       if (request.authorizersAction.length === request.numberOfAuthorisers) {
+         await notificationService.createNotifications([
+           {
+             transaction: request._id,
+             user: request.verifier,
+             title: "Verification Required",
+             message: "New transaction request require your review",
+           },
+         ]);
 
-      request.status = "awaiting verification";
-    }
+         request.status = "awaiting verification";
+       }
 
     await request.save();
 
@@ -555,6 +574,13 @@ const verifierApprovalRequest = async (req, res) => {
         title: "Request Verified",
         message: "Your request has been verified",
       },
+
+      {
+        transaction: request._id,
+        user: request.verifier,
+        title: "Request not Verified",
+        message: "Your request has been declined",
+      },
     ]);
 
     return res.status(200).json({
@@ -595,8 +621,17 @@ const verifierDeclineRequest = async (req, res) => {
         title: "Request not Verified",
         message: "Your request has been declined",
       },
+
+      {
+        transaction: request._id,
+        user: request.verifier,
+        title: "Request not Verified",
+        message: "Your request has been declined",
+      },
     ]);
 
+     
+    
     return res.status(200).json({
       message: "Request declined successfully",
       status: "success",

@@ -17,7 +17,7 @@ const {
   getAllRequest,
   getAllInitiatorRequests,
   getRequestById,
-  verifierApprovalRequest,
+  verifierApprovalRequest,  
   verifierDeclineRequest,
 } = require("../controller/initiateRequest/initiateRequest.controller");
 const batchUpload = require("../controller/batchUpload");
