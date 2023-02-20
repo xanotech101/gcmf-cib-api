@@ -32,13 +32,13 @@ const initiateRequestSchema = new mongoose.Schema(
       default: "pending",
     },
     numberOfAuthorisers: Number,
-    authorizersAction: [
+    authorisersAction: [
       {
         status: {
           type: String,
           enum: ["authorised", "rejected"],
         },
-        authorizerID: {
+        authoriserID: {
           type: mongoose.Schema.Types.ObjectID,
           ref: "User",
         },

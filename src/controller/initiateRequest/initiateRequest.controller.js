@@ -30,7 +30,7 @@ const initiateRequest = async (req, res) => {
       minAmount: { $lte: request.amount },
       maxAmount: { $gte: request.amount },
     }).populate({
-      path: "authorizers",
+      path: "authorisers",
       select: "firstName lastName email phone",
     });
 
@@ -45,15 +45,14 @@ const initiateRequest = async (req, res) => {
     request.initiator = req.user._id;
     request.verifier = mandate.verifier;
 
-    request.numberOfAuthorisers = mandate.authorizers.length;
     const result = await request.save();
 
     const notificationsToCreate = [];
-    for (const authorizer of mandate.authorizers) {
+    for (const authoriser of mandate.authorisers) {
       const notification = {
         title: "Transaction request Initiated",
         transaction: result._id,
-        user: authorizer._id,
+        user: authoriser._id,
         message:
           "A transaction request was initiated and is awaiting your approval",
       };
@@ -64,13 +63,13 @@ const initiateRequest = async (req, res) => {
       const subject = "Transaction Request Initiated";
       const message = `
           <h3>Transaction Request Initiated</h3>
-          <p> Dear ${authorizer.firstName}. The below request was initiated for your authorization.</p>
+          <p> Dear ${authoriser.firstName}. The below request was initiated for your authorization.</p>
           <p>TransactionID: ${result._id}</p>
           <p>Amount: ${result.amount}</p>
           <p>Kindly login to your account to review</p>
         `;
 
-      await sendEmail(authorizer.email, subject, message);
+      await sendEmail(authoriser.email, subject, message);
       
     }
 
@@ -101,7 +100,7 @@ const declineRequest = async (req, res) => {
     const userId = req.user._id;
     console.log(req.user);
 
-    const request = await InitiateRequest.findById(_id);
+    const request = await InitiateRequest.findById(_id).populate("mandate");
 
     if (!request) {
       return res.status(404).json({
@@ -122,13 +121,13 @@ const declineRequest = async (req, res) => {
           }
 
           otpDetails.otp = null;
-    await otpDetails.save();
+          await otpDetails.save();
     
     let duplicate = false;
-    for (let i = 0; i < request.authorizersAction.length; i++) {
-      let transaction = request.authorizersAction[i];
+    for (let i = 0; i < request.authorisersAction.length; i++) {
+      let transaction = request.authorisersAction[i];
       if (
-        transaction.authorizerID == req.user._id &&
+        transaction.authoriserID == req.user._id &&
         transaction.status === "rejected"
       ) {
         return res.status(404).json({
@@ -136,7 +135,7 @@ const declineRequest = async (req, res) => {
           status: "failed",
         });
       } else if (
-        transaction.authorizerID == req.user._id &&
+        transaction.authoriserID == req.user._id &&
         transaction.status === "authorised"
       ) {
         transaction.status = "rejected";
@@ -146,11 +145,12 @@ const declineRequest = async (req, res) => {
     }
 
     if (duplicate === false) {
-      request.authorizersAction.push({
-        status: "authorised",
-        authorizerID: userId,
+      request.authorisersAction.push({
+        status: "rejected",
+        authoriserID: userId,
         reason: req.body.reason,
       });
+
     }
 
     await notificationService.createNotifications([
@@ -161,17 +161,19 @@ const declineRequest = async (req, res) => {
         message:
           `An authoriser has declined your transaction request for ${request.customerName}`,
       },
-      {
-        transaction: request._id,
-        user: request.verifier,
-        title: "Transaction Request Declined",
-        message: `An authoriser declined transaction request for ${request.customerName}`,
-      },
+      // {
+      //   transaction: request._id,
+      //   user: request.verifier,
+      //   title: "Transaction Request Declined",
+      //   message: `An authoriser declined transaction request for ${request.customerName}`,
+      // },
     ]);
 
-        request.status = "pending";
+    request.status = "in progress";
 
-    if (request.authorizersAction.length === request.numberOfAuthorisers) {
+    if (
+      request.authorisersAction.length === request.mandate.numberOfAuthorisers
+    ) {
       await notificationService.createNotifications([
         {
           transaction: request._id,
@@ -204,7 +206,7 @@ const approveRequest = async (req, res) => {
     const userId = req.user._id;
 
 
-    const request = await InitiateRequest.findById(_id);
+    const request = await InitiateRequest.findById(_id).populate("mandate");
 
     if (!request) {
       return res.status(404).json({
@@ -226,10 +228,10 @@ const approveRequest = async (req, res) => {
     await otpDetails.save();
     
     let duplicate = false;
-    for (let i = 0; i < request.authorizersAction.length; i++) {
-      let transaction = request.authorizersAction[i];
+    for (let i = 0; i < request.authorisersAction.length; i++) {
+      let transaction = request.authorisersAction[i];
       if (
-        transaction.authorizerID == req.user._id &&
+        transaction.authoriserID == req.user._id &&
         transaction.status === "authorised"
       ) {
         return res.status(404).json({
@@ -237,7 +239,7 @@ const approveRequest = async (req, res) => {
           status: "failed",
         });
       } else if (
-        transaction.authorizerID == req.user._id &&
+        transaction.authoriserID == req.user._id &&
         transaction.status === "rejected"
       ) {
         transaction.status = "authorised";
@@ -247,9 +249,9 @@ const approveRequest = async (req, res) => {
     }
 
     if (duplicate === false) {
-      request.authorizersAction.push({
+      request.authorisersAction.push({
         status: "authorised",
-        authorizerID: userId,
+        authoriserID: userId,
       });
     }
 
@@ -264,17 +266,15 @@ const approveRequest = async (req, res) => {
         message:
           `An authoriser has approved your transaction request for ${request.customerName}`,
       },
-      {
-        transaction: request._id,
-        user: request.verifier,
-        title: "Transaction Request Approved",
-        message: `An authoriser approved transaction request for ${request.customerName}`,
-      },
     ]);
 
-    request.status = "pending";
+   request.status = "in progress";
     
-       if (request.authorizersAction.length === request.numberOfAuthorisers) {
+ 
+       if (
+         request.authorisersAction.length ==
+         request.mandate.numberOfAuthorisers
+       ) {
          await notificationService.createNotifications([
            {
              transaction: request._id,
@@ -371,7 +371,7 @@ const getAllInitiatorRequests = async (req, res) => {
   }
 };
 
-const getAllAuthorizerRequests = async (req, res) => {
+const getAllAuthoriserRequests = async (req, res) => {
   const { perPage, page } = req.query;
 
   const options = {
@@ -381,6 +381,7 @@ const getAllAuthorizerRequests = async (req, res) => {
   };
 
   try {
+
     const requests = await InitiateRequest.aggregate([
       {
         $lookup: {
@@ -389,13 +390,14 @@ const getAllAuthorizerRequests = async (req, res) => {
           foreignField: "_id",
           as: "mandate",
         },
+
       },
       {
         $unwind: "$mandate",
       },
       {
         $match: {
-          "mandate.authorizers": {
+          "mandate.authorisers": {
             $in: [mongoose.Types.ObjectId(req.user._id)],
           },
         },
@@ -510,10 +512,10 @@ const getRequestById = async (req, res) => {
     const request = await InitiateRequest.findOne({ _id })
       .populate({
         path: "mandate",
-        select: "maxAmount minAmount authorizers verifier",
+        select: "maxAmount minAmount authorisers verifier",
         populate: [
           {
-            path: "authorizers",
+            path: "authorisers",
             model: "User",
             select: "firstName lastName",
           },
@@ -563,25 +565,38 @@ const verifierApprovalRequest = async (req, res) => {
       });
     }
 
-    request.status = "approved";
 
-    await request.save();
 
-    await notificationService.createNotifications([
-      {
-        transaction: request._id,
-        user: request.initiator,
-        title: "Request Verified",
-        message: "Your request has been verified",
-      },
+     const otpDetails = await Otp.findOne({ otp: req.body.otp, user: userId });
+     if (!otpDetails) {
+       return res.status(404).json({
+         message: "OTP is incorrect or used",
+         status: "failed",
+       });
+     }
 
-      {
-        transaction: request._id,
-        user: request.verifier,
-        title: "Request not Verified",
-        message: "Your request has been declined",
-      },
-    ]);
+     otpDetails.otp = null;
+     await otpDetails.save();
+
+   request.status = "approved";
+
+     await request.save();
+
+     await notificationService.createNotifications([
+       {
+         transaction: request._id,
+         user: request.initiator,
+         title: "Request not Verified",
+         message: `Your transaction request for ${request.customerName} has been declined`,
+       },
+
+       {
+         transaction: request._id,
+         user: request.authoriser,
+         title: "Request not Verified",
+         message: `Verification request for ${request.customerName} has been declined`,
+       },
+     ]);
 
     return res.status(200).json({
       message: "Request verified successfully",
@@ -610,6 +625,17 @@ const verifierDeclineRequest = async (req, res) => {
       });
     }
 
+    const otpDetails = await Otp.findOne({ otp: req.body.otp, user: userId });
+    if (!otpDetails) {
+      return res.status(404).json({
+        message: "OTP is incorrect or used",
+        status: "failed",
+      });
+    }
+
+    otpDetails.otp = null;
+    await otpDetails.save();
+
     request.status = "declined";
 
     await request.save();
@@ -619,14 +645,15 @@ const verifierDeclineRequest = async (req, res) => {
         transaction: request._id,
         user: request.initiator,
         title: "Request not Verified",
-        message: "Your request has been declined",
+        message: `Your transaction request for ${request.customerName} has been declined`,
       },
 
       {
         transaction: request._id,
-        user: request.verifier,
+        user: request.authoriser,
         title: "Request not Verified",
-        message: "Your request has been declined",
+        message:
+          `Verification request for ${request.customerName} has been declined`,
       },
     ]);
 
@@ -652,7 +679,7 @@ module.exports = {
   getAllInitiatorRequests,
   getAllRequest,
   getRequestById,
-  getAllAuthorizerRequests,
+  getAllAuthoriserRequests,
   verifierDeclineRequest,
   verifierApprovalRequest,
 };

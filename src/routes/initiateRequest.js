@@ -13,7 +13,7 @@ const {
   initiateRequest,
   declineRequest,
   approveRequest,
-  getAllAuthorizerRequests,
+  getAllAuthoriserRequests,
   getAllRequest,
   getAllInitiatorRequests,
   getRequestById,
@@ -38,8 +38,8 @@ router.put("verifier/approve/:id", verifierAuth, verifierDeclineRequest);
 // bulk upload request
 router.post("/upload", upload.single("file"), initiatorAuth, batchUpload);
 
-// get all request for authorizer
-router.get("/authorizer", authoriserAuth, getAllAuthorizerRequests);
+// get all request for authoriser
+router.get("/authoriser", authoriserAuth, getAllAuthoriserRequests);
 
 // get all request for admin
 router.get("/allrequests", adminAuth, getAllRequest);

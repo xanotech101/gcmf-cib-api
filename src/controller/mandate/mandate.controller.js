@@ -15,7 +15,7 @@ const registerMandate = async (req, res) => {
       });
     }
 
-    let amount = await Mandate.find({}).select("minAmount maxAmount");
+    let amount = await Mandate.find({}).select("name minAmount maxAmount");
 
     let mandateCheckFailed;
     let overlap = {};
@@ -49,10 +49,11 @@ const registerMandate = async (req, res) => {
       name: req.body.name,
       minAmount: req.body.minAmount,
       maxAmount: req.body.maxAmount,
-      authorizers: req.body.authorizers,
-      ff: req.body.ff,
+      authorisers: req.body.authorisers,
       verifier: req.body.verifier,
     });
+
+    mandate.numberOfAuthorisers = mandate.authorisers.length;
 
     const result = await mandate.save();
 
@@ -108,7 +109,7 @@ const updateMandate = async (req, res) => {
     mandate.name = req.body.name;
     mandate.minAmount = req.body.minAmount;
     mandate.maxAmount = req.body.maxAmount;
-    mandate.authorizers = req.body.authorizers;
+    mandate.authorisers = req.body.authorisers;
 
     if (!mandate)
       return res.status(400).json({ message: "This mandate doesn't exist" });
@@ -139,9 +140,9 @@ const getAllMandates = async (req, res) => {
       {
         $lookup: {
           from: "users",
-          localField: "authorizers",
+          localField: "authorisers",
           foreignField: "_id",
-          as: "authorizers",
+          as: "authorisers",
         },
       },
       {
@@ -183,7 +184,7 @@ const getAllMandates = async (req, res) => {
       },
     ]);
 
-    // const mandate = await Mandate.find().populate(["authorizers"]);
+    // const mandate = await Mandate.find().populate(["authorisers"]);
     return res.status(200).json({
       message: "Request Successful",
       data: {
@@ -203,7 +204,7 @@ const getSingleMandate = async (req, res) => {
   try {
     const mandate = await Mandate.findById(id.toString()).populate([
       {
-        path: "authorizers",
+        path: "authorisers",
         select: "firstName lastName",
       }, 
       {

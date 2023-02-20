@@ -5,7 +5,7 @@ const mandateSchemas = {
     name: Joi.string().lowercase().required(),
     minAmount: Joi.number().required(),
     maxAmount: Joi.number().required(),
-    authorizers: Joi.array().items(Joi.string().length(24).trim().required()),
+    authorisers: Joi.array().items(Joi.string().length(24).trim().required()),
     verifier: Joi.string().hex().length(24),
   }),
 };

@@ -18,7 +18,7 @@ const {
 router.post(
   "/create",
   validate(mandateSchemas.createMandate, "body"),
-  superUserAuth,
+  adminAuth,
   registerMandate
 );
 router.put("/update", adminAuth, updateMandate);

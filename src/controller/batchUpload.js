@@ -66,12 +66,12 @@ const batchUpload = async (req, res) => {
         accountName: datum[i].accountName,
       });
       let mandate = await Mandate.find({}).select(
-        "minAmount maxAmount AuthorizerID"
+        "minAmount maxAmount AuthoriserID"
       );
-      let authorizerIDArr = [];
+      let authoriserIDArr = [];
       let emails = [];
       let mandateID;
-      let authorizerID;
+      let authoriserID;
       mandate.map((item) => {
         if (
           request.amount >= item.minAmount &&
@@ -80,14 +80,14 @@ const batchUpload = async (req, res) => {
           //Send email logic here
           //.....
           // await sendEmail()
-          authorizerID = item.AuthorizerID;
+          authoriserID = item.AuthoriserID;
           mandateID = item._id;
         }
-        authorizerIDArr.push(authorizerID);
+        authoriserIDArr.push(authoriserID);
       });
 
       //TODO: code duplication, you don't need to save autorizer id here again, all you need is the mandateId
-      request.authorizerID = authorizerID;
+      request.authoriserID = authoriserID;
       request.mandateID = mandateID;
       request.isApproved = "active";
       let result = await request.save();
