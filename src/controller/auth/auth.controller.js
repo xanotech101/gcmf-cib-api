@@ -41,12 +41,20 @@ const login = async (req, res) => {
 
     const token = user.generateAuthToken();
 
-    const auditTrail = new AuditTrail({
-      type: "authentication",
+    // create audit trail
+    const myUser = await User.findById(user._id);
+    let dt = new Date(new Date().toISOString());
+    let date = dt.toString().slice(0, 15);
+    let time = dt.toString().slice(16, 21);
+
+    let audit = await AuditTrail.create({
       user: user._id,
+      type: "authentication",
+      message: `${myUser.firstName} logged in on ${date} by ${time}`,
+      organization: myUser.organization,
     });
 
-    await auditTrail.save();
+    await audit.save();
 
     res.json({
       message: "User Logged in Successfully",

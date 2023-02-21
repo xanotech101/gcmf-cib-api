@@ -19,6 +19,8 @@ const getAllAuditTrail = async (req, res) => {
           foreignField: "_id",
           as: "user",
         },
+      },
+{
         $facet: {
           data: [
             {

@@ -48,6 +48,7 @@ userSchema.methods.generateAuthToken = function () {
       _id: this._id,
       organizationId: this.organizationId,
       privileges: this.privileges,
+      firstName: this.firstName,
     },
     process.env.JWT_SECRET,
     {

@@ -1,4 +1,5 @@
 const Mandate = require("../../model/mandate.model");
+const User = require("../../model/user.model");
 const InitiateRequest = require("../../model/initiateRequest.model");
 const AuditTrail = require("../../model/auditTrail");
 const { validateInitiateRequestSchema } = require("../../utils/utils");
@@ -76,12 +77,22 @@ const initiateRequest = async (req, res) => {
     // create all the notifications at once
     await notificationService.createNotifications(notificationsToCreate);
 
+  
     // create audit trail
-    await AuditTrail.create({
+      const user = await User.findById(req.user._id);
+    let dt = new Date(new Date().toISOString());
+    let date = dt.toString().slice(0, 15);
+    let time = dt.toString().slice(16, 21);
+  
+    let audit = await AuditTrail.create({
+      user: req.user._id,
       type: "transaction",
       transaction: result._id,
+      message: `${user.firstName} ${user.lastName} initiated a transaction request on ${date} by ${time}`,
+      organization: req.user.organization
     });
 
+    await audit.save();
     return res.status(201).json({
       message: "Request initiated successfully and sent for approval",
       data: result,
@@ -109,20 +120,20 @@ const declineRequest = async (req, res) => {
       });
     }
 
-          const otpDetails = await Otp.findOne({
-            otp: req.body.otp,
-            user: userId,
-          });
-          if (!otpDetails) {
-            return res.status(404).json({
-              message: "OTP is incorrect or used",
-              status: "failed",
-            });
-          }
+    const otpDetails = await Otp.findOne({
+      otp: req.body.otp,
+      user: userId,
+    });
+    if (!otpDetails) {
+      return res.status(404).json({
+        message: "OTP is incorrect or has already been used",
+        status: "failed",
+      });
+    }
 
-          otpDetails.otp = null;
-          await otpDetails.save();
-    
+    otpDetails.otp = null;
+    await otpDetails.save();
+
     let duplicate = false;
     for (let i = 0; i < request.authorisersAction.length; i++) {
       let transaction = request.authorisersAction[i];
@@ -150,7 +161,6 @@ const declineRequest = async (req, res) => {
         authoriserID: userId,
         reason: req.body.reason,
       });
-
     }
 
     await notificationService.createNotifications([
@@ -158,8 +168,7 @@ const declineRequest = async (req, res) => {
         transaction: request._id,
         user: request.initiator,
         title: "Transaction Request Declined",
-        message:
-          `An authoriser has declined your transaction request for ${request.customerName}`,
+        message: `An authoriser has declined your transaction request for ${request.customerName}`,
       },
       // {
       //   transaction: request._id,
@@ -186,7 +195,24 @@ const declineRequest = async (req, res) => {
       request.status = "awaiting verification";
     }
 
+    // create audit trail
+    const user = await User.findById(req.user._id);
+    let dt = new Date(new Date().toISOString());
+    let date = dt.toString().slice(0, 15);
+    let time = dt.toString().slice(16, 21);
+
+    let audit = await AuditTrail.create({
+      user: req.user._id,
+      type: "transaction",
+      transaction: request._id,
+      message: `${user.firstName} rejected a transaction request on ${date} by ${time}`,
+      organization: req.user.organization
+    });
+
+    await audit.save();
+
     await request.save();
+
     return res.status(200).json({
       message: "Request declined successfully",
       status: "success",
@@ -205,7 +231,6 @@ const approveRequest = async (req, res) => {
     const _id = req.params.id;
     const userId = req.user._id;
 
-
     const request = await InitiateRequest.findById(_id).populate("mandate");
 
     if (!request) {
@@ -215,18 +240,17 @@ const approveRequest = async (req, res) => {
       });
     }
 
-      const otpDetails = await Otp.findOne({ otp: req.body.otp, user: userId });
+    const otpDetails = await Otp.findOne({ otp: req.body.otp, user: userId });
     if (!otpDetails) {
-        return res.status(404).json({
-          message: "OTP is incorrect or used",
-          status: "failed",
-         
-        });
+      return res.status(404).json({
+        message: "OTP is incorrect or used",
+        status: "failed",
+      });
     }
-    
+
     otpDetails.otp = null;
     await otpDetails.save();
-    
+
     let duplicate = false;
     for (let i = 0; i < request.authorisersAction.length; i++) {
       let transaction = request.authorisersAction[i];
@@ -255,37 +279,47 @@ const approveRequest = async (req, res) => {
       });
     }
 
-  
-
-
-       await notificationService.createNotifications([
+    await notificationService.createNotifications([
       {
         transaction: request._id,
         user: request.initiator,
         title: "Transaction Request Approved",
-        message:
-          `An authoriser has approved your transaction request for ${request.customerName}`,
+        message: `An authoriser has approved your transaction request for ${request.customerName}`,
       },
     ]);
 
-   request.status = "in progress";
-    
- 
-       if (
-         request.authorisersAction.length ==
-         request.mandate.numberOfAuthorisers
-       ) {
-         await notificationService.createNotifications([
-           {
-             transaction: request._id,
-             user: request.verifier,
-             title: "Verification Required",
-             message: "New transaction request require your review",
-           },
-         ]);
+    request.status = "in progress";
 
-         request.status = "awaiting verification";
-       }
+    if (
+      request.authorisersAction.length == request.mandate.numberOfAuthorisers
+    ) {
+      await notificationService.createNotifications([
+        {
+          transaction: request._id,
+          user: request.verifier,
+          title: "Verification Required",
+          message: "New transaction request require your review",
+        },
+      ]);
+
+      request.status = "awaiting verification";
+    }
+
+    // create audit trail
+    const user = await User.findById(req.user._id);
+    let dt = new Date(new Date().toISOString());
+    let date = dt.toString().slice(0, 15);
+    let time = dt.toString().slice(16, 21);
+
+    let audit = await AuditTrail.create({
+      user: req.user._id,
+      type: "transaction",
+      transaction: request._id,
+      message: `${user.firstName} authorised a transaction request on ${date} by ${time}`,
+      organization: req.user.organization,
+    });
+
+    await audit.save();
 
     await request.save();
 
@@ -565,38 +599,54 @@ const verifierApprovalRequest = async (req, res) => {
       });
     }
 
+    const otpDetails = await Otp.findOne({ otp: req.body.otp, user: userId });
+    if (!otpDetails) {
+      return res.status(404).json({
+        message: "OTP is incorrect or used",
+        status: "failed",
+      });
+    }
+
+    otpDetails.otp = null;
+    await otpDetails.save();
+
+    request.status = "approved";
 
 
-     const otpDetails = await Otp.findOne({ otp: req.body.otp, user: userId });
-     if (!otpDetails) {
-       return res.status(404).json({
-         message: "OTP is incorrect or used",
-         status: "failed",
-       });
-     }
 
-     otpDetails.otp = null;
-     await otpDetails.save();
+    await notificationService.createNotifications([
+      {
+        transaction: request._id,
+        user: request.initiator,
+        title: "Request not Verified",
+        message: `Your transaction request for ${request.customerName} has been declined`,
+      },
 
-   request.status = "approved";
+      {
+        transaction: request._id,
+        user: request.authoriser,
+        title: "Request not Verified",
+        message: `Verification request for ${request.customerName} has been declined`,
+      },
+    ]);
 
-     await request.save();
+    // create audit trail
+    const user = await User.findById(req.user._id);
+    let dt = new Date(new Date().toISOString());
+    let date = dt.toString().slice(0, 15);
+    let time = dt.toString().slice(16, 21);
 
-     await notificationService.createNotifications([
-       {
-         transaction: request._id,
-         user: request.initiator,
-         title: "Request not Verified",
-         message: `Your transaction request for ${request.customerName} has been declined`,
-       },
+    let audit = await AuditTrail.create({
+      user: req.user._id,
+      type: "transaction",
+      transaction: request._id,
+      message: `${user.firstName} approved a transaction request on ${date} by ${time}`,
+      organization: req.user.organization,
+    });
 
-       {
-         transaction: request._id,
-         user: request.authoriser,
-         title: "Request not Verified",
-         message: `Verification request for ${request.customerName} has been declined`,
-       },
-     ]);
+    await audit.save();
+
+        await request.save();
 
     return res.status(200).json({
       message: "Request verified successfully",
@@ -638,7 +688,6 @@ const verifierDeclineRequest = async (req, res) => {
 
     request.status = "declined";
 
-    await request.save();
 
     await notificationService.createNotifications([
       {
@@ -652,13 +701,28 @@ const verifierDeclineRequest = async (req, res) => {
         transaction: request._id,
         user: request.authoriser,
         title: "Request not Verified",
-        message:
-          `Verification request for ${request.customerName} has been declined`,
+        message: `Verification request for ${request.customerName} has been declined`,
       },
     ]);
 
-     
-    
+    // create audit trail
+    const user = await User.findById(req.user._id);
+    let dt = new Date(new Date().toISOString());
+    let date = dt.toString().slice(0, 15);
+    let time = dt.toString().slice(16, 21);
+
+    let audit = await AuditTrail.create({
+      user: req.user._id,
+      type: "transaction",
+      transaction: request._id,
+      message: `${user.firstName} declined a transaction request on ${date} by ${time}`,
+      organization: req.user.organization,
+    });
+
+    await audit.save();
+
+        await request.save();
+
     return res.status(200).json({
       message: "Request declined successfully",
       status: "success",

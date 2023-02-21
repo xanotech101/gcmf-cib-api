@@ -13,7 +13,8 @@ const auditTrailSchema = new mongoose.Schema(
     },
     organization: {
       type: String
-    }
+    },
+    message: String
   },
   {
     timestamps: true,
