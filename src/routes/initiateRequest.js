@@ -5,6 +5,7 @@ const {
   initiatorAuth,
   authoriserAuth,
   verifierAuth,
+  allUsersAuth,
 } = require("../middleware/auth");
 
 const upload = require("../middleware/multer");
@@ -45,7 +46,7 @@ router.get("/authoriser", authoriserAuth, getAllAuthoriserRequests);
 router.get("/allrequests", adminAuth, getAllRequest);
 
 // get request by id
-router.get("/:id", authoriserAuth, getRequestById);
+router.get("/:id", allUsersAuth, getRequestById);
 
 module.exports = router;
 

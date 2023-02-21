@@ -685,8 +685,8 @@ const verifierDeclineRequest = async (req, res) => {
 
     otpDetails.otp = null;
     await otpDetails.save();
-
-    request.status = "declined";
+    
+  request.status = "declined";
 
 
     await notificationService.createNotifications([
