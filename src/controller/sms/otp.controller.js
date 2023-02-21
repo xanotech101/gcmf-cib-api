@@ -6,9 +6,9 @@ const Otp = require("../../model/otp.model");
 
 const generateOTP = async (req, res) => {
   try {
-    const id = req.user._id;
+    const id = req.user;
     const user = await User.findById(id)
-    console.log(user);
+    const { context, transaction } = req.body;
 
     const otp = crypto.randomBytes(3).toString("hex");
     const smsBody = `Your GCMB confirmation OTP code is ${otp}.`;
@@ -17,22 +17,38 @@ const generateOTP = async (req, res) => {
     if (num.startsWith("0")) {
       num = num.replace("0", "+234");
     }
-    await sendSMS(num, smsBody);
 
-    const newOtp = new Otp({
-      user: id,
-      context: 'transaction-request',
-      otp
+    let newOtp = {}
+
+    const otpRecord = await Otp.findOne({
+      user: user._id,
+      transaction,
+      context,
     });
+
+    if (!otpRecord) {
+      // create one and send to the user
+      newOtp = new Otp({
+        user: user._id,
+        transaction,
+        context,
+        otp,
+      });
+    } else {
+      newOtp = otpRecord;
+      newOtp.otp = otp;
+    }
 
     await newOtp.save();
 
+    await sendSMS(num, smsBody);
 
     const subject = "Verification Code";
     const message = `${user.firstName}, Your GCMB confirmation OTP code is ${otp}.`;
 
     await sendEmail(user.email, subject, message);
-    res.status(200).json({
+
+    return res.status(200).json({
       message: "Successfully sent otp code",
       data: otp,
       status: "success",
@@ -47,4 +63,8 @@ const generateOTP = async (req, res) => {
   }
 };
 
-module.exports = generateOTP;
+
+
+module.exports = {
+  generateOTP
+};
