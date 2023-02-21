@@ -8,24 +8,20 @@ const InitiateRequest = require("../model/initiateRequest.model");
 const { validateInitiateRequestSchema } = require("../utils/utils");
 
 const batchUpload = async (req, res) => {
-  console.log(req.file);
   try {
     let data;
-    let excelDocs = ["xlsx", "xls"];
-    let csvDocs = ["csv"];
+    const excelDocs = ["xlsx", "xls"];
+    const csvDocs = ["csv"];
 
-    if (
-      req.file == null ||
-      req.file?.originalname == "undefined" ||
-      req.file == undefined
-    ) {
-      return res
-        .status(400)
-        .json({ message: "No file uploaded. Please upload a file" });
+    if (!req.file) {
+      return res.status(400).json({
+        message: "No file uploaded. Please upload a file",
+        status: "failed",
+      });
     }
 
     let fileExtension = req.file.originalname.split(".")[1];
-    let datum;
+    let formattedFile;
 
     if (excelDocs.includes(fileExtension)) {
       data = excelToJson({
@@ -43,60 +39,63 @@ const batchUpload = async (req, res) => {
         result = i;
         break;
       }
-      datum = data[result];
+      formattedFile = data[result];
     } else if (csvDocs.includes(fileExtension)) {
       data = csvToJson.fieldDelimiter(",").getJsonFromCsv(req.file.path);
-      datum = data;
+      formattedFile = data;
     } else {
-      return res
-        .status(400)
-        .json({
-          message: "Invalid file type. Please upload a csv or excel file",
-        });
+      return res.status(400).json({
+        message: "Invalid file type. Please upload a csv or excel file",
+        status: "failed",
+      });
     }
 
     fs.unlinkSync(req.file.path);
 
-    for (let i = 0; i < datum.length; i++) {
+    // process file here
+    for (let i = 0; i < formattedFile.length; i++) {
+      const datum = formattedFile[i];
       let request = new InitiateRequest({
-        customerName: datum[i].customerName,
-        amount: datum[i].amount,
-        bankName: datum[i].bankName,
-        accountNumber: datum[i].accountNumber,
-        accountName: datum[i].accountName,
+        customerName: datum.customerName,
+        amount: datum.amount,
+        bankName: datum.bankName,
+        accountNumber: datum.accountNumber,
+        accountName: datum.accountName,
+        initiator: req.user._id,
+        status: "pending",
       });
-      let mandate = await Mandate.find({}).select(
-        "minAmount maxAmount AuthoriserID"
-      );
-      let authoriserIDArr = [];
+
+      const mandates = await Mandate.find().select("minAmount maxAmount");
+
       let emails = [];
-      let mandateID;
-      let authoriserID;
-      mandate.map((item) => {
+
+      mandates.map((mandate) => {
         if (
-          request.amount >= item.minAmount &&
-          request.amount <= item.maxAmount
+          request.amount >= mandate.minAmount &&
+          request.amount <= mandate.maxAmount
         ) {
           //Send email logic here
           //.....
           // await sendEmail()
-          authoriserID = item.AuthoriserID;
-          mandateID = item._id;
+          request.mandate = mandate._id;
+          request.verifier = mandate.verifier;
         }
-        authoriserIDArr.push(authoriserID);
       });
 
-      //TODO: code duplication, you don't need to save autorizer id here again, all you need is the mandateId
-      request.authoriserID = authoriserID;
-      request.mandateID = mandateID;
-      request.isApproved = "active";
-      let result = await request.save();
+      request.initiator = req.user._id;
+      await request.save();
     }
 
-    res.status(200).json({ message: "File uploaded successfully", data });
+    // return response to user here while processing file
+    res.status(200).json({
+      message: "File uploaded successfully",
+      status: "success",
+    });
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      message: error.message,
+      status: "failed",
+    });
   }
 };
 
