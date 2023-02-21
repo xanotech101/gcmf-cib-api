@@ -71,7 +71,7 @@ app.use("/api", paystackRoute);
 app.use("/api/audit_trails", trailRoute);
 app.use("/api/requests", requestRoute);
 app.use("/api/notifications", notificationRoute);
-app.use("/api/generate", otpRoute);
+app.use("/api/otp", otpRoute);
 
 
 app.use(function (req, res, next) {

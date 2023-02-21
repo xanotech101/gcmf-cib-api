@@ -9,7 +9,6 @@ const notificationService = require("../../services/notification.service");
 const mongoose = require("mongoose");
 const Otp = require("../../model/otp.model");
 
-
 const initiateRequest = async (req, res) => {
   try {
     const { error } = validateInitiateRequestSchema(req.body);
@@ -71,7 +70,6 @@ const initiateRequest = async (req, res) => {
         `;
 
       await sendEmail(authoriser.email, subject, message);
-      
     }
 
     // create all the notifications at once
@@ -123,16 +121,18 @@ const declineRequest = async (req, res) => {
     const otpDetails = await Otp.findOne({
       otp: req.body.otp,
       user: userId,
+      transaction: request._id,
     });
+
     if (!otpDetails) {
       return res.status(404).json({
-        message: "OTP is incorrect or has already been used",
+        message: "OTP is incorrect or used",
         status: "failed",
       });
     }
 
-    otpDetails.otp = null;
-    await otpDetails.save();
+    await Otp.findByIdAndDelete(otpDetails._id);
+
 
     let duplicate = false;
     for (let i = 0; i < request.authorisersAction.length; i++) {
@@ -168,6 +168,7 @@ const declineRequest = async (req, res) => {
         transaction: request._id,
         user: request.initiator,
         title: "Transaction Request Declined",
+        message: `An authoriser has declined your transaction request for ${request.customerName}`,
         message: `An authoriser has declined your transaction request for ${request.customerName}`,
       },
       // {
@@ -241,15 +242,22 @@ const approveRequest = async (req, res) => {
     }
 
     const otpDetails = await Otp.findOne({ otp: req.body.otp, user: userId });
+   
     if (!otpDetails) {
+      return res.status(404).json({
+        message: "OTP is incorrect or used",
+        status: "failed",
+      });
       return res.status(404).json({
         message: "OTP is incorrect or used",
         status: "failed",
       });
     }
 
+
     otpDetails.otp = null;
     await otpDetails.save();
+
 
     let duplicate = false;
     for (let i = 0; i < request.authorisersAction.length; i++) {
@@ -279,6 +287,7 @@ const approveRequest = async (req, res) => {
       });
     }
 
+   
     await notificationService.createNotifications([
       {
         transaction: request._id,
@@ -415,7 +424,6 @@ const getAllAuthoriserRequests = async (req, res) => {
   };
 
   try {
-
     const requests = await InitiateRequest.aggregate([
       {
         $lookup: {
@@ -424,7 +432,6 @@ const getAllAuthoriserRequests = async (req, res) => {
           foreignField: "_id",
           as: "mandate",
         },
-
       },
       {
         $unwind: "$mandate",
@@ -612,7 +619,7 @@ const verifierApprovalRequest = async (req, res) => {
 
     request.status = "approved";
 
-
+     await request.save();
 
     await notificationService.createNotifications([
       {
@@ -705,24 +712,8 @@ const verifierDeclineRequest = async (req, res) => {
       },
     ]);
 
-    // create audit trail
-    const user = await User.findById(req.user._id);
-    let dt = new Date(new Date().toISOString());
-    let date = dt.toString().slice(0, 15);
-    let time = dt.toString().slice(16, 21);
-
-    let audit = await AuditTrail.create({
-      user: req.user._id,
-      type: "transaction",
-      transaction: request._id,
-      message: `${user.firstName} declined a transaction request on ${date} by ${time}`,
-      organization: req.user.organization,
-    });
-
-    await audit.save();
-
-        await request.save();
-
+     
+    
     return res.status(200).json({
       message: "Request declined successfully",
       status: "success",
