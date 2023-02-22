@@ -14,46 +14,33 @@ const trailRoute = require("./routes/auditTrail");
 const authRoute = require("./routes/auth.route");
 const notificationRoute = require("./routes/notification.route");
 const otpRoute = require("./routes/otp.route");
-const mongoose = require("mongoose");
+const privilegeRoute = require("./routes/privilege.route");
 const cors = require("cors");
+const connectDB = require("./config/db");
 
+const URI = process.env.MONGO_URI;
 
-
-if (process.env.NODE_ENV == 'development') {
-  
+if (process.env.NODE_ENV == "development") {
   URI = "mongodb://localhost/xanotech";
-} else  {
-    URI = process.env.MONGO_URI;
 }
 
+connectDB(URI, () => {
+  app.listen(process.env.PORT, () => {
+    console.log(
+      "listening for requests on port",
+      process.env.PORT,
+      process.env.NODE_ENV
+    );
+  });
+});
 
-
-mongoose
-  .set("strictQuery", false)
-  .connect(URI)
-  .then(() => {
-    console.log("connected to database");
-    // listen to port
-    app.listen(process.env.PORT, () => {
-      console.log(
-        "listening for requests on port",
-        process.env.PORT,
-        process.env.NODE_ENV
-      );
-    });
-  })
-  .catch((err) => {
-    console.log(err);
-  }); 
-
-app.use(cors(
-  {
+app.use(
+  cors({
     origin: "*",
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
     preflightContinue: false,
-  }
-));
-
+  })
+);
 
 app.use(logger("dev"));
 app.use(express.json());
@@ -62,8 +49,7 @@ app.use(cookieParser());
 app.use(bodyparser.urlencoded({ extended: false }));
 app.use(bodyparser.json());
 
-
-app.use("/api/auth", authRoute)
+app.use("/api/auth", authRoute);
 app.use("/api/users", userRoute);
 app.use("/api/account", accountRoute);
 app.use("/api/mandate", mandateRoute);
@@ -72,7 +58,7 @@ app.use("/api/audit_trails", trailRoute);
 app.use("/api/requests", requestRoute);
 app.use("/api/notifications", notificationRoute);
 app.use("/api/otp", otpRoute);
-
+app.use("/api/privileges", privilegeRoute);
 
 app.use(function (req, res, next) {
   next(createError(404));
@@ -85,12 +71,16 @@ app.use(function (err, req, res, next) {
   res.render("error");
 });
 
-
 app.use((req, res, next) => {
   if (res.headersSent) {
-    return next()
+    return next();
   }
-  res.status(404).json({message: "404 error! The endpoint is not available on the server. Kindly cross check the url"})
+  res
+    .status(404)
+    .json({
+      message:
+        "404 error! The endpoint is not available on the server. Kindly cross check the url",
+    });
 });
 
 // const port = process.env.PORT || 3000;

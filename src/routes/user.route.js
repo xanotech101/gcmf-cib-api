@@ -3,7 +3,6 @@ const {
   getOrganizationUsers,
   getUserProfile,
   changePassword,
-  getAllPriviledges,
   updateUserProfile,
   getAllUsers,
   deleteNonAdminUsers,
@@ -24,7 +23,6 @@ router.post("/change-password", allUsersAuth, changePassword);
 
 //admin routes
 router.get("/allbranchusers", adminAuth, getOrganizationUsers);
-router.get("/priviledges", adminAuth, getAllPriviledges);
 router.get("/all", adminAuth, getAllUsers);
 router.delete("/delete_user", superUserAuth, deleteAnyUser);
 router.delete("/delete_nonadmin", adminAuth, deleteNonAdminUsers) ;

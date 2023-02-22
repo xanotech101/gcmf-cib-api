@@ -1,66 +1,113 @@
 const User = require("../../model/user.model");
-const Priviledge = require("../../model/priviledge");
 const { validateChangePasswordSchema } = require("../../utils/utils");
 const bcrypt = require("bcrypt");
 const { PER_PAGE } = require("../../utils/constants");
 
-  const getOrganizationUsers = async (req, res) => {
-  const { organizationId } =  req.user
+const getOrganizationUsers = async (req, res) => {
+  const { organizationId } = req.user;
   try {
-      const { perPage, page } = req.query;
+    const { perPage, page } = req.query;
 
-      const options = {
-        page: page || 1,
-        limit: perPage || PER_PAGE,
-        sort: { createdAt: -1 },
-      };
+    const options = {
+      page: page || 1,
+      limit: perPage || 2,
+      sort: { createdAt: -1 },
+    };
 
-    // const user = await User.find({ organizationId });
-      const { privilege } = req.query;
-  const users = await User.find({
-    organizationId,
-    privileges: privilege ? { $in: [privilege] } : { $exists: true },
-  });
+    const { privilege, withPagination } = req.query;
+
+    if (withPagination === "true") {
+      const users = await User.aggregate([
+        {
+          $match: {
+            organizationId,
+            privileges: privilege ? { $in: [privilege] } : { $exists: true },
+          },
+        },
+        // {
+        //   $lookup: {
+        //     from: "priviledges",
+        //     localField: "privileges",
+        //     foreignField: "_id",
+        //     as: "privileges",
+        //   },
+        // },
+        {
+          $project: {
+            firstName: 1,
+            lastName: 1,
+            email: 1,
+            phone: 1,
+            gender: 1,
+            role: 1,
+          }
+        },
+        {
+          $facet: {
+            data: [{ $skip: options.limit * (options.page - 1) }, { $limit: options.limit }],
+            totalCount: [
+              { $count: "count" }, 
+              {
+                $addFields: {
+                  page: options.page,
+                  perPage: options.limit,
+                },
+              },
+            ],
+          },
+        },
+      ]);
+
+      return res.status(200).json({
+        message: "Successfully fetched user",
+        data: {
+          users: users[0].data,
+          meta: users[0].meta,
+        },
+      });
+    }
     
+
+    const users = await User.find({
+      organizationId,
+      privileges: privilege ? { $in: [privilege] } : { $exists: true },
+    });
+
     if (!users) {
-      res.status(404).json({ 
+      res.status(404).json({
         message: "User not found",
         data: null,
-        status: "failed"
-      })
+        status: "failed",
+      });
     }
-
 
     res.status(200).json({
       message: "Successfully fetched user",
       data: users ?? [],
     });
-    
   } catch (error) {
     console.log(error);
-    res.status(500).json({ 
+    res.status(500).json({
       message: error.message,
-      status: "failed"
+      status: "failed",
     });
   }
 };
-
-
 
 const getUserProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
     res.status(200).json({
       message: "Successfully fetched user",
-      data: { user},
-      status: "success"
+      data: { user },
+      status: "success",
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ 
+    res.status(500).json({
       message: error.message,
       data: null,
-      status: "failed"
+      status: "failed",
     });
   }
 };
@@ -78,7 +125,6 @@ const updateUserProfile = async (req, res) => {
 
     await user.save();
 
-
     res.status(200).json({
       message: "Successfully updated your profile",
       data: { user },
@@ -94,7 +140,6 @@ const updateUserProfile = async (req, res) => {
   }
 };
 
-
 const changePassword = async (req, res) => {
   const { _id } = req.user;
   try {
@@ -104,11 +149,11 @@ const changePassword = async (req, res) => {
         status: "failed",
         message: error.details[0].message,
         data: null,
-      })
-    };
+      });
+    }
 
     const { password, old_password } = req.body;
-     
+
     const user = await User.findById(_id);
     const isPasswordValid = await bcrypt.compare(old_password, user.password);
 
@@ -136,7 +181,6 @@ const changePassword = async (req, res) => {
 
     await user.save();
     return res.status(200).json({ message: "Password changed successfully" });
-
   } catch (error) {
     return res.status(500).json({
       status: "Failed",
@@ -145,71 +189,46 @@ const changePassword = async (req, res) => {
   }
 };
 
-// TODO: please move to a separate controller called privilege, also create a route for this and reference it in app.js
-const getAllPriviledges = async (req, res) => {
-  try {
-    const priviledge = await Priviledge.find();
-    res.status(200).json({
-      message: "Successfully fetched priviledges",
-      data: { priviledge },
-      status: "success",
-    });
-
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({
-      message: error.message,
-      data: null,
-      status: "failed",
-    });
-  }
-};
 
 const getAllUsers = async (req, res) => {
   try {
-
-
     const { page, perPage } = req.query;
-    console.log(req.query)
+    console.log(req.query);
 
     const options = {
       limit: perPage || PER_PAGE,
       page: page || 1,
-      sort: { createdAt: -1 }
+      sort: { createdAt: -1 },
     };
 
     const user = await User.aggregate([
-{
-      $facet: {
-        data: [
-          {
-            $sort: { ...options.sort },
-          },
-          {
-            $skip: options.limit * (options.page - 1),
-          },
-          {
-            $limit: options.limit * 1,
-          },
-        ],
-        meta: [
-          {
-            $count: "total",
-          },
-          {
-            $addFields: {
-              page: options.page,
-              perPage: options.limit,
+      {
+        $facet: {
+          data: [
+            {
+              $sort: { ...options.sort },
             },
-          }
-
-        ],
+            {
+              $skip: options.limit * (options.page - 1),
+            },
+            {
+              $limit: options.limit * 1,
+            },
+          ],
+          meta: [
+            {
+              $count: "total",
+            },
+            {
+              $addFields: {
+                page: options.page,
+                perPage: options.limit,
+              },
+            },
+          ],
+        },
       },
-    }
-
-      ])
-
-
+    ]);
 
     res.status(200).json({
       message: "Successfully fetched all users",
@@ -226,18 +245,20 @@ const getAllUsers = async (req, res) => {
   }
 };
 
-
 const deleteNonAdminUsers = async (req, res) => {
   try {
-   const { name, id } = req.body;
+    const { name, id } = req.body;
     const user = await User.findById(id);
-    if (user.privileges.includes("superUser") || user.privileges.includes("admin"))
+    if (
+      user.privileges.includes("superUser") ||
+      user.privileges.includes("admin")
+    )
       return res.status(401).json({
         message: "You cannot delete a user with admin role",
         data: null,
         status: "failed",
       });
-    
+
     const result = await User.findByIdAndDelete(id);
     res.status(200).json({
       message: "User Deleted Successfully",
@@ -276,9 +297,8 @@ module.exports = {
   getOrganizationUsers,
   getUserProfile,
   changePassword,
-  getAllPriviledges,
   updateUserProfile,
   getAllUsers,
   deleteNonAdminUsers,
-  deleteAnyUser
+  deleteAnyUser,
 };
