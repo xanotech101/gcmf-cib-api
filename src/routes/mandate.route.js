@@ -14,7 +14,6 @@ const {
 } = require("../middleware/auth");
 
 
-
 router.post(
   "/create",
   validate(mandateSchemas.createMandate, "body"),

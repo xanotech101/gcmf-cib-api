@@ -6,6 +6,11 @@ const Mandate = require("../model/mandate.model");
 const User = require("../model/user.model");
 const InitiateRequest = require("../model/initiateRequest.model");
 const { validateInitiateRequestSchema } = require("../utils/utils");
+const { sendEmail } = require("../utils/emailService");
+const notificationService = require("../services/notification.service");
+const AuditTrail = require("../model/auditTrail");
+
+
 
 const batchUpload = async (req, res) => {
   console.log(req.file);
@@ -57,6 +62,12 @@ const batchUpload = async (req, res) => {
 
     fs.unlinkSync(req.file.path);
 
+       let mandate = await Mandate.find({}).populate({
+         path: "authorisers",
+         select: "firstName email",
+       })
+         .populate("verifier");
+
     for (let i = 0; i < datum.length; i++) {
       let request = new InitiateRequest({
         customerName: datum[i].customerName,
@@ -65,39 +76,79 @@ const batchUpload = async (req, res) => {
         accountNumber: datum[i].accountNumber,
         accountName: datum[i].accountName,
       });
-      let mandate = await Mandate.find({}).select(
-        "minAmount maxAmount AuthoriserID"
-      );
-      let authoriserIDArr = [];
-      let emails = [];
+
+      let verifier;
+      var authoriserDetails;
       let mandateID;
-      let authoriserID;
-      mandate.map((item) => {
+
+      for (let i = 0; i < mandate.length; i++) {
+        let item = mandate[i];
         if (
           request.amount >= item.minAmount &&
           request.amount <= item.maxAmount
         ) {
-          //Send email logic here
-          //.....
-          // await sendEmail()
-          authoriserID = item.AuthoriserID;
+          authoriserDetails = item.authorisers;
+          verifier = item.verifier._id;
           mandateID = item._id;
         }
-        authoriserIDArr.push(authoriserID);
+      }
+
+      request.initiator = req.user._id;
+      request.mandate = mandateID;
+      request.verifier = verifier;
+      request.status = "pending";
+
+      let result = await request.save();
+
+      for (let i = 0; i < authoriserDetails.length; i++) {
+        let authoriser = authoriserDetails[i];
+
+        const subject = "Transaction Request Initiated";
+        const message = `
+          <h3>Transaction Request Initiated</h3>
+          <p> Dear ${authoriser.firstName}. The below request was initiated for your authorization.</p>
+          <p>TransactionID: ${result._id}</p>
+          <p>Amount: ${result.amount}</p>
+          <p>Kindly login to your account to review</p>
+        `;
+
+        await sendEmail(authoriser.email, subject, message);
+
+        await notificationService.createNotifications([
+          {
+            title: "Transaction request Initiated",
+            transaction: result._id,
+            user: authoriser._id,
+            message:
+              "A transaction request was initiated and is awaiting your approval",
+          },
+        ]);
+      }
+
+      // create audit trail
+      const user = await User.findById(req.user._id);
+      let dt = new Date(new Date().toISOString());
+      let date = dt.toString().slice(0, 15);
+      let time = dt.toString().slice(16, 21);
+
+      let audit = await AuditTrail.create({
+        user: req.user._id,
+        type: "transaction",
+        transaction: result._id,
+        message: `${user.firstName} ${user.lastName} initiated a transaction request on ${date} by ${time}`,
+        organization: req.user.organization,
       });
 
-      //TODO: code duplication, you don't need to save autorizer id here again, all you need is the mandateId
-      request.authoriserID = authoriserID;
-      request.mandateID = mandateID;
-      request.isApproved = "active";
-      let result = await request.save();
+      await audit.save();
     }
 
-    res.status(200).json({ message: "File uploaded successfully", data });
+
+    return res.status(200).json({ message: "File uploaded successfully", data });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 };
 
 module.exports = batchUpload;
+  
