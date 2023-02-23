@@ -1,7 +1,6 @@
 const jwt = require("jsonwebtoken");
 
 function superUserAuth(req, res, next) {
-  console.log('here for you')
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(" ")[1];
   try {
@@ -129,8 +128,6 @@ function verifierAuth(req, res, next) {
   }
 }
 
-
-
 function authoriserAuth(req, res, next) {
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(" ")[1];
@@ -164,13 +161,11 @@ function authoriserAuth(req, res, next) {
   }
 }
 
-
-
-
 function allUsersAuth(req, res, next) {
   console.log("This worked");
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(" ")[1];
+  
   try {
     if (!token) {
       return res.sendStatus(401).send({
@@ -180,6 +175,7 @@ function allUsersAuth(req, res, next) {
       });
     }
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
     const arr = decoded.privileges;
     if (
       !arr.includes("verifier") &&

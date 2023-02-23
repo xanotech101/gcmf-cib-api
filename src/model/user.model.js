@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
-const { string } = require("joi");
+const Privilege = require("./privilege.model");
 
 
 const userSchema = new mongoose.Schema(
@@ -29,7 +29,12 @@ const userSchema = new mongoose.Schema(
     gender: String,
     organizationId: String,
     imageUrl: String,
-    privileges: [String],
+    privileges: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Privilege",
+      },
+    ],
     role: {
       type: String,
       required: true,
@@ -42,12 +47,14 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-userSchema.methods.generateAuthToken = function () {
+userSchema.methods.generateAuthToken = async function () {
+  const privileges = await Privilege.find({ _id: { $in: this.privileges } }) || [];
+ 
   const token = jwt.sign(
     {
       _id: this._id,
       organizationId: this.organizationId,
-      privileges: this.privileges,
+      privileges: privileges.map((privilege) => privilege.name),
       firstName: this.firstName,
     },
     process.env.JWT_SECRET,

@@ -10,7 +10,7 @@ const getOrganizationUsers = async (req, res) => {
 
     const options = {
       page: page || 1,
-      limit: perPage || 2,
+      limit: perPage || PER_PAGE,
       sort: { createdAt: -1 },
     };
 
@@ -24,14 +24,28 @@ const getOrganizationUsers = async (req, res) => {
             privileges: privilege ? { $in: [privilege] } : { $exists: true },
           },
         },
-        // {
-        //   $lookup: {
-        //     from: "priviledges",
-        //     localField: "privileges",
-        //     foreignField: "_id",
-        //     as: "privileges",
-        //   },
-        // },
+        {
+          $addFields: {
+            privileges: {
+              $map: {
+                input: "$privileges",
+                as: "privilege",
+                in: {
+                  $toObjectId: "$$privilege",
+                },
+              },
+            },
+          },
+        },
+        {
+          $lookup: {
+            from: "privileges",
+            localField: "privileges",
+            foreignField: "_id",
+            as: "privileges",
+            pipeline: [{ $project: { name: 1 } }],
+          },
+        },
         {
           $project: {
             firstName: 1,
@@ -40,13 +54,17 @@ const getOrganizationUsers = async (req, res) => {
             phone: 1,
             gender: 1,
             role: 1,
-          }
+            privileges: 1,
+          },
         },
         {
           $facet: {
-            data: [{ $skip: options.limit * (options.page - 1) }, { $limit: options.limit }],
+            data: [
+              { $skip: options.limit * (options.page - 1) },
+              { $limit: options.limit },
+            ],
             totalCount: [
-              { $count: "count" }, 
+              { $count: "count" },
               {
                 $addFields: {
                   page: options.page,
@@ -66,7 +84,6 @@ const getOrganizationUsers = async (req, res) => {
         },
       });
     }
-    
 
     const users = await User.find({
       organizationId,
@@ -188,7 +205,6 @@ const changePassword = async (req, res) => {
     });
   }
 };
-
 
 const getAllUsers = async (req, res) => {
   try {

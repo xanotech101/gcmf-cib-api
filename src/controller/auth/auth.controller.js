@@ -39,7 +39,7 @@ const login = async (req, res) => {
       });
     }
 
-    const token = user.generateAuthToken();
+    const token = await user.generateAuthToken();
 
     // create audit trail
     const myUser = await User.findById(user._id);
@@ -64,7 +64,6 @@ const login = async (req, res) => {
       },
     });
   } catch (error) {
-    console.log("🚀 ~ file: auth.controller.js:51 ~ login ~ error", error)
     res.status(500).json({
       status: "failed",
       message: "Unable to login user",

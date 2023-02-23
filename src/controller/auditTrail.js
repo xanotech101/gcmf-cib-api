@@ -20,7 +20,7 @@ const getAllAuditTrail = async (req, res) => {
           as: "user",
         },
       },
-{
+      {
         $facet: {
           data: [
             {
@@ -47,13 +47,13 @@ const getAllAuditTrail = async (req, res) => {
         },
       },
     ]);
-    
-    res.status(200).json({ 
-      message: "Audit trail fetcehd successfully", 
+
+    res.status(200).json({
+      message: "Audit trail fetcehd successfully",
       data: {
         trails: result[0].data,
-        meta: result[0].meta[0]
-      } 
+        meta: result[0].meta[0],
+      },
     });
   } catch (error) {
     console.log(error);
@@ -70,14 +70,12 @@ const getOrganizationAuditTrail = async (req, res) => {
     sort: { createdAt: -1 },
   };
 
-
   try {
     const result = await AuditTrail.aggregate([
       {
-        $match: { organization: req.user.organization }
+        $match: { organization: req.user.organization },
       },
       {
-        
         $lookup: {
           from: "users",
           localField: "user",
@@ -89,13 +87,13 @@ const getOrganizationAuditTrail = async (req, res) => {
                 _id: 1,
                 firstName: 1,
                 lastName: 1,
-              }
-            }
-          ]
+              },
+            },
+          ],
         },
       },
       {
-        $unwind: "$user"
+        $unwind: "$user",
       },
       {
         $facet: {
@@ -124,22 +122,21 @@ const getOrganizationAuditTrail = async (req, res) => {
         },
       },
     ]);
-    
-    res.status(200).json({ 
-      message: "Audit trail fetched successfully", 
+
+    res.status(200).json({
+      message: "Audit trail fetched successfully",
       data: {
         trails: result[0].data,
-        meta: result[0].meta[0]
-      } 
+        meta: result[0].meta[0],
+      },
     });
-  }catch (error) {
+  } catch (error) {
     console.log(error);
     res.status(500).json({ message: error.message });
   }
-}
-
+};
 
 module.exports = {
   getAllAuditTrail,
-  getOrganizationAuditTrail
+  getOrganizationAuditTrail,
 };
