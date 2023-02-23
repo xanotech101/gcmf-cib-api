@@ -16,10 +16,6 @@ const initiateRequestSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectID,
       ref: "User",
     },
-    verifier: {
-      type: mongoose.Schema.Types.ObjectID,
-      ref: "User",
-    },
     status: {
       type: String,
       enum: [
@@ -45,6 +41,13 @@ const initiateRequestSchema = new mongoose.Schema(
         reason: String,
       },
     ],
+    verifierAction: {
+      status: {
+        type: String,
+        enum: ["approved", "declined"],
+      },
+      reason: String,
+    },
     time: Date,
   },
   {

@@ -18,7 +18,7 @@ const {
   getAllRequest,
   getAllInitiatorRequests,
   getRequestById,
-  verifierApprovalRequest,  
+  verifierApproveRequest,  
   verifierDeclineRequest,
 } = require("../controller/initiateRequest/initiateRequest.controller");
 const batchUpload = require("../controller/batchUpload");
@@ -33,8 +33,8 @@ router.get("/initiator", initiatorAuth, getAllInitiatorRequests);
 router.put("/authoriser/approve/:id", authoriserAuth, approveRequest);
 router.put("/authoriser/decline/:id", authoriserAuth, declineRequest);
 
-router.put("verifier/decline/:id", verifierAuth, verifierApprovalRequest);
-router.put("verifier/approve/:id", verifierAuth, verifierDeclineRequest);
+router.put("/verifier/decline/:id", verifierAuth,  verifierDeclineRequest);
+router.put("/verifier/approve/:id", verifierAuth, verifierApproveRequest);
 
 // bulk upload request
 router.post("/upload", upload.single("file"), initiatorAuth, batchUpload);
