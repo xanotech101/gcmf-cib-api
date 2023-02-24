@@ -63,7 +63,8 @@ const batchUpload = async (req, res) => {
        })
          .populate("verifier");
 
-    for (let i = 0; i < datum.length; i++) {
+    for (let i = 0; i < formattedFile.length; i++) {
+      const datum = formattedFile[i];
       let request = new InitiateRequest({
         customerName: datum.customerName,
         amount: datum.amount,

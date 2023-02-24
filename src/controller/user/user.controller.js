@@ -88,7 +88,7 @@ const getOrganizationUsers = async (req, res) => {
 
     const users = await User.find({
       organizationId,
-      privileges: privilege ? { $in: [privilege] } : { $exists: true },
+      // privileges: privilege ? { $in: [privilege] } : { $exists: true },
     });
 
     if (!users) {

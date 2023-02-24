@@ -41,7 +41,7 @@ const generateOTP = async (req, res) => {
 
     await newOtp.save();
 
-    await sendSMS(num, smsBody);
+    // await sendSMS(num, smsBody);
 
     const subject = "Verification Code";
     const message = `${user.firstName}, Your GCMB confirmation OTP code is ${otp}.`;
