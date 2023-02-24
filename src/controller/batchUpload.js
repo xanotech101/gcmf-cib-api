@@ -10,8 +10,6 @@ const { sendEmail } = require("../utils/emailService");
 const notificationService = require("../services/notification.service");
 const AuditTrail = require("../model/auditTrail");
 
-
-
 const batchUpload = async (req, res) => {
   try {
     let data;
@@ -57,11 +55,12 @@ const batchUpload = async (req, res) => {
 
     fs.unlinkSync(req.file.path);
 
-       let mandate = await Mandate.find({}).populate({
-         path: "authorisers",
-         select: "firstName email",
-       })
-         .populate("verifier");
+    let mandate = await Mandate.find({})
+      .populate({
+        path: "authorisers",
+        select: "firstName email",
+      })
+      .populate("verifier");
 
     for (let i = 0; i < formattedFile.length; i++) {
       const datum = formattedFile[i];
@@ -98,7 +97,7 @@ const batchUpload = async (req, res) => {
 
       let result = await request.save();
 
-      for (let i = 0; i < authoriserDetails.length; i++) {
+      for (let i = 0; i < (authoriserDetails?.length ?? []); i++) {
         let authoriser = authoriserDetails[i];
 
         const subject = "Transaction Request Initiated";
@@ -140,8 +139,9 @@ const batchUpload = async (req, res) => {
       await audit.save();
     }
 
-
-    return res.status(200).json({ message: "File uploaded successfully", data });
+    return res
+      .status(200)
+      .json({ message: "File uploaded successfully", data });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: error.message });
@@ -149,4 +149,3 @@ const batchUpload = async (req, res) => {
 };
 
 module.exports = batchUpload;
-  

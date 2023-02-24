@@ -331,7 +331,7 @@ const approveRequest = async (req, res) => {
 
 const getAllInitiatorRequests = async (req, res) => {
   const { perPage, page } = req.query;
-  console.log(req.user);
+  console.log(req.user._id);
 
   const options = {
     page: page || 1,
