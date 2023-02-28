@@ -6,6 +6,7 @@ const createError = require("http-errors");
 const cookieParser = require("cookie-parser");
 const logger = require("morgan");
 const userRoute = require("./routes/user.route");
+const tokenRoute = require("./routes/csrfToken");
 const accountRoute = require("./routes/account");
 const mandateRoute = require("./routes/mandate.route");
 const requestRoute = require("./routes/initiateRequest");
@@ -49,6 +50,8 @@ app.use(cookieParser());
 app.use(bodyparser.urlencoded({ extended: false }));
 app.use(bodyparser.json());
 
+
+app.use("/api/token", tokenRoute);
 app.use("/api/auth", authRoute);
 app.use("/api/users", userRoute);
 app.use("/api/account", accountRoute);
