@@ -1,37 +1,60 @@
-const config = require("../config/bankine");
+const config = require("../config/bankone");
 const axios = require("axios");
 
 class BankOneService {
-  async getAccountByAccountNo() {
+  async accountByAccountNo(accountNo, authToken) {
     try {
-      const { data } = await axios.get(config.getAccountByAccountNo);
+      const { data } = await axios.get(
+        `${config.getAccountByAccountNo}?authtoken=${authToken}&accountNumber=${accountNo}`
+      );
+      return data;
+    } catch (error) {
+        console.log(error);
+        return null;
+    }
+  }
+
+  async accountByCustomerID(customerId, authToken) {
+    try {
+      const { data } = await axios.get(
+        `${config.getAccountByCustomerID}?authtoken=${authToken}&customerId=${customerId}`
+      );
       return data;
     } catch (error) {
       return null;
     }
   }
 
-  async getAccountByCustomerID() {
+  async transactionHistory(
+    authToken,
+    fromDate,
+    toDate,
+    productCode,
+    institutionCode,
+    pageNo,
+    PageSize
+  ) {
     try {
-      const { data } = await axios.get(config.getAccountByCustomerID);
+      const { data } = await axios.get(
+        `${config.transactionHistory}?authtoken=${authToken}&fromDate=${fromDate}&toDate=${toDate}&productCode=${productCode}&institutionCode=${institutionCode}&pageNo=${pageNo}&PageSize=${PageSize}`
+      );
       return data;
     } catch (error) {
       return null;
     }
   }
 
-  async getTransactionHistory() {
+  async accountStatement(
+    authToken,
+    accountNumber,
+    fromDate,
+    toDate,
+    isPdf,
+  ) {
     try {
-      const { data } = await axios.get(config.transactionHistory);
-      return data;
-    } catch (error) {
-      return null;
-    }
-  }
-
-  async getAccountStatement() {
-    try {
-      const { data } = await axios.get(config.accountStatement);
+      const { data } = await axios.get(
+        `${config.accountStatement}?authtoken=${authToken}&accountNumber=${accountNumber}&fromDate=${fromDate}&toDate=${toDate}&isPdf=${isPdf}`
+      );
       return data;
     } catch (error) {
       return null;
@@ -40,7 +63,7 @@ class BankOneService {
 
   async getInterbankTransfer() {
     try {
-      const { data } = await axios.get(config.interbankTransfer);
+      const { data } = await axios.get(`${config.interbankTransfer}`);
       return data;
     } catch (error) {
       return null;
@@ -49,25 +72,21 @@ class BankOneService {
 
   async getIntrabankTransfer() {
     try {
-      const { data } = await axios.get(config.intrabankTransfer);
+      const { data } = await axios.get(`${config.intrabankTransfer}`);
       return data;
     } catch (error) {
       return null;
     }
   }
 
-  async getNameEnquiry() {
+    async getNameEnquiry(
+        authToken,
+        accountNumber,
+        institutionCode,) {
     try {
-      const { data } = await axios.get(config.nameEnquiry);
-      return data;
-    } catch (error) {
-      return null;
-    }
-  }
-
-  async getNameEnquiry() {
-    try {
-      const { data } = await axios.get("https://api.publicapis.org/entries");
+      const { data } = await axios.post(
+        `${config.nameEnquiry}?authtoken=${authToken}&accountNumber=${accountNumber}&institutionCode=${institutionCode}`
+      );
       return data;
     } catch (error) {
       return null;

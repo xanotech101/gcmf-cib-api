@@ -236,7 +236,11 @@ const approveRequest = async (req, res) => {
       });
     }
 
-    const otpDetails = await Otp.findOne({ otp: req.body.otp, user: userId, transaction: request._id });
+    const otpDetails = await Otp.findOne({
+      otp: req.body.otp,
+      user: userId,
+      transaction: request._id,
+    });
 
     if (!otpDetails) {
       return res.status(404).json({
@@ -259,8 +263,8 @@ const approveRequest = async (req, res) => {
       } else if (
         transaction.authoriserID == req.user._id &&
         transaction.status === "rejected"
-        ) {
-        transaction.reason = req.body.reason
+      ) {
+        transaction.reason = req.body.reason;
         transaction.status = "authorised";
         duplicate = true;
       }
@@ -297,7 +301,7 @@ const approveRequest = async (req, res) => {
       ]);
       request.status = "awaiting verification";
     }
-    
+
     // create audit trail
     const user = await User.findById(req.user._id);
     let dt = new Date(new Date().toISOString());
@@ -385,7 +389,7 @@ const getAllInitiatorRequests = async (req, res) => {
       },
     ]);
 
-    res.status(200).json({
+    return res.status(200).json({
       message: "Request Successful",
       data: {
         requests: requests[0].data,
@@ -394,7 +398,7 @@ const getAllInitiatorRequests = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 };
 
@@ -455,7 +459,7 @@ const getAllAuthoriserRequests = async (req, res) => {
       },
     ]);
 
-    res.status(200).json({
+    return res.status(200).json({
       message: "Request Successful",
       data: {
         requests: requests[0].data,
@@ -464,7 +468,7 @@ const getAllAuthoriserRequests = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 };
 
@@ -607,7 +611,7 @@ const verifierApproveRequest = async (req, res) => {
     request.status = "approved";
     const verifierAction = {
       status: "approved",
-      reason: req.body.reason
+      reason: req.body.reason,
     };
     request.verifierAction = verifierAction;
     await request.save();
@@ -694,7 +698,7 @@ const verifierDeclineRequest = async (req, res) => {
     request.status = "declined";
     const verifierAction = {
       status: "declined",
-      reason: req.body.reason
+      reason: req.body.reason,
     };
     request.verifierAction = verifierAction;
     await request.save();

@@ -2,19 +2,18 @@
 
 const bankone = {
   getAccountByAccountNo:
-    "http://52.168.85.231/BankOneWebAPI/swagger/ui/index#!/Account/Account_GetAccountByAccountNumber",
+    "http://52.168.85.231/BankOneWebAPI/api/Account/GetAccountByAccountNumber/2/",
   getAccountByCustomerID:
-    "http://52.168.85.231/BankOneWebAPI/swagger/ui/index#!/Account/Account_GetAccountsByCustomerId",
+    "http://52.168.85.231/BankOneWebAPI/api/Account/GetAccountsByCustomerId/2",
   transactionHistory:
-    "http://52.168.85.231/BankOneWebAPI/swagger/ui/index#!/Account/Account_GetAllTransactionsPaginated",
+    "http://52.168.85.231/BankOneWebAPI/api/Account/GetAllTransactionsPaginated/2",
   accountStatement:
-    "http://52.168.85.231/BankOneWebAPI/swagger/ui/index#!/Account/Account_GenerateAccountStatement2",
+    "http://52.168.85.231/BankOneWebAPI/api/Account/GenerateAccountStatement2/2",
   interbankTransfer:
     "http://52.168.85.231/thirdpartyapiservice/apiservice/Transfer/InterbankTransfer",
   intrabankTransfer:
     "http://52.168.85.231/thirdpartyapiservice/apiservice/CoreTransactions/LocalFundsTransfer ",
-  nameEnquiry:
-    "http://52.168.85.231/ThirdPartyAPIService/APIService/Transfer/NameEnquiry"
+  nameEnquiry: "http://52.168.85.231/BankOneWebAPI/api/Account/DoNameEnquiry/2",
 };
 
 module.exports = bankone;

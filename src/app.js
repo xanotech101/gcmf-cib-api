@@ -5,6 +5,8 @@ const app = express();
 const createError = require("http-errors");
 const cookieParser = require("cookie-parser");
 const logger = require("morgan");
+
+
 const userRoute = require("./routes/user.route");
 const tokenRoute = require("./routes/csrfToken");
 const accountRoute = require("./routes/account");
@@ -16,8 +18,12 @@ const authRoute = require("./routes/auth.route");
 const notificationRoute = require("./routes/notification.route");
 const otpRoute = require("./routes/otp.route");
 const privilegeRoute = require("./routes/privilege.route");
+const bankoneRoute = require("./routes/bankone.route");
+
+
 const cors = require("cors");
 const connectDB = require("./config/db");
+
 
 const URI = process.env.MONGO_URI;
 
@@ -62,6 +68,9 @@ app.use("/api/requests", requestRoute);
 app.use("/api/notifications", notificationRoute);
 app.use("/api/otp", otpRoute);
 app.use("/api/privileges", privilegeRoute);
+app.use("/api/account", bankoneRoute);
+
+
 
 app.use(function (req, res, next) {
   next(createError(404));
