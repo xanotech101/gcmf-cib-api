@@ -45,11 +45,13 @@ class BankOneService {
     }
   }
 
-  async getNameEnquiry(authToken, accountNumber, institutionCode) {
+  async getNameEnquiry(authToken, accountNumber, bankCode) {
     try {
-      const { data } = await axios.post(
-        `${config.nameEnquiry}?authtoken=${authToken}&accountNumber=${accountNumber}&institutionCode=${institutionCode}`
-      );
+      const { data } = await axios.post(`${config.nameEnquiry}`, {
+        AccountNumber: accountNumber,
+        BankCode: bankCode,
+        Token: authToken,
+      });
       return data;
     } catch (error) {
       // return null;

@@ -103,55 +103,85 @@ const getAccountStatement = async (req, res) => {
       message: "Unable to get bank account details",
     });
   }
-
-  return res.status(200).json({
-    status: "Success",
-    message: "Account Details retrieved successfully",
-    data: statement,
-  });
-};
+}
 
 
+const getNameEnquiry = async (req, res) => {
 
+  const { AccountNumber, BankCode } = req.body;
 
-const getTransactionsPaginated = async (req, res) => {
-  const accountNumber = req.params.account;
-  const fromDate = req.query.fromDate;
-  const toDate = req.query.toDate;
-  const institutionCode = req.query.institutionCode;
-  const pageNo = req.query.pageNo;
-  const PageSize = req.query.PageSize;
-  const authToken = "8424f843-fd36-4a30-8e7e-18f4f920aa91";
+    const authToken = "8424f843-fd36-4a30-8e7e-18f4f920aa91";
 
-  const getTransactions = await bankOneService.getTransactionsPaginated(
-    authToken,
-    accountNumber,
-    fromDate,
-    toDate,
-    institutionCode,
-    pageNo,
-    PageSize
-  );
+    const enquiry = await bankOneService.getNameEnquiry(
+      authToken,
+      AccountNumber,
+      BankCode
+    ); 
 
-  if (!getTransactions) {
-    return res.status(500).json({
-      status: "Failed",
-      message: "Unable to get bank account details",
+    if (!enquiry) {
+      return res.status(500).json({
+        status: "Failed",
+        message: "Unable to get bank account details",
+      });
+    }
+
+    return res.status(200).json({
+      status: "Success",
+      message: "Name Enquiry retrieved successfully",
+      data: enquiry,
     });
-  }
+  };
 
-  return res.status(200).json({
-    status: "Success",
-    message: "Account Details retrieved successfully",
-    data: getTransactions,
-  });
-};
 
+
+
+  const getTransactionsPaginated = async (req, res) => {
+    const accountNumber = req.params.account;
+    const fromDate = req.query.fromDate;
+    const toDate = req.query.toDate;
+    const institutionCode = req.query.institutionCode;
+    const pageNo = req.query.pageNo;
+    const PageSize = req.query.PageSize;
+    const authToken = "8424f843-fd36-4a30-8e7e-18f4f920aa91";
+
+    const getTransactions = await bankOneService.getTransactionsPaginated(
+      authToken,
+      accountNumber,
+      fromDate,
+      toDate,
+      institutionCode,
+      pageNo,
+      PageSize
+    );
+
+    if (!getTransactions) {
+      return res.status(500).json({
+        status: "Failed",
+        message: "Unable to get bank account details",
+      });
+    }
+
+    return res.status(200).json({
+      status: "Success",
+      message: "Account Details retrieved successfully",
+      data: getTransactions,
+    });
+  };
+
+  
 module.exports = {
   getAccountByAccountNo,
   getAccountByCustomerID,
   getTransactionHistory,
   getAccountStatement,
-  // getNameEnquiry
-  getTransactionsPaginated,
+  getNameEnquiry,
+  getTransactionsPaginated
 };
+
+
+
+// {
+//     "AccountNumber" : "0230650585",
+//     "BankCode" : "035",
+//     "Token" : "8424f843-fd36-4a30-8e7e-18f4f920aa91"
+// }
