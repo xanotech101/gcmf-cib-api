@@ -6,7 +6,8 @@ const {
   getAccountByCustomerID,
   getTransactionHistory,
   getAccountStatement,
-  getNameEnquiry,
+  // getNameEnquiry,
+  getTransactionsPaginated,
 } = require("../controller/bankone/bankDetails");
 const { adminAuth } = require("../middleware/auth");
 
@@ -14,7 +15,8 @@ router.get("/details/:account", adminAuth, getAccountByAccountNo);
 router.get("/detail/:customerId", adminAuth, getAccountByCustomerID);
 router.get("/history", adminAuth, getTransactionHistory);
 router.get("/statement/:account", adminAuth, getAccountStatement);
-router.get("/enquiry/:account/:institutionCode", adminAuth, getNameEnquiry);
+// router.get("/enquiry/:account/:institutionCode", adminAuth, getNameEnquiry);
+router.get("/tansactions/:account", adminAuth, getTransactionsPaginated);
 
 
 module.exports = router;

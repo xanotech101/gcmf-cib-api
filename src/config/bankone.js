@@ -14,6 +14,12 @@ const bankone = {
   intrabankTransfer:
     "http://52.168.85.231/thirdpartyapiservice/apiservice/CoreTransactions/LocalFundsTransfer ",
   nameEnquiry: "http://52.168.85.231/BankOneWebAPI/api/Account/DoNameEnquiry/2",
+  getTransactions: "http://52.168.85.231/BankOneWebAPI/api/Account/GetTransactionsPaginated/2",
 };
+
+
+
+
+ 
 
 module.exports = bankone;

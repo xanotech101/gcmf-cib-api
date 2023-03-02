@@ -9,8 +9,8 @@ class BankOneService {
       );
       return data;
     } catch (error) {
-        console.log(error);
-        return null;
+      console.log(error);
+      return null;
     }
   }
 
@@ -22,7 +22,7 @@ class BankOneService {
       return data;
     } catch (error) {
       // return null;
-      console.log(error.message)
+      console.log(error.message);
     }
   }
 
@@ -45,13 +45,19 @@ class BankOneService {
     }
   }
 
-  async accountStatement(
-    authToken,
-    accountNumber,
-    fromDate,
-    toDate,
-    isPdf,
-  ) {
+  async getNameEnquiry(authToken, accountNumber, institutionCode) {
+    try {
+      const { data } = await axios.post(
+        `${config.nameEnquiry}?authtoken=${authToken}&accountNumber=${accountNumber}&institutionCode=${institutionCode}`
+      );
+      return data;
+    } catch (error) {
+      // return null;
+      console.log(error);
+    }
+  }
+
+  async accountStatement(authToken, accountNumber, fromDate, toDate, isPdf) {
     try {
       const { data } = await axios.get(
         `${config.accountStatement}?authtoken=${authToken}&accountNumber=${accountNumber}&fromDate=${fromDate}&toDate=${toDate}&isPdf=${isPdf}`
@@ -59,7 +65,7 @@ class BankOneService {
       return data;
     } catch (error) {
       // return null;
-      console.log(error)
+      console.log(error);
     }
   }
 
@@ -81,18 +87,24 @@ class BankOneService {
     }
   }
 
-    async getNameEnquiry(
-        authToken,
-        accountNumber,
-        institutionCode) {
+
+  async getTransactionsPaginated(
+    authToken,
+    accountNumber,
+    fromDate,
+    toDate,
+    institutionCode,
+    pageNo,
+    PageSize
+  ) {
     try {
       const { data } = await axios.post(
-        `${config.nameEnquiry}?authtoken=${authToken}&accountNumber=${accountNumber}&institutionCode=${institutionCode}`
+        `${config.nameEnquiry}?authtoken=${authToken}&accountNumber=${accountNumber}&fromDate=${fromDate}&toDate=${toDate}&institutionCode=${institutionCode}&pageNo=${pageNo}&PageSize=${PageSize}`
       );
       return data;
     } catch (error) {
       // return null;
-      console.log(error)
+      console.log(error);
     }
   }
 }
