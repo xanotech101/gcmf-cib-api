@@ -4,7 +4,7 @@ const bankone = {
   getAccountByAccountNo:
     "http://52.168.85.231/BankOneWebAPI/api/Account/GetAccountByAccountNumber/2/",
   getAccountByCustomerID:
-    "http://52.168.85.231/BankOneWebAPI/api/Account/GetAccountsByCustomerId/2",
+    "http://52.168.85.231/BankOneWebAPI/api/Account/GetAccountsByCustomerId/2/",
   transactionHistory:
     "http://52.168.85.231/BankOneWebAPI/api/Account/GetAllTransactionsPaginated/2",
   accountStatement:

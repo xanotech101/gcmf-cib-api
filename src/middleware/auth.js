@@ -41,7 +41,6 @@ function adminAuth(req, res, next) {
       });
     }
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log(decoded)
     const arr = decoded.privileges;
 
     if (!arr.includes("admin") && !arr.includes("superUser")) {

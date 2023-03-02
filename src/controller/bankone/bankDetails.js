@@ -24,9 +24,13 @@ const getAccountByAccountNo = async (req, res) => {
 
 const getAccountByCustomerID = async (req, res) => {
   let customerId = req.params.customerId;
+  console.log(customerId)
   let authToken = "8424f843-fd36-4a30-8e7e-18f4f920aa91";
 
-  const accountDetails = await accountByCustomerID(customerId, authToken);
+  const accountDetails = await bankOneService.accountByCustomerID(
+    customerId,
+    authToken
+  );
 
   if (!accountDetails) {
     return res.status(500).json({
@@ -51,7 +55,7 @@ const getTransactionHistory = async (req, res) => {
   const PageSize = req.query.PageSize;
   const authToken = "8424f843-fd36-4a30-8e7e-18f4f920aa91";
 
-  const transactionHistory = await transactionHistory(
+  const transHistory = await bankOneService.transactionHistory(
     authToken,
     fromDate,
     toDate,
@@ -61,7 +65,7 @@ const getTransactionHistory = async (req, res) => {
     PageSize
   );
 
-  if (!transactionHistory) {
+  if (!transHistory) {
     return res.status(500).json({
       status: "Failed",
       message: "Unable to get bank account details",
@@ -71,7 +75,7 @@ const getTransactionHistory = async (req, res) => {
   return res.status(200).json({
     status: "Success",
     message: "Account Details retrieved successfully",
-    data: transactionHistory,
+    data: transHistory,
   });
 };
 
@@ -80,18 +84,20 @@ const getAccountStatement = async (req, res) => {
   const fromDate = req.query.fromDate;
   const toDate = req.query.toDate;
   const isPdf = req.query.isPdf;
-  const accountNumber = req.params.accountNumber;
+  const account = req.params.account;
   const authToken = "8424f843-fd36-4a30-8e7e-18f4f920aa91";
 
-  const accountStatement = await accountStatement(
+  console.log(account)
+
+  const statement = await bankOneService.accountStatement(
     authToken,
-    accountNumber,
+    account,
     fromDate,
     toDate,
-    isPdf,
+    isPdf
   );
 
-  if (!accountStatement) {
+  if (!statement) {
     return res.status(500).json({
       status: "Failed",
       message: "Unable to get bank account details",
@@ -101,14 +107,44 @@ const getAccountStatement = async (req, res) => {
   return res.status(200).json({
     status: "Success",
     message: "Account Details retrieved successfully",
-    data: accountStatement,
+    data: statement,
   });
 };
 
+
+
+
+const getNameEnquiry = async (req, res) => {
+  const institutionCode = req.params.institutionCode;
+  const account = req.params.account;
+  const authToken = "8424f843-fd36-4a30-8e7e-18f4f920aa91";
+
+  console.log(req.params)
+
+  const statement = await bankOneService.getNameEnquiry(
+    authToken,
+    account,
+    institutionCode
+  );
+
+  if (!statement) {
+    return res.status(500).json({
+      status: "Failed",
+      message: "Unable to get bank account details",
+    });
+  }
+
+  return res.status(200).json({
+    status: "Success",
+    message: "Account Details retrieved successfully",
+    data: statement,
+  });
+};
 
 module.exports = {
   getAccountByAccountNo,
   getAccountByCustomerID,
   getTransactionHistory,
   getAccountStatement,
+  getNameEnquiry
 };

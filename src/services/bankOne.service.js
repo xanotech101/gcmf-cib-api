@@ -21,7 +21,8 @@ class BankOneService {
       );
       return data;
     } catch (error) {
-      return null;
+      // return null;
+      console.log(error.message)
     }
   }
 
@@ -57,7 +58,8 @@ class BankOneService {
       );
       return data;
     } catch (error) {
-      return null;
+      // return null;
+      console.log(error)
     }
   }
 
@@ -72,7 +74,7 @@ class BankOneService {
 
   async getIntrabankTransfer() {
     try {
-      const { data } = await axios.get(`${config.intrabankTransfer}`);
+      const { data } = await axios.post(`${config.intrabankTransfer}`);
       return data;
     } catch (error) {
       return null;
@@ -82,14 +84,15 @@ class BankOneService {
     async getNameEnquiry(
         authToken,
         accountNumber,
-        institutionCode,) {
+        institutionCode) {
     try {
       const { data } = await axios.post(
         `${config.nameEnquiry}?authtoken=${authToken}&accountNumber=${accountNumber}&institutionCode=${institutionCode}`
       );
       return data;
     } catch (error) {
-      return null;
+      // return null;
+      console.log(error)
     }
   }
 }
