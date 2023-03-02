@@ -25,7 +25,7 @@ const cors = require("cors");
 const connectDB = require("./config/db");
 
 
-const URI = process.env.MONGO_URI;
+let URI = process.env.MONGO_URI;
 
 if (process.env.NODE_ENV == "development") {
   URI = "mongodb://localhost/xanotech";

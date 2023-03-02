@@ -12,10 +12,9 @@ const initiateRequestSchema = new mongoose.Schema(
     accountNumber: String,
     accountName: String,
     transferStatus: String,
-    initiator: {
-      type: mongoose.Schema.Types.ObjectID,
-      ref: "User",
-    },
+    bankCode: String,
+    organizationId: String,
+    numberOfAuthorisers: Number,
     status: {
       type: String,
       enum: [
@@ -27,7 +26,10 @@ const initiateRequestSchema = new mongoose.Schema(
       ],
       default: "pending",
     },
-    numberOfAuthorisers: Number,
+    initiator: {
+      type: mongoose.Schema.Types.ObjectID,
+      ref: "User",
+    },
     authorisersAction: [
       {
         status: {
@@ -47,6 +49,10 @@ const initiateRequestSchema = new mongoose.Schema(
         enum: ["approved", "declined"],
       },
       reason: String,
+    },
+    type: {
+      enum: ['inter-bank', 'intra-bank'],
+      type: String
     },
     time: Date,
   },

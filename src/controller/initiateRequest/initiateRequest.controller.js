@@ -101,6 +101,257 @@ const initiateRequest = async (req, res) => {
   }
 };
 
+const getAllInitiatorRequests = async (req, res) => {
+  const { perPage, page } = req.query;
+  console.log(req.user._id);
+
+  const options = {
+    page: page || 1,
+    limit: perPage || PER_PAGE,
+    sort: { createdAt: -1 },
+  };
+
+  try {
+    const requests = await InitiateRequest.aggregate([
+      {
+        $match: {
+          initiator: mongoose.Types.ObjectId(req.user._id),
+        },
+      },
+      {
+        $lookup: {
+          from: "mandates",
+          localField: "mandate",
+          foreignField: "_id",
+          as: "mandate",
+        },
+      },
+      {
+        $unwind: "$mandate",
+      },
+      {
+        $facet: {
+          data: [
+            {
+              $sort: { ...options.sort },
+            },
+            {
+              $skip: options.limit * (options.page - 1),
+            },
+            {
+              $limit: options.limit * 1,
+            },
+          ],
+          meta: [
+            {
+              $count: "total",
+            },
+            {
+              $addFields: {
+                page: options.page,
+                perPage: options.limit,
+              },
+            },
+          ],
+        },
+      },
+    ]);
+
+    return res.status(200).json({
+      message: "Request Successful",
+      data: {
+        requests: requests[0].data,
+        meta: requests[0].meta[0],
+      },
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+const getAllAuthoriserRequests = async (req, res) => {
+  const { perPage, page } = req.query;
+
+  const options = {
+    page: page || 1,
+    limit: perPage || PER_PAGE,
+    sort: { createdAt: -1 },
+  };
+
+  try {
+    const requests = await InitiateRequest.aggregate([
+      {
+        $lookup: {
+          from: "mandates",
+          localField: "mandate",
+          foreignField: "_id",
+          as: "mandate",
+        },
+      },
+      {
+        $unwind: "$mandate",
+      },
+      {
+        $match: {
+          "mandate.authorisers": {
+            $in: [mongoose.Types.ObjectId(req.user._id)],
+          },
+        },
+      },
+      {
+        $facet: {
+          data: [
+            {
+              $sort: { ...options.sort },
+            },
+            {
+              $skip: options.limit * (options.page - 1),
+            },
+            {
+              $limit: options.limit * 1,
+            },
+          ],
+          meta: [
+            {
+              $count: "total",
+            },
+            {
+              $addFields: {
+                page: options.page,
+                perPage: options.limit,
+              },
+            },
+          ],
+        },
+      },
+    ]);
+
+    return res.status(200).json({
+      message: "Request Successful",
+      data: {
+        requests: requests[0].data,
+        meta: requests[0].meta[0],
+      },
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+const getAllRequest = async (req, res) => {
+  const { page, perPage } = req.query;
+
+  const options = {
+    page: page || 1,
+    limit: perPage || PER_PAGE,
+    sort: { createdAt: -1 },
+  };
+
+  try {
+    const request = await InitiateRequest.aggregate([
+      {
+        $lookup: {
+          from: "mandates",
+          localField: "mandate",
+          foreignField: "_id",
+          as: "mandate",
+        },
+      },
+      {
+        $unwind: "$mandate",
+      },
+      {
+        $facet: {
+          data: [
+            {
+              $sort: { ...options.sort },
+            },
+            {
+              $skip: options.limit * (options.page - 1),
+            },
+            {
+              $limit: options.limit * 1,
+            },
+          ],
+          meta: [
+            {
+              $count: "total",
+            },
+            {
+              $addFields: {
+                page: options.page,
+                perPage: options.limit,
+              },
+            },
+          ],
+        },
+      },
+    ]);
+
+    res.status(200).json({
+      message: "Request Successful",
+      data: {
+        requests: request[0].data,
+        meta: request[0].meta[0],
+      },
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const getRequestByOrganizationId = async (req, res) => {
+  return {}
+}
+
+const getRequestById = async (req, res) => {
+  try {
+    const _id = req.params.id;
+    const request = await InitiateRequest.findOne({ _id })
+      .populate({
+        path: "mandate",
+        select: "maxAmount minAmount authorisers verifier",
+        populate: [
+          {
+            path: "authorisers",
+            model: "User",
+            select: "firstName lastName",
+          },
+          {
+            path: "verifier",
+            model: "User",
+            select: "firstName lastName",
+          },
+        ],
+      })
+      .populate({
+        path: "initiator",
+        model: "User",
+        select: "firstName lastName email",
+      });
+
+    if (!request) {
+      return res.status(404).json({
+        message: "Request not found",
+        status: "success",
+      });
+    }
+    res.status(200).json({
+      message: "Request Successful",
+      data: request,
+      status: "success",
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+      status: "error",
+    });
+  }
+};
+
 const declineRequest = async (req, res) => {
   try {
     const _id = req.params.id;
@@ -329,253 +580,6 @@ const approveRequest = async (req, res) => {
     res.status(500).json({
       message: error.message,
       status: "failed",
-    });
-  }
-};
-
-const getAllInitiatorRequests = async (req, res) => {
-  const { perPage, page } = req.query;
-  console.log(req.user._id);
-
-  const options = {
-    page: page || 1,
-    limit: perPage || PER_PAGE,
-    sort: { createdAt: -1 },
-  };
-
-  try {
-    const requests = await InitiateRequest.aggregate([
-      {
-        $match: {
-          initiator: mongoose.Types.ObjectId(req.user._id),
-        },
-      },
-      {
-        $lookup: {
-          from: "mandates",
-          localField: "mandate",
-          foreignField: "_id",
-          as: "mandate",
-        },
-      },
-      {
-        $unwind: "$mandate",
-      },
-      {
-        $facet: {
-          data: [
-            {
-              $sort: { ...options.sort },
-            },
-            {
-              $skip: options.limit * (options.page - 1),
-            },
-            {
-              $limit: options.limit * 1,
-            },
-          ],
-          meta: [
-            {
-              $count: "total",
-            },
-            {
-              $addFields: {
-                page: options.page,
-                perPage: options.limit,
-              },
-            },
-          ],
-        },
-      },
-    ]);
-
-    return res.status(200).json({
-      message: "Request Successful",
-      data: {
-        requests: requests[0].data,
-        meta: requests[0].meta[0],
-      },
-    });
-  } catch (error) {
-    console.log(error);
-    return res.status(500).json({ message: error.message });
-  }
-};
-
-const getAllAuthoriserRequests = async (req, res) => {
-  const { perPage, page } = req.query;
-
-  const options = {
-    page: page || 1,
-    limit: perPage || PER_PAGE,
-    sort: { createdAt: -1 },
-  };
-
-  try {
-    const requests = await InitiateRequest.aggregate([
-      {
-        $lookup: {
-          from: "mandates",
-          localField: "mandate",
-          foreignField: "_id",
-          as: "mandate",
-        },
-      },
-      {
-        $unwind: "$mandate",
-      },
-      {
-        $match: {
-          "mandate.authorisers": {
-            $in: [mongoose.Types.ObjectId(req.user._id)],
-          },
-        },
-      },
-      {
-        $facet: {
-          data: [
-            {
-              $sort: { ...options.sort },
-            },
-            {
-              $skip: options.limit * (options.page - 1),
-            },
-            {
-              $limit: options.limit * 1,
-            },
-          ],
-          meta: [
-            {
-              $count: "total",
-            },
-            {
-              $addFields: {
-                page: options.page,
-                perPage: options.limit,
-              },
-            },
-          ],
-        },
-      },
-    ]);
-
-    return res.status(200).json({
-      message: "Request Successful",
-      data: {
-        requests: requests[0].data,
-        meta: requests[0].meta[0],
-      },
-    });
-  } catch (error) {
-    console.log(error);
-    return res.status(500).json({ message: error.message });
-  }
-};
-
-const getAllRequest = async (req, res) => {
-  const { page, perPage } = req.query;
-
-  const options = {
-    page: page || 1,
-    limit: perPage || PER_PAGE,
-    sort: { createdAt: -1 },
-  };
-
-  try {
-    const request = await InitiateRequest.aggregate([
-      {
-        $lookup: {
-          from: "mandates",
-          localField: "mandate",
-          foreignField: "_id",
-          as: "mandate",
-        },
-      },
-      {
-        $unwind: "$mandate",
-      },
-      {
-        $facet: {
-          data: [
-            {
-              $sort: { ...options.sort },
-            },
-            {
-              $skip: options.limit * (options.page - 1),
-            },
-            {
-              $limit: options.limit * 1,
-            },
-          ],
-          meta: [
-            {
-              $count: "total",
-            },
-            {
-              $addFields: {
-                page: options.page,
-                perPage: options.limit,
-              },
-            },
-          ],
-        },
-      },
-    ]);
-
-    res.status(200).json({
-      message: "Request Successful",
-      data: {
-        requests: request[0].data,
-        meta: request[0].meta[0],
-      },
-    });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: error.message });
-  }
-};
-
-const getRequestById = async (req, res) => {
-  try {
-    const _id = req.params.id;
-    const request = await InitiateRequest.findOne({ _id })
-      .populate({
-        path: "mandate",
-        select: "maxAmount minAmount authorisers verifier",
-        populate: [
-          {
-            path: "authorisers",
-            model: "User",
-            select: "firstName lastName",
-          },
-          {
-            path: "verifier",
-            model: "User",
-            select: "firstName lastName",
-          },
-        ],
-      })
-      .populate({
-        path: "initiator",
-        model: "User",
-        select: "firstName lastName email",
-      });
-
-    if (!request) {
-      return res.status(404).json({
-        message: "Request not found",
-        status: "success",
-      });
-    }
-    res.status(200).json({
-      message: "Request Successful",
-      data: request,
-      status: "success",
-    });
-  } catch (error) {
-    res.status(500).json({
-      message: error.message,
-      status: "error",
     });
   }
 };

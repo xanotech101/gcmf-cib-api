@@ -1,7 +1,7 @@
 const bankOneService = require("../../services/bankOne.service");
 
 const getAccountByAccountNo = async (req, res) => {
-  let accountNo = req.params.account;
+  let accountNo = req.params.account || '00680011010004232';
   let authToken = "8424f843-fd36-4a30-8e7e-18f4f920aa91";
 
   const accountDetails = await bankOneService.accountByAccountNo(
@@ -23,14 +23,10 @@ const getAccountByAccountNo = async (req, res) => {
 };
 
 const getAccountByCustomerID = async (req, res) => {
-  let customerId = req.params.customerId;
-  console.log(customerId)
+  let customerId = req.params.customerId || '004232';
   let authToken = "8424f843-fd36-4a30-8e7e-18f4f920aa91";
 
-  const accountDetails = await bankOneService.accountByCustomerID(
-    customerId,
-    authToken
-  );
+  const accountDetails = await bankOneService.accountByCustomerID(customerId, authToken);
 
   if (!accountDetails) {
     return res.status(500).json({
