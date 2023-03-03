@@ -104,14 +104,14 @@ const getAccountStatement = async (req, res) => {
 
 const getNameEnquiry = async (req, res) => {
 
-  const { AccountNumber, BankCode } = req.body;
+  const { accountNumber, bankCode } = req.body;
 
     const authToken = "8424f843-fd36-4a30-8e7e-18f4f920aa91";
 
     const enquiry = await bankOneService.getNameEnquiry(
       authToken,
-      AccountNumber,
-      BankCode
+      accountNumber,
+      bankCode
     ); 
 
     if (!enquiry) {

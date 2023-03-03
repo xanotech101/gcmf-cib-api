@@ -16,7 +16,7 @@ router.get("/detail/:customerId", adminAuth, getAccountByCustomerID);
 router.get("/balance", adminAuth, getAccountByAccountNo);
 router.get("/history", adminAuth, getTransactionHistory);
 router.get("/statement/:account", adminAuth, getAccountStatement);
-router.post("/enquiry", adminAuth, getNameEnquiry);
+router.post("/name-enquiry", adminAuth, getNameEnquiry);
 router.get("/transactions/:account", adminAuth, getTransactionsPaginated);
 
 

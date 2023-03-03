@@ -8,13 +8,22 @@ const initiateRequestSchema = new mongoose.Schema(
     },
     customerName: String,
     amount: Number,
-    bankName: String,
-    accountNumber: String,
-    accountName: String,
-    transferStatus: String,
-    bankCode: String,
+    beneficiaryBankCode: String,
+    beneficiaryAccountNumber: String,
+    beneficiaryBankName: String,
+    beneficiaryAccountName: String,
+    beneficiaryPhoneNumber: String,
+    beneficiaryAccountType: {
+      type: String,
+      enum: ['savings', 'current']
+    },
+    beneficiaryKYC: String,
+    beneficiaryBVN: String,
+    NIPSessionID: String,
+    transactionReference: String,
     organizationId: String,
     numberOfAuthorisers: Number,
+    transferStatus: String,
     status: {
       type: String,
       enum: [

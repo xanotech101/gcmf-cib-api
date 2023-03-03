@@ -70,3 +70,16 @@ const initiateRequestSchema = Joi.object().keys({
   accountName: Joi.string().min(3).max(60).lowercase().required(),
 });
 exports.validateInitiateRequestSchema = validateRequest(initiateRequestSchema);
+
+
+const getDateAndTime = () => {
+  const dt = new Date(new Date().toISOString());
+  const date = dt.toString().slice(0, 15);
+  const time = dt.toString().slice(16, 21);
+
+  return { date, time };
+};
+
+module.exports = {
+  getDateAndTime,
+};

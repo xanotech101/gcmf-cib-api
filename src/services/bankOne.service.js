@@ -54,8 +54,8 @@ class BankOneService {
       });
       return data;
     } catch (error) {
-      // return null;
       console.log(error);
+      return null;
     }
   }
 

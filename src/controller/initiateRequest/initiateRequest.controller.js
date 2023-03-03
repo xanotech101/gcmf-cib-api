@@ -2,28 +2,38 @@ const Mandate = require("../../model/mandate.model");
 const User = require("../../model/user.model");
 const InitiateRequest = require("../../model/initiateRequest.model");
 const AuditTrail = require("../../model/auditTrail");
-const { validateInitiateRequestSchema } = require("../../utils/utils");
+// const { validateInitiateRequestSchema } = require("../../utils/utils");
 const { sendEmail } = require("../../utils/emailService");
 const { PER_PAGE } = require("../../utils/constants");
-const notificationService = require("../../services/notification.service");
 const mongoose = require("mongoose");
 const Otp = require("../../model/otp.model");
+const { userService , auditTrailService, notificationService} = require("../../services");
+const { getDateAndTime } = require("../../utils/utils");
 
 const initiateRequest = async (req, res) => {
+  console.log("🚀 ~ file: initiateRequest.controller.js:14 ~ initiateRequest ~ req:", req.user)
   try {
-    const { error } = validateInitiateRequestSchema(req.body);
-    if (error)
-      return res.status(400).json({
-        message: error.details[0].message,
-        status: "failed",
-      });
+    // const { error } = validateInitiateRequestSchema(req.body);
+    // if (error)
+    //   return res.status(400).json({
+    //     message: error.details[0].message,
+    //     status: "failed",
+    //   });
 
     const request = new InitiateRequest({
-      customerName: req.body.customerName,
+      NIPSessionID: req.body.NIPSessionID,
       amount: req.body.amount,
-      bankName: req.body.bankName,
-      accountNumber: req.body.accountNumber,
-      accountName: req.body.accountName,
+      beneficiaryAccountName: req.body.beneficiaryAccountName,
+      beneficiaryAccountNumber: req.body.beneficiaryAccountNumber,
+      beneficiaryAccountType: req.body.beneficiaryAccountType,
+      beneficiaryBVN: req.body.beneficiaryBVN,
+      beneficiaryBankCode: req.body.beneficiaryBankCode,
+      beneficiaryBankName: req.body.beneficiaryBankName,
+      beneficiaryKYC: req.body.beneficiaryKYC,
+      beneficiaryPhoneNumber: req.body.beneficiaryPhoneNumber,
+      customerName: req.body.customerName,
+      organizationId: req.user.organizationId,
+      transactionReference: mongoose.Types.ObjectId().toString().substr(0, 12),
     });
 
     const mandate = await Mandate.findOne({
@@ -45,8 +55,8 @@ const initiateRequest = async (req, res) => {
     request.initiator = req.user._id;
 
     const result = await request.save();
-
     const notificationsToCreate = [];
+
     for (const authoriser of mandate.authorisers) {
       const notification = {
         title: "Transaction request Initiated",
@@ -71,16 +81,15 @@ const initiateRequest = async (req, res) => {
       await sendEmail(authoriser.email, subject, message);
     }
 
-    // create all the notifications at once
+    // send out notifications
     await notificationService.createNotifications(notificationsToCreate);
 
+    
     // create audit trail
-    const user = await User.findById(req.user._id);
-    let dt = new Date(new Date().toISOString());
-    let date = dt.toString().slice(0, 15);
-    let time = dt.toString().slice(16, 21);
+    const user = await userService.getUserById(req.user._id);
+    const { date, time } = getDateAndTime();
 
-    let audit = await AuditTrail.create({
+    await auditTrailService.createAuditTrail({
       user: req.user._id,
       type: "transaction",
       transaction: result._id,
@@ -88,7 +97,6 @@ const initiateRequest = async (req, res) => {
       organization: req.user.organization,
     });
 
-    await audit.save();
     return res.status(201).json({
       message: "Request initiated successfully and sent for approval",
       data: result,
@@ -302,10 +310,6 @@ const getAllRequest = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
-const getRequestByOrganizationId = async (req, res) => {
-  return {}
-}
 
 const getRequestById = async (req, res) => {
   try {
