@@ -15,7 +15,7 @@ const initiateRequestSchema = new mongoose.Schema(
     beneficiaryPhoneNumber: String,
     beneficiaryAccountType: {
       type: String,
-      enum: ['savings', 'current']
+      enum: ["savings", "current"],
     },
     beneficiaryKYC: String,
     beneficiaryBVN: String,
@@ -60,8 +60,8 @@ const initiateRequestSchema = new mongoose.Schema(
       reason: String,
     },
     type: {
-      enum: ['inter-bank', 'intra-bank'],
-      type: String
+      enum: ["inter-bank", "intra-bank"],
+      type: String,
     },
     time: Date,
   },
@@ -71,6 +71,3 @@ const initiateRequestSchema = new mongoose.Schema(
 );
 
 module.exports = mongoose.model("InitiateRequest", initiateRequestSchema);
-
-
-
