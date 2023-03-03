@@ -60,7 +60,7 @@ class BankOneService {
     }
   }
 
-  async getMultipleNameEnquiry (authToken, payload) {
+  async getMultipleNameEnquiry(authToken, payload) {
     const promises = payload.map((item) => {
       return axios.post(`${config.nameEnquiry}`, {
         AccountNumber: item.accountNumber,
@@ -71,18 +71,24 @@ class BankOneService {
 
     const results = await Promise.allSettled(promises);
 
-    const successfulPromises = results.filter((promise) => promise.status === "fulfilled");
+    const successfulPromises = results.filter(
+      (promise) => promise.status === "fulfilled"
+    );
     const data = successfulPromises.map((promise) => promise.value.data);
 
-    const failedPromise = results.filter((promise) => promise.status === "rejected");
-    const failedPayload = failedPromise.map((promise) => promise.reason.config.data);
+    const failedPromise = results.filter(
+      (promise) => promise.status === "rejected"
+    );
+    const failedPayload = failedPromise.map(
+      (promise) => promise.reason.config.data
+    );
 
     console.log(failedPromise, failedPayload);
 
     return {
       data,
       failedPayload,
-    }
+    };
   }
 
   async accountStatement(authToken, accountNumber, fromDate, toDate, isPdf) {
@@ -97,9 +103,37 @@ class BankOneService {
     }
   }
 
-  async getInterbankTransfer() {
+  async getInterbankTransfer(
+    Amount,
+    Payer,
+    ReceiverAccountNumber,
+    PayerAccountNumber,
+    ReceiverAccountType,
+    ReceiverBankCode,
+    ReceiverPhoneNumber,
+    ReceiverName,
+    ReceiverBVN,
+    ReceiverKYC,
+    Narration,
+    TransactionReference,
+    NIPSessionID
+  ) {
     try {
-      const { data } = await axios.get(`${config.interbankTransfer}`);
+      const { data } = await axios.post(`${config.interbankTransfer}`, {
+        Amount,
+        Payer,
+        ReceiverAccountNumber,
+        PayerAccountNumber,
+        ReceiverAccountType,
+        ReceiverBankCode,
+        ReceiverPhoneNumber,
+        ReceiverName,
+        ReceiverBVN,
+        ReceiverKYC,
+        Narration,
+        TransactionReference,
+        NIPSessionID,
+      });
       return data;
     } catch (error) {
       return null;
@@ -114,7 +148,6 @@ class BankOneService {
       return null;
     }
   }
-
 
   async getTransactionsPaginated(
     authToken,

@@ -19,9 +19,4 @@ const bankone = {
     "http://52.168.85.231/BankOneWebAPI/api/Account/GetTransactionsPaginated/2",
 };
 
-
-
-
- 
-
 module.exports = bankone;
