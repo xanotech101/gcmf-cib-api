@@ -21,8 +21,8 @@ class BankOneService {
       );
       return data;
     } catch (error) {
-      // return null;
       console.log(error.message);
+      return null;
     }
   }
 
@@ -41,6 +41,7 @@ class BankOneService {
       );
       return data;
     } catch (error) {
+      console.log(error);
       return null;
     }
   }
@@ -56,6 +57,31 @@ class BankOneService {
     } catch (error) {
       console.log(error);
       return null;
+    }
+  }
+
+  async getMultipleNameEnquiry (authToken, payload) {
+    const promises = payload.map((item) => {
+      return axios.post(`${config.nameEnquiry}`, {
+        AccountNumber: item.accountNumber,
+        BankCode: item.bankCode,
+        Token: authToken,
+      });
+    });
+
+    const results = await Promise.allSettled(promises);
+
+    const successfulPromises = results.filter((promise) => promise.status === "fulfilled");
+    const data = successfulPromises.map((promise) => promise.value.data);
+
+    const failedPromise = results.filter((promise) => promise.status === "rejected");
+    const failedPayload = failedPromise.map((promise) => promise.reason.config.data);
+
+    console.log(failedPromise, failedPayload);
+
+    return {
+      data,
+      failedPayload,
     }
   }
 
@@ -105,8 +131,8 @@ class BankOneService {
       );
       return data;
     } catch (error) {
-      // return null;
       console.log(error);
+      return null;
     }
   }
 }

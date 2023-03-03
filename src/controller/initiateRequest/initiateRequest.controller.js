@@ -11,7 +11,6 @@ const { userService , auditTrailService, notificationService} = require("../../s
 const { getDateAndTime } = require("../../utils/utils");
 
 const initiateRequest = async (req, res) => {
-  console.log("🚀 ~ file: initiateRequest.controller.js:14 ~ initiateRequest ~ req:", req.user)
   try {
     // const { error } = validateInitiateRequestSchema(req.body);
     // if (error)
@@ -178,7 +177,7 @@ const getAllInitiatorRequests = async (req, res) => {
   }
 };
 
-const getAllAuthoriserRequests = async (req, res) => {
+const getAllAssignedRequests = async (req, res) => {
   const { perPage, page } = req.query;
 
   const options = {
@@ -202,9 +201,16 @@ const getAllAuthoriserRequests = async (req, res) => {
       },
       {
         $match: {
-          "mandate.authorisers": {
-            $in: [mongoose.Types.ObjectId(req.user._id)],
-          },
+          $or: [
+            {
+              "mandate.authorisers": {
+                $in: [mongoose.Types.ObjectId(req.user._id)],
+              },
+            },
+            {
+              "mandate.verifier": mongoose.Types.ObjectId(req.user._id),
+            },
+          ],
         },
       },
       {
@@ -248,8 +254,10 @@ const getAllAuthoriserRequests = async (req, res) => {
   }
 };
 
-const getAllRequest = async (req, res) => {
+const getAllRequestPerOrganization = async (req, res) => {
   const { page, perPage } = req.query;
+  const organizationId = req.user.organizationId;
+
 
   const options = {
     page: page || 1,
@@ -259,6 +267,11 @@ const getAllRequest = async (req, res) => {
 
   try {
     const request = await InitiateRequest.aggregate([
+      {
+        $match: {
+          initiator: mongoose.Types.ObjectId(req.user._id),
+        },
+      },
       {
         $lookup: {
           from: "mandates",
@@ -749,9 +762,9 @@ module.exports = {
   declineRequest,
   approveRequest,
   getAllInitiatorRequests,
-  getAllRequest,
+  getAllRequestPerOrganization,
   getRequestById,
-  getAllAuthoriserRequests,
+  getAllAssignedRequests,
   verifierDeclineRequest,
   verifierApproveRequest,
 };

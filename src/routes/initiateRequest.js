@@ -1,7 +1,6 @@
 const express = require("express");
 const router = express.Router();
 const {
-  adminAuth,
   initiatorAuth,
   authoriserAuth,
   verifierAuth,
@@ -14,8 +13,8 @@ const {
   initiateRequest,
   declineRequest,
   approveRequest,
-  getAllAuthoriserRequests,
-  getAllRequest,
+  getAllAssignedRequests,
+  getAllRequestPerOrganization,
   getAllInitiatorRequests,
   getRequestById,
   verifierApproveRequest,  
@@ -29,24 +28,23 @@ router.post("/initiate", initiatorAuth, initiateRequest);
 // get all request for initiator
 router.get("/initiator", initiatorAuth, getAllInitiatorRequests);
 
+// get all assigned requests
+router.get("/assigned", allUsersAuth, getAllAssignedRequests);
+
+// get all request per organization
+router.get("/all", allUsersAuth, getAllRequestPerOrganization);
+
+// get request by id
+router.get("/:id", allUsersAuth, getRequestById);
+
 // update request
 router.put("/authoriser/approve/:id", authoriserAuth, approveRequest);
 router.put("/authoriser/decline/:id", authoriserAuth, declineRequest);
-
 router.put("/verifier/decline/:id", verifierAuth,  verifierDeclineRequest);
 router.put("/verifier/approve/:id", verifierAuth, verifierApproveRequest);
 
 // bulk upload request
 router.post("/upload", upload.single("file"), initiatorAuth, batchUpload);
-
-// get all request for authoriser
-router.get("/authoriser", authoriserAuth, getAllAuthoriserRequests);
-
-// get all request for admin
-router.get("/allrequests", adminAuth, getAllRequest);
-
-// get request by id
-router.get("/:id", allUsersAuth, getRequestById);
 
 module.exports = router;
 
