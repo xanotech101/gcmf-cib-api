@@ -11,6 +11,7 @@ const {
   registerUser,
 } = require("../controller/auth/auth.controller");
 
+const createAuthQuestions = require("../controller/authQuestion/authQuestion");
 //general route
 router.post("/login", validate(authSchemas.login, "body"), login);
 router.post(
@@ -49,5 +50,7 @@ router.post(
   validate(authSchemas.register, "body"),
   registerUser
 );
+
+router.post("secrete_question", createAuthQuestions);
 
 module.exports = router;

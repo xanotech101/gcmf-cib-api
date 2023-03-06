@@ -9,7 +9,7 @@ const mongoose = require("mongoose");
 const Otp = require("../../model/otp.model");
 const { userService , auditTrailService, notificationService} = require("../../services");
 const { getDateAndTime } = require("../../utils/utils");
-
+let mine = await User.findById(req.user._id)
 const initiateRequest = async (req, res) => {
   try {
     // const { error } = validateInitiateRequestSchema(req.body);
@@ -31,7 +31,7 @@ const initiateRequest = async (req, res) => {
       beneficiaryKYC: req.body.beneficiaryKYC,
       beneficiaryPhoneNumber: req.body.beneficiaryPhoneNumber,
       customerName: req.body.customerName,
-      organizationId: req.user.organizationId,
+      organizationId: mine.organizationId,
       transactionReference: mongoose.Types.ObjectId().toString().substr(0, 12),
     });
 
@@ -93,7 +93,7 @@ const initiateRequest = async (req, res) => {
       type: "transaction",
       transaction: result._id,
       message: `${user.firstName} ${user.lastName} initiated a transaction request on ${date} by ${time}`,
-      organization: req.user.organization,
+      organization: mine.organization,
     });
 
     return res.status(201).json({
@@ -256,7 +256,7 @@ const getAllAssignedRequests = async (req, res) => {
 
 const getAllRequestPerOrganization = async (req, res) => {
   const { page, perPage } = req.query;
-  const organizationId = req.user.organizationId;
+  const organizationId = mine.organizationId;
 
 
   const options = {
@@ -373,7 +373,6 @@ const declineRequest = async (req, res) => {
   try {
     const _id = req.params.id;
     const userId = req.user._id;
-    console.log(req.user);
 
     const request = await InitiateRequest.findById(_id).populate("mandate");
 
@@ -470,7 +469,7 @@ const declineRequest = async (req, res) => {
       type: "transaction",
       transaction: request._id,
       message: `${user.firstName} rejected a transaction request on ${date} by ${time}`,
-      organization: req.user.organization,
+      organization: mine.organization,
     });
 
     await audit.save();
@@ -581,7 +580,7 @@ const approveRequest = async (req, res) => {
       type: "transaction",
       transaction: request._id,
       message: `${user.firstName} authorised a transaction request on ${date} by ${time}`,
-      organization: req.user.organization,
+      organization: mine.organization,
     });
 
     await audit.save();
@@ -666,7 +665,7 @@ const verifierApproveRequest = async (req, res) => {
       type: "transaction",
       transaction: request._id,
       message: `${user.firstName} approved a transaction request on ${date} by ${time}`,
-      organization: req.user.organization,
+      organization: mine.organization,
     });
 
     await audit.save();

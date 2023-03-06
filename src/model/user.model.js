@@ -35,12 +35,14 @@ const userSchema = new mongoose.Schema(
         ref: "Privilege",
       },
     ],
+    
     role: {
       type: String,
       required: true,
       enum: ['super-admin', 'admin', 'user']
     },
-    token : String,
+    token: String,
+    authAnswer: String,
   },
   {
     timestamps: true,
@@ -53,13 +55,13 @@ userSchema.methods.generateAuthToken = async function () {
   const token = jwt.sign(
     {
       _id: this._id,
-      organizationId: this.organizationId,
-      privileges: privileges.map((privilege) => privilege.name),
-      firstName: this.firstName,
+      // organizationId: this.organizationId,
+      // privileges: privileges.map((privilege) => privilege.name),
+      // firstName: this.firstName,
     },
     process.env.JWT_SECRET,
     {
-      expiresIn: "1d",
+      expiresIn: "1h",
     }
   );
   return token;

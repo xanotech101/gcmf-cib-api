@@ -133,7 +133,7 @@ const batchUpload = async (req, res) => {
         type: "transaction",
         transaction: result._id,
         message: `${user.firstName} ${user.lastName} initiated a transaction request on ${date} by ${time}`,
-        organization: req.user.organization,
+        organization: user.organization,
       });
 
       await audit.save();
