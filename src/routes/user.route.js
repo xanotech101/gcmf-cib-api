@@ -6,7 +6,7 @@ const {
   updateUserProfile,
   getAllUsers,
   deleteNonAdminUsers,
-  deleteAnyUser
+  deleteAnyUser,
 } = require("../controller/user/user.controller");
 const {
   adminAuth,
@@ -25,10 +25,8 @@ router.post("/change-password", allUsersAuth, changePassword);
 router.get("/allbranchusers", adminAuth, getOrganizationUsers);
 router.get("/all", adminAuth, getAllUsers);
 router.delete("/delete_user", superUserAuth, deleteAnyUser);
-router.delete("/delete_nonadmin", adminAuth, deleteNonAdminUsers) ;
+router.delete("/delete_nonadmin", adminAuth, deleteNonAdminUsers);
 // router.post("/priviledges", superUserAuth, createPriviledges);
 module.exports = router;
- 
-
 
 deleteNonAdminUsers;

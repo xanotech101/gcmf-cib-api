@@ -46,9 +46,9 @@ const registerAccount = async (req, res) => {
     // send email to admin
     const email = admin.email;
     const subject = "Account Verification";
-    const message = `Hello ${admin.firstName}, \n\n
-    Please verify your account by clicking the link: \nhttp://localhost:8000/verify-account/${token}.\n`;
-    // await sendEmail(email, subject, message);
+    const message = `Hello ${admin.firstName}, \n An account has been created for you \n\n
+    Please verify your account by clicking the link: \n${process.env.FRONT_END_URL}/${token}.\n`;
+    await sendEmail(email, subject, message);
     return res.status(201).json({
       status: "Success",
       result,
