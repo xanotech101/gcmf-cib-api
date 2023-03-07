@@ -1,10 +1,10 @@
-const User = require("../model/user.model")
+const User = require("../model/user.model");
 
 class UserService {
-  async getUserById (id) {
+  async getUserById(id) {
     const user = await User.findById(id);
     return user;
   }
 }
 
-module.exports = new UserService()
+module.exports = new UserService();
