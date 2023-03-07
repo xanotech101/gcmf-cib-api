@@ -1,7 +1,7 @@
 const authSchemas = require("./auth.validation");
+const accountSchemas = require("./account.validation");
 const mandateSchemas = require("./mandate.validation");
-const notificationsSchemas = require("./notification.validation")
-
+const notificationsSchemas = require("./notification.validation");
 
 const validate = (schema, property) => {
   return (req, res, next) => {
@@ -24,5 +24,6 @@ module.exports = {
   validate,
   authSchemas,
   mandateSchemas,
-  notificationsSchemas
-}
+  notificationsSchemas,
+  accountSchemas,
+};

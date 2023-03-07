@@ -51,6 +51,6 @@ router.post(
   registerUser
 );
 
-router.post("secrete_question", createAuthQuestions);
+router.post("/secret_question", createAuthQuestions);
 
 module.exports = router;

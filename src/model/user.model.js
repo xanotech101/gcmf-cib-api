@@ -2,7 +2,6 @@ const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
 const Privilege = require("./privilege.model");
 
-
 const userSchema = new mongoose.Schema(
   {
     firstName: {
@@ -35,33 +34,42 @@ const userSchema = new mongoose.Schema(
         ref: "Privilege",
       },
     ],
-    
     role: {
       type: String,
       required: true,
-      enum: ['super-admin', 'admin', 'user']
+      enum: ["super-admin", "admin", "user"],
     },
     token: String,
-    authAnswer: String,
+    secrets: {
+      type: [mongoose.Schema.Types.Mixed],
+    },
   },
   {
     timestamps: true,
+    toJSON: {
+      transform(doc, ret) {
+        delete ret.secrets;
+        delete ret.password;
+        delete ret.__v;
+      },
+    },
   }
 );
 
 userSchema.methods.generateAuthToken = async function () {
-  const privileges = await Privilege.find({ _id: { $in: this.privileges } }) || [];
- 
+  const privileges =
+    (await Privilege.find({ _id: { $in: this.privileges } })) || [];
+
   const token = jwt.sign(
     {
       _id: this._id,
-      // organizationId: this.organizationId,
-      // privileges: privileges.map((privilege) => privilege.name),
-      // firstName: this.firstName,
+      organizationId: this.organizationId,
+      privileges: privileges.map((privilege) => privilege.name),
+      firstName: this.firstName,
     },
     process.env.JWT_SECRET,
     {
-      expiresIn: "1h",
+      expiresIn: "1d",
     }
   );
   return token;

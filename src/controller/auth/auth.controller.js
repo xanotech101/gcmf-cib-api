@@ -2,16 +2,17 @@ const User = require("../../model/user.model");
 const AuditTrail = require("../../model/auditTrail");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-
+const verifySecretAnswers = require("../../services/verifySecretAnswers");
 const { sendEmail } = require("../../utils/emailService");
 
 //@desc     Login User
 //@route    POST /users/login
 //@access   Public
 const login = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, answers } = req.body;
   try {
     const user = await User.findOne({ email });
+    // console.log(user.secrets);
 
     if (!user) {
       return res.status(400).send({
@@ -40,6 +41,13 @@ const login = async (req, res) => {
     }
 
     const token = await user.generateAuthToken();
+
+    let isVerified = verifySecretAnswers(user.secrets, answers);
+
+    if (!isVerified) {
+      // If the secret answers are incorrect, return an error
+      return res.status(401).json({ error: "Invalid secret answers" });
+    }
 
     // create audit trail
     const myUser = await User.findById(user._id);
@@ -90,7 +98,7 @@ const forgetPassword = async (req, res) => {
 
     //Email Details
     const token = jwt.sign(
-      { user_email: user.email, user_password : user.password },
+      { user_email: user.email, user_password: user.password },
       process.env.EMAIL_SECRET,
       {
         expiresIn: "10m",
@@ -139,7 +147,6 @@ const verifyUser = async (req, res) => {
       });
     }
 
-    
     const user = await User.findOne({ email: mail.user_email });
 
     if (!user) {
@@ -150,10 +157,13 @@ const verifyUser = async (req, res) => {
       });
     }
 
-    if (user.isVerified) return res.status(400).json({ message: "User is already verified on the platform" });
-    if (user.token == null) return res.status(400).json({ message: "Invalid token" });
-      
-      
+    if (user.isVerified)
+      return res
+        .status(400)
+        .json({ message: "User is already verified on the platform" });
+    if (user.token == null)
+      return res.status(400).json({ message: "Invalid token" });
+
     user.isVerified = true;
     user.token = null;
     await user.save();
@@ -182,18 +192,21 @@ const resetPassword = async (req, res) => {
 
     const user = await User.findOne({ email: userEmail });
     const validPassword = await bcrypt.compare(password, userPassword);
-    if (!validPassword) return res.status(400).json({ message: "Invalid token. Kindly use the reset link again" });
+    if (!validPassword)
+      return res
+        .status(400)
+        .json({ message: "Invalid token. Kindly use the reset link again" });
 
     //Hash password
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(password, salt);
 
     await user.save();
-    return res.status(200).json({ 
+    return res.status(200).json({
       status: "success",
       message: "Password changed successfully",
       data: null,
-     });
+    });
   } catch (error) {
     console.log(error);
     return res.status(500).json({
@@ -207,7 +220,6 @@ const resetPassword = async (req, res) => {
 const registerUser = async (req, res) => {
   try {
     const userExits = await User.findOne({ email: req.body.email });
-
     if (userExits) {
       return res.status(400).send({
         status: "failed",
@@ -217,13 +229,11 @@ const registerUser = async (req, res) => {
     }
 
     let role = "user";
-
     if (req.path === "/super_admin/register") {
       role = "super-admin";
     } else if (req.path === "/admin/register") {
       role = "admin";
     }
-
     const user = new User({
       firstName: req.body.firstName,
       lastName: req.body.lastName,
@@ -235,6 +245,7 @@ const registerUser = async (req, res) => {
       organizationId: req.body.organizationId,
       imageUrl: req.body.imageUrl,
       privileges: req.body.privileges,
+      secrets: req.body.secrets,
       role,
     });
 
@@ -265,7 +276,7 @@ const registerUser = async (req, res) => {
     <p>${link}</p>
   `;
 
-    await sendEmail(user.email, subject, message);
+    // await sendEmail(user.email, subject, message);
 
     await user.save();
 

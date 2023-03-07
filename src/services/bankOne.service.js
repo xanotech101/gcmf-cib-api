@@ -46,11 +46,36 @@ class BankOneService {
     }
   }
 
+  async getAccountDetails(authToken, accountNumber, bankCode) {
+    try {
+      const { data } = await axios.post(`${config.nameEnquiry}`, {
+        AccountNumber: accountNumber,
+        BankCode: bankCode,
+        Token: authToken,
+      });
+      return data;
+    } catch (error) {
+      console.log(error);
+      return null;
+    }
+  }
   async getNameEnquiry(authToken, accountNumber, bankCode) {
     try {
       const { data } = await axios.post(`${config.nameEnquiry}`, {
         AccountNumber: accountNumber,
         BankCode: bankCode,
+        Token: authToken,
+      });
+      return data;
+    } catch (error) {
+      console.log(error);
+      return null;
+    }
+  }
+  async getbankDetails(authToken, accountNumber) {
+    try {
+      const { data } = await axios.post(`${config.bankDetails}`, {
+        AccountNumber: accountNumber,
         Token: authToken,
       });
       return data;
@@ -170,9 +195,4 @@ class BankOneService {
   }
 }
 
-
 module.exports = new BankOneService();
-
-
-
-

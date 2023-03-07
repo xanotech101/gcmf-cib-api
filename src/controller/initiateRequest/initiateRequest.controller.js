@@ -9,7 +9,7 @@ const mongoose = require("mongoose");
 const Otp = require("../../model/otp.model");
 const { userService , auditTrailService, notificationService} = require("../../services");
 const { getDateAndTime } = require("../../utils/utils");
-let mine = await User.findById(req.user._id)
+
 const initiateRequest = async (req, res) => {
   try {
     // const { error } = validateInitiateRequestSchema(req.body);
@@ -18,6 +18,7 @@ const initiateRequest = async (req, res) => {
     //     message: error.details[0].message,
     //     status: "failed",
     //   });
+    const mine = await User.findById(req.user._id);
 
     const request = new InitiateRequest({
       NIPSessionID: req.body.NIPSessionID,
@@ -370,6 +371,8 @@ const getRequestById = async (req, res) => {
 };
 
 const declineRequest = async (req, res) => {
+  
+      const mine = await User.findById(req.user._id);
   try {
     const _id = req.params.id;
     const userId = req.user._id;
@@ -490,6 +493,7 @@ const declineRequest = async (req, res) => {
 };
 
 const approveRequest = async (req, res) => {
+      const mine = await User.findById(req.user._id);
   try {
     const _id = req.params.id;
     const userId = req.user._id;
@@ -502,7 +506,7 @@ const approveRequest = async (req, res) => {
         status: "failed",
       });
     }
-
+    
     const otpDetails = await Otp.findOne({
       otp: req.body.otp,
       user: userId,
@@ -601,6 +605,7 @@ const approveRequest = async (req, res) => {
 };
 
 const verifierApproveRequest = async (req, res) => {
+      const mine = await User.findById(req.user._id);
   try {
     const _id = req.params.id;
     const userId = req.user._id;
