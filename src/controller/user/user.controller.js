@@ -62,7 +62,7 @@ const getOrganizationUsers = async (req, res) => {
             data: [
               { $skip: options.limit * (options.page - 1) },
               { $limit: options.limit },
-              {$sort: { ...options.sort }},
+              { $sort: { ...options.sort } },
             ],
             totalCount: [
               { $count: "count" },
