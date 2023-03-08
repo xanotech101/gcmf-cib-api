@@ -28,16 +28,15 @@ class BankOneService {
 
   async transactionHistory(
     authToken,
+    accountNumber,
     fromDate,
     toDate,
-    productCode,
     institutionCode,
-    pageNo,
-    PageSize
+   numberOfItems
   ) {
     try {
       const { data } = await axios.get(
-        `${config.transactionHistory}?authtoken=${authToken}&fromDate=${fromDate}&toDate=${toDate}&productCode=${productCode}&institutionCode=${institutionCode}&pageNo=${pageNo}&PageSize=${PageSize}`
+        `${config.transactionHistory}?authtoken=${authToken}&accountNumber=${accountNumber}&fromDate=${fromDate}&toDate=${toDate}&institutionCode=${institutionCode}&numberOfItems=${numberOfItems}`
       );
       return data;
     } catch (error) {

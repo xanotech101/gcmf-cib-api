@@ -45,21 +45,20 @@ const getAccountByCustomerID = async (req, res) => {
 };
 
 const getTransactionHistory = async (req, res) => {
+  const authToken = req.query.authToken;
+    const accountNumber = req.query.accountNumber;
   const fromDate = req.query.fromDate;
   const toDate = req.query.toDate;
-  const productCode = req.query.productCode;
   const institutionCode = req.query.institutionCode;
-  const pageNo = req.query.pageNo;
-  const PageSize = req.query.PageSize;
+  const numberOfItems = req.query.numberOfItems;
 
   const transHistory = await bankOneService.transactionHistory(
     authToken,
+    accountNumber,
     fromDate,
     toDate,
-    productCode,
     institutionCode,
-    pageNo,
-    PageSize
+    numberOfItems
   );
 
   if (!transHistory) {
