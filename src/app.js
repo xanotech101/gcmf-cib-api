@@ -68,7 +68,7 @@ app.use("/api/requests", requestRoute);
 app.use("/api/notifications", notificationRoute);
 app.use("/api/otp", otpRoute);
 app.use("/api/privileges", privilegeRoute);
-app.use("/api/account", bankoneRoute);
+// app.use("/api/account", bankoneRoute);
 
 
 

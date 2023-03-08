@@ -1,10 +1,15 @@
 const express = require("express");
-const { getAllPrivileges } = require("../controller/privilege/privilege.controller");
-const { adminAuth } = require("../middleware/auth");
-
 const router = express.Router();
 
-router.get("/", adminAuth, getAllPrivileges);
+const {
+  getAllPrivileges,
+  roleSwitchMailNotification,
+  updateUserRole,
+} = require("../controller/privilege/privilege.controller");
+const { adminAuth } = require("../middleware/auth");
 
+router.get("/", adminAuth, getAllPrivileges);
+router.post("/", adminAuth, roleSwitchMailNotification);
+router.get("/:token", adminAuth, updateUserRole);
 
 module.exports = router;
