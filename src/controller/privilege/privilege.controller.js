@@ -115,10 +115,7 @@ const updateUserRole = async (req, res) => {
     const privilege = Privilege.find({ name: mail.newPrivilege });
 
     user.role = mail.newRole;
-    user.privileges = user.privileges.push({
-      name: mail.newPrivilege,
-      _id: privilege._id,
-    });
+    user.privileges = privilege
 
     return res.status(200).json({
       message: "Successfully switched user role and privilege",
