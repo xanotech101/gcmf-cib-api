@@ -264,4 +264,3 @@ class BankOneService {
 
 
 module.exports = new BankOneService();
-transactionStatus

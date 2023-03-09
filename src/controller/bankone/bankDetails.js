@@ -120,6 +120,9 @@ const getAccountDetails = async (req, res) => {
     data: accountDetails,
   });
 };
+
+
+
 const getNameEnquiry = async (req, res) => {
   const { accountNumber, bankCode } = req.body;
 
@@ -249,7 +252,6 @@ const getTransactionStatus = async (req, res) => {
    let TransactionDate = req.body.TransactionDate;
     let institutionCode = req.body.institutionCode;
     let Amount = req.body.Amount;
-    let institutionCode = req.body.institutionCode;
 
   const transactionStatusInfo = await bankOneService.transactionStatus(
     RetrievalReference,
@@ -280,7 +282,6 @@ const intrabankTransfer = async (req, res) => {
     ToAccountNumber,
     RetrievalReference,
     Narration,
-    AuthenticationKey,
   } = req.body;
 
   let AuthenticationKey = authToken;
