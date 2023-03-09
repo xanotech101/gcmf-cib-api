@@ -8,6 +8,11 @@ const {
   getAccountStatement,
   getNameEnquiry,
   getTransactionsPaginated,
+  interbankTransfer,
+  intrabankTransfer,
+   getAccountDetails,
+  getAccountInfo,
+  getTransactionStatus
 } = require("../controller/bankone/bankDetails");
 const { adminAuth } = require("../middleware/auth");
 
@@ -18,9 +23,10 @@ router.get("/history", adminAuth, getTransactionHistory);
 router.get("/statement/:account", adminAuth, getAccountStatement);
 router.post("/name-enquiry", adminAuth, getNameEnquiry);
 router.get("/transactions/:account", adminAuth, getTransactionsPaginated);
-router.get("/transfer/interbank", adminAuth, getTransactionsPaginated);
-
+router.post("/transfer/interbank", adminAuth, interbankTransfer);
+router.post("/transfer/intrabank", adminAuth, intrabankTransfer);
+router.post("/details", adminAuth, getAccountDetails);
+router.post("/info", adminAuth, getAccountInfo);
+router.post("/status", adminAuth, getTransactionStatus);
 
 module.exports = router;
-
-

@@ -7,7 +7,7 @@ const accountSchema = new mongoose.Schema(
     accountNumber: {
       type: String,
       required: [true, "Please enter an account number"],
-      unique: true
+      unique: true,
     },
     customerID: String,
   },
@@ -24,4 +24,3 @@ accountSchema.methods.generateAuthToken = function () {
 };
 
 module.exports = mongoose.model("Account", accountSchema);
-

@@ -9,10 +9,9 @@ const { sendEmail } = require("../../utils/emailService");
 //@route    POST /users/login
 //@access   Public
 const login = async (req, res) => {
-  const { email, password, answers } = req.body;
+  const { email, password } = req.body;
   try {
     const user = await User.findOne({ email });
-    // console.log(user.secrets);
 
     if (!user) {
       return res.status(400).send({
@@ -39,14 +38,50 @@ const login = async (req, res) => {
         status: "failed",
       });
     }
+    // get one  random user secret questions
+    let randomSecret = null;
+    // redirect to question page front end
+    if (user.secrets.length > 0) {
+      randomSecret =
+        user.secrets[Math.floor(Math.random() * user.secrets.length)];
+    }
+
+    // `${process.env.FRONTEND_URL}question/${user._id}` +
+    return res
+      .status(200)
+      .redirect(
+        `${process.env.FRONTEND_URL}question/${user._id}` +
+          JSON.stringify(randomSecret)
+      );
+  } catch (error) {
+    res.status(500).json({
+      status: "failed",
+      message: "Unable to login user",
+      data: null,
+    });
+  }
+};
+//@desc     Question User
+//@route    POST /users/login
+//@access   Public
+const finalLogin = async (req, res) => {
+  const { email, answers } = req.body;
+  try {
+    const user = await User.findOne({ email });
 
     const token = await user.generateAuthToken();
 
-    let isVerified = verifySecretAnswers(user.secrets, answers);
+    let isVerified = true;
 
-    if (!isVerified) {
-      // If the secret answers are incorrect, return an error
-      return res.status(401).json({ error: "Invalid secret answers" });
+    if (user.secrets.length > 0) {
+      isVerified = verifySecretAnswers(answers, user.secrets);
+      if (!isVerified) {
+        return res.status(400).send({
+          data: null,
+          message: "Invalid answers",
+          status: "failed",
+        });
+      }
     }
 
     // create audit trail
@@ -302,4 +337,5 @@ module.exports = {
   login,
   resetPassword,
   registerUser,
+  finalLogin,
 };
