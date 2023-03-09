@@ -58,6 +58,7 @@ class BankOneService {
       return null;
     }
   }
+
   async getNameEnquiry(authToken, accountNumber, bankCode) {
     try {
       const { data } = await axios.post(`${config.nameEnquiry}`, {
@@ -183,7 +184,7 @@ class BankOneService {
     PageSize
   ) {
     try {
-      const { data } = await axios.post(
+      const { data } = await axios.get(
         `${config.nameEnquiry}?authtoken=${authToken}&accountNumber=${accountNumber}&fromDate=${fromDate}&toDate=${toDate}&institutionCode=${institutionCode}&pageNo=${pageNo}&PageSize=${PageSize}`
       );
       return data;
@@ -192,6 +193,75 @@ class BankOneService {
       return null;
     }
   }
+
+
+ async getAccountInfo(authtoken, accountNumber, institutionCode) {
+    try {
+        const { data } = await axios.get(
+        `${config.getAccountInfo}?authtoken=${authToken}&accountNumber=${accountNumber}&institutionCode=${institutionCode}`
+      );
+      return data;
+    } catch (error) {
+      console.log(error);
+      return null;
+    }
+}
+  
+ async transactionStatus(
+    RetrievalReference,
+    TransactionDate,
+    TransactionType,
+    Amount,
+    Token,
+  ) {
+    try {
+      const { data } = await axios.post(`${config.transactionStatus}`, {
+        RetrievalReference,
+    TransactionDate,
+    TransactionType,
+    Amount,
+    Token,
+      });
+      return data;
+    } catch (error) {
+      console.log(error);
+      return null;
+    }
+  }
+
+
+
+
+  async getIntrabankTransfer(
+    Amount,
+    FromAccountNumber,
+    ToAccountNumber,
+    RetrievalReference,
+    Narration,
+    AuthenticationKey,
+  ) {
+    try {
+      const { data } = await axios.post(`${config.intrabankTransfer}`, {
+    Amount,
+    FromAccountNumber,
+    ToAccountNumber,
+    RetrievalReference,
+    Narration,
+    AuthenticationKey,
+      });
+      return data;
+    } catch (error) {
+      return null;
+    }
+  }
+
+
+
 }
 
+
+
+
+
 module.exports = new BankOneService();
+transactionStatus

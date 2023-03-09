@@ -222,6 +222,95 @@ const interbankTransfer = async (req, res) => {
   });
 };
 
+
+const getAccountInfo = async (req, res) => {
+  let accountNo = req.query.account;
+    let institutionCode = req.query.institutionCode;
+
+  const accountInfo = await bankOneService.getAccountInfo(authToken, account, institutionCode);
+  if (!accountInfo) {
+    return res.status(500).json({
+      status: "Failed",
+      message: "Unable to get bank account details",
+    });
+  }
+
+  return res.status(200).json({
+    status: "Success",
+    message: "Account Details retrieved successfully",
+    data: accountInfo,
+  });
+};
+
+
+
+const getTransactionStatus = async (req, res) => {
+  let  RetrievalReference = req.body.RetrievalReference;
+   let TransactionDate = req.body.TransactionDate;
+    let institutionCode = req.body.institutionCode;
+    let Amount = req.body.Amount;
+    let institutionCode = req.body.institutionCode;
+
+  const transactionStatusInfo = await bankOneService.transactionStatus(
+    RetrievalReference,
+    TransactionDate,
+    TransactionType,
+    Amount,
+    authToken,
+  )
+  if (!transactionStatusInfo) {
+    return res.status(500).json({
+      status: "Failed",
+      message: "Unable to get bank account details",
+    });
+  }
+
+  return res.status(200).json({
+    status: "Success",
+    message: "Account Details retrieved successfully",
+    data: transactionStatusInfo,
+  });
+};
+
+
+const intrabankTransfer = async (req, res) => {
+  const {
+     Amount,
+    FromAccountNumber,
+    ToAccountNumber,
+    RetrievalReference,
+    Narration,
+    AuthenticationKey,
+  } = req.body;
+
+  let AuthenticationKey = authToken;
+
+  const intraTransferDetails = await bankOneService.getIntrabankTransfer(
+    Amount,
+    FromAccountNumber,
+    ToAccountNumber,
+    RetrievalReference,
+    Narration,
+    AuthenticationKey,
+  );
+
+  if (!intraTransferDetails ) {
+    return res.status(500).json({
+      status: "Failed",
+      message: "Unable to get bank account details",
+    });
+  }
+
+  return res.status(200).json({
+    status: "Success",
+    message: "Account Details retrieved successfully",
+    data: intraTransferDetails,
+  });
+};
+
+
+
+
 module.exports = {
   getAccountByAccountNo,
   getAccountByCustomerID,
@@ -231,10 +320,12 @@ module.exports = {
   getTransactionsPaginated,
   interbankTransfer,
   getAccountDetails,
+  getAccountInfo,
+  getTransactionStatus,
+  intrabankTransfer
 };
 
-// {
-//     "AccountNumber" : "0230650585",
-//     "BankCode" : "035",
-//     "Token" : "8424f843-fd36-4a30-8e7e-18f4f920aa91"
-// }
+
+
+
+
