@@ -18,14 +18,14 @@ const registerAccount = async (req, res) => {
   // console.log(req.user);
   try {
 
-    const bankVerificationKey = await AuthorisationKey.findOne({ token: req.body.bankVerificationKey, bankNumber: req.body.bankNumber });
+    // const bankVerificationKey = await AuthorisationKey.findOne({ token: req.body.bankVerificationKey, bankNumber: req.body.bankNumber });
     
-    if (!bankVerificationKey) {
-      return res.status(400).json({
-        status: "Failed",
-        Message: "Invalid bank verification key",
-      });
-    };
+    // if (!bankVerificationKey) {
+    //   return res.status(400).json({
+    //     status: "Failed",
+    //     Message: "Invalid bank verification key",
+    //   });
+    // };
 
     const input = _.pick(req.body, ["admin", "accountDetails"]);
     // get user details through adminId
