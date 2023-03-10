@@ -117,9 +117,20 @@ const updateUserRole = async (req, res) => {
     user.role = mail.newRole;
     user.privileges = privilege
 
+    let mine = await User.findById(req.user._id);
+    if (mine.role === "admin" && user.role !== "user") {
+       return res.status(401).json({
+         status: "failed",
+         Message: "Admin is not authorised to switch promote user to an higher role",
+         data: null,
+       });
+    }
+
+    const switchRole = await user.save();
+
     return res.status(200).json({
       message: "Successfully switched user role and privilege",
-      data: { privileges },
+      data: { switchRole },
       status: "success",
     });
   } catch (error) {
@@ -130,6 +141,8 @@ const updateUserRole = async (req, res) => {
     });
   }
 };
+
+
 
 module.exports = {
   getAllPrivileges,

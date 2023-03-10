@@ -1,5 +1,6 @@
 const bankOneService = require("../../services/bankOne.service");
 const authToken = process.env.AUTHTOKEN;
+const { sendEmail } = require("../../utils/emailService");
 
 const getAccountByAccountNo = async (req, res) => {
   let accountNo = req.params.account || "00680011010004232";

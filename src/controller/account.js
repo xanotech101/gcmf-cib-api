@@ -1,4 +1,5 @@
 const Account = require("../model/account");
+const AuthorisationKey = require("../model/authorisationKey");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const _ = require("lodash");
@@ -7,6 +8,8 @@ const User = require("../model/user.model");
 const { log } = require("console");
 const { sendEmail } = require("../utils/emailService");
 const { randomUUID } = require("crypto");
+const bankOneService = require("../services/bankOne.service");
+const authToken = process.env.AUTHTOKEN;
 
 //@desc     register an account
 //@route    POST /account/register
@@ -14,6 +17,16 @@ const { randomUUID } = require("crypto");
 const registerAccount = async (req, res) => {
   // console.log(req.user);
   try {
+
+    const bankVerificationKey = await AuthorisationKey.findOne({ token: req.body.bankVerificationKey, bankNumber: req.body.bankNumber });
+    
+    if (!bankVerificationKey) {
+      return res.status(400).json({
+        status: "Failed",
+        Message: "Invalid bank verification key",
+      });
+    };
+
     const input = _.pick(req.body, ["admin", "accountDetails"]);
     // get user details through adminId
 
@@ -109,6 +122,56 @@ const verifyAccount = async (req, res) => {
     });
   }
 };
+
+
+const sendAccountVericationPin = async (req, res) => {
+  let accountNo = req.query.account;
+  let institutionCode = req.query.institutionCode;
+
+  const accountInfo = await bankOneService.getAccountInfo(
+    authToken,
+    account,
+    institutionCode
+  );
+  if (!accountInfo) {
+    return res.status(500).json({
+      status: "Failed",
+      message: "Unable to get bank account details",
+    });
+  }
+
+  let authorisationKey = randomUUID();
+  const authorisationKeyModel = new AuthorisationKey({
+    bankNumber: accountNo,
+    token: authorisationKey,
+  });
+  await authorisationKeyModel.save();
+
+  const accountEmail = accountInfo.Message.Email
+  const name = accountInfo.Message.Name
+  
+
+      //Mail notification
+      const subject = "Request to connect your account";
+      const message = `
+          <h3>Transaction Request Initiated</h3>
+          <p> Dear ${name}. There is a request to connect your account to the GMFB platform for transactional purpose.</p>
+          <p>Kindly find below the authorisation key to verify you are authorizing this action</p>
+          <p>Verification Key: ${authorisationKey}</p>
+        `;
+
+      await sendEmail(accountEmail, subject, message);
+    
+
+
+  return res.status(200).json({
+    status: "Success",
+    message: "Account Details retrieved successfully",
+    data: accountInfo,
+  });
+};
+
+
 module.exports = { registerAccount, verifyAccount };
 
 /*
