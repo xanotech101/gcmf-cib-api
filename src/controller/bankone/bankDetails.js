@@ -122,8 +122,6 @@ const getAccountDetails = async (req, res) => {
   });
 };
 
-
-
 const getNameEnquiry = async (req, res) => {
   const { accountNumber, bankCode } = req.body;
 

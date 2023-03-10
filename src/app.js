@@ -72,7 +72,7 @@ app.use("/api/otp", otpRoute);
 app.use("/api/privileges", privilegeRoute);
 app.use("/api/secret_questions", secretQuestionRoute);
 app.use("/api/ticket", adminRequest);
-app.use("/api/bank", bankoneRoute);
+app.use("/api/account", bankoneRoute);
 
 
 
