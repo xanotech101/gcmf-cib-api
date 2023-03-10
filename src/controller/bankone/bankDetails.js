@@ -228,10 +228,12 @@ const interbankTransfer = async (req, res) => {
 
 
 const getAccountInfo = async (req, res) => {
-  let accountNo = req.query.account;
-    let institutionCode = req.query.institutionCode;
-
-  const accountInfo = await bankOneService.getAccountInfo(authToken, account, institutionCode);
+  let accountNumber = req.query.accountNumber;
+console.log("working here")
+  const accountInfo = await bankOneService.getbankSumaryDetails(
+    authToken,
+    accountNumber
+  );
   if (!accountInfo) {
     return res.status(500).json({
       status: "Failed",
