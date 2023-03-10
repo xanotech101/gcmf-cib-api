@@ -257,6 +257,7 @@ const getAllAssignedRequests = async (req, res) => {
 
 const getAllRequestPerOrganization = async (req, res) => {
   const { page, perPage } = req.query;
+  const mine = await User.findById(req.user._id)
   const organizationId = mine.organizationId;
 
 
