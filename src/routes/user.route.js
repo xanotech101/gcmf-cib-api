@@ -7,6 +7,7 @@ const {
   getAllUsers,
   deleteNonAdminUsers,
   deleteAnyUser,
+  createSecurityQuestions
 } = require("../controller/user/user.controller");
 const {
   adminAuth,
@@ -20,6 +21,7 @@ const router = express.Router();
 router.get("/profile", allUsersAuth, getUserProfile);
 router.put("/profile", allUsersAuth, updateUserProfile);
 router.post("/change-password", allUsersAuth, changePassword);
+router.post("/secret-questions/create", createSecurityQuestions)
 
 //admin routes
 router.get("/allbranchusers", adminAuth, getOrganizationUsers);

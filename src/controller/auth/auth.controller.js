@@ -1,14 +1,12 @@
 const User = require("../../model/user.model");
-const AuditTrail = require("../../model/auditTrail");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const verifySecretAnswers = require("../../services/verifySecretAnswers");
+const secretQuestionService = require("../../services/secretQuestion.service");
 const { sendEmail } = require("../../utils/emailService");
+const { getDateAndTime } = require("../../utils/utils");
+const auditTrailService = require("../../services/auditTrail.service")
 
-//@desc     Login User
-//@route    POST /users/login
-//@access   Public
-const login = async (req, res) => {
+const preLogin = async (req, res) => {
   const { email, password } = req.body;
   try {
     const user = await User.findOne({ email });
@@ -38,23 +36,39 @@ const login = async (req, res) => {
         status: "failed",
       });
     }
-    // get one  random user secret questions
-    let randomSecret = null;
-    // redirect to question page front end
-    if (user.secrets.length > 0) {
-      randomSecret =
-        user.secrets[Math.floor(Math.random() * user.secrets.length)];
-    }
-    const token = await user.generateAuthToken();
+    
+    if (user.is2FAEnabled) {
+      const randomSecretQuestion = user.secretQuestions[
+        Math.floor(Math.random() * user.secretQuestions.length)
+      ];
 
-    // `${process.env.FRONTEND_URL}question/${user._id}` +
-    return res
-      .status(200).send(token)
-      // .redirect(
-      //   `${process.env.FRONTEND_URL}question/${user._id}` +
-      //     JSON.stringify(randomSecret)
-      // );
+      //query secretquestion db to get the question
+      const secretQuestion = await secretQuestionService.getQuestionById(randomSecretQuestion.question)
+
+      // send the secret question to the user as response
+      return res.status(200).send({
+        data: { secretQuestion },
+        message: "User is required to answer a secret question",
+        status: "success",
+      });
+    }
+
+    if(!user.is2FAEnabled) {
+      return res.status(400).send({
+        data: null,
+        message: "User has not set up secret questions",
+        status: "failed",
+      });
+    }
+
+    res.status(200).send({
+      data: null,
+      message: "User has not set up secret questions",
+      status: "failed",
+    })
+
   } catch (error) {
+    console.log("🚀 ~ file: auth.controller.js:71 ~ preLogin ~ error:", error)
     res.status(500).json({
       status: "failed",
       message: "Unable to login user",
@@ -62,43 +76,53 @@ const login = async (req, res) => {
     });
   }
 };
-//@desc     Question User
-//@route    POST /users/login
-//@access   Public
-const finalLogin = async (req, res) => {
-  const { email, answers } = req.body;
+
+const login = async (req, res) => {
+  const { email, question, answer } = req.body;
   try {
     const user = await User.findOne({ email });
+    const secretQuestion = user.secretQuestions.find((q) => {
+      return q.question.toString() === question
+    })
+
+    if (!secretQuestion) {
+      return res.status(400).send({
+        data: null,
+        message: "Invalid question",
+        status: "failed",
+      });
+    }
+
+    console.log("🚀 ~ file: auth.controller.js:89 ~ login ~ secretQuestion:", secretQuestion, answer)
+  
+    const isAnswerCorrect = secretQuestion.answer === answer
+
+    if (isAnswerCorrect === false) {
+      // pick another question for the user
+      const randomSecretQuestion = user.secretQuestions[
+        Math.floor(Math.random() * user.secretQuestions.length)
+      ];
+
+      const secretQuestion = await secretQuestionService.getQuestionById(randomSecretQuestion.question)
+
+      // send the secret question to the user as response
+      return res.status(400).send({
+        data: secretQuestion ,
+        message: "Incorrect answer",
+        status: "failed",
+      });
+    }
 
     const token = await user.generateAuthToken();
 
-    let isVerified = true;
+    const { date, time } = getDateAndTime();
 
-    if (user.secrets.length > 0) {
-      isVerified = verifySecretAnswers(answers, user.secrets);
-      if (!isVerified) {
-        return res.status(400).send({
-          data: null,
-          message: "Invalid answers",
-          status: "failed",
-        });
-      }
-    }
-
-    // create audit trail
-    const myUser = await User.findById(user._id);
-    let dt = new Date(new Date().toISOString());
-    let date = dt.toString().slice(0, 15);
-    let time = dt.toString().slice(16, 21);
-
-    let audit = await AuditTrail.create({
+    await auditTrailService.createAuditTrail({
       user: user._id,
       type: "authentication",
-      message: `${myUser.firstName} logged in on ${date} by ${time}`,
-      organization: myUser.organization,
+      message: `${user.firstName} logged in on ${date} by ${time}`,
+      organization: user.organizationId,
     });
-
-    await audit.save();
 
     res.json({
       message: "User Logged in Successfully",
@@ -108,6 +132,7 @@ const finalLogin = async (req, res) => {
       },
     });
   } catch (error) {
+    console.log("🚀 ~ file: auth.controller.js:136 ~ login ~ error:", error)
     res.status(500).json({
       status: "failed",
       message: "Unable to login user",
@@ -116,9 +141,6 @@ const finalLogin = async (req, res) => {
   }
 };
 
-//@desc     confirm email inorder to change user password. Send email to user
-//@route    POST /users/send_password_reset_link"
-//@access   Public
 const forgetPassword = async (req, res) => {
   try {
     const user = await User.findOne({ email: req.body.email });
@@ -193,15 +215,18 @@ const verifyUser = async (req, res) => {
       });
     }
 
-    if (user.isVerified)
+    if (user.isVerified) {
       return res
         .status(400)
         .json({ message: "User is already verified on the platform" });
-    if (user.token == null)
+    }
+
+    if (user.verificationToken == null) {
       return res.status(400).json({ message: "Invalid token" });
+    }
 
     user.isVerified = true;
-    user.token = null;
+    user.verificationToken = null;
     await user.save();
 
     return res.status(200).json({
@@ -290,7 +315,7 @@ const registerUser = async (req, res) => {
     user.password = await bcrypt.hash(user.password, salt);
 
     //Email Details
-    const token = jwt.sign(
+    const verificationToken = jwt.sign(
       { user_email: user.email },
       process.env.EMAIL_SECRET,
       {
@@ -298,9 +323,9 @@ const registerUser = async (req, res) => {
       }
     );
 
-    user.token = token;
+    user.verificationToken = verificationToken;
 
-    const link = `${process.env.FRONTEND_URL}/verify-account/${token}`;
+    const link = `${process.env.FRONTEND_URL}/verify-account/${verificationToken}`;
 
     const subject = "Welcome on Board";
     const message = `
@@ -318,12 +343,11 @@ const registerUser = async (req, res) => {
 
     return res.status(201).json({
       message:
-        "Verification code has been sent to your email. To continue, please verify your email.",
+        "Verification link has been sent to your email. To continue, please verify your email.",
       status: "success",
       data: { user },
     });
   } catch (error) {
-    console.log(error);
     return res.status(500).json({
       status: "failed",
       data: null,
@@ -338,5 +362,5 @@ module.exports = {
   login,
   resetPassword,
   registerUser,
-  finalLogin,
+  preLogin,
 };

@@ -9,10 +9,13 @@ const {
   resetPassword,
   verifyUser,
   registerUser,
+  preLogin
 } = require("../controller/auth/auth.controller");
 
 const createAuthQuestions = require("../controller/authQuestion/authQuestion");
+
 //general route
+router.post("/pre_login", validate(authSchemas.preLogin, "body"), preLogin);
 router.post("/login", validate(authSchemas.login, "body"), login);
 router.post(
   "/register",

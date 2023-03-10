@@ -1,9 +1,15 @@
 const Joi = require("joi");
 
 const authSchemas = {
-  login: Joi.object().keys({
+  preLogin: Joi.object().keys({
     email: Joi.string().min(6).max(40).trim().lowercase().required().email(),
     password: Joi.string().min(8).required().label("Password"),
+  }),
+
+  login: Joi.object().keys({
+    email: Joi.string().min(6).max(40).trim().lowercase().required().email(),
+    question: Joi.string().required(),
+    answer: Joi.string().required(),
   }),
 
   forgetPassword: Joi.object().keys({

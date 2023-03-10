@@ -39,20 +39,31 @@ const userSchema = new mongoose.Schema(
       required: true,
       enum: ["super-admin", "admin", "user"],
     },
-    token: String,
-    secrets: {
-      type: [mongoose.Schema.Types.Mixed],
+    verificationToken: String,
+    is2FAEnabled: {
+      type: Boolean,
+      default: false,
+    },
+    secretQuestions: {
+      type: [
+        {
+          question: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "SecretQuestion",
+          },
+          answer: String,
+        },
+      ],
+      validate: {
+        validator: function (v) {
+          return v.length === 3;
+        },
+        message: "You must provide 3 secret questions",
+      }
     },
   },
   {
     timestamps: true,
-    toJSON: {
-      transform(doc, ret) {
-        delete ret.secrets;
-        delete ret.password;
-        delete ret.__v;
-      },
-    },
   }
 );
 
@@ -72,12 +83,15 @@ userSchema.methods.generateAuthToken = async function () {
       expiresIn: "1d",
     }
   );
+  // TODO: Encrypt token
   return token;
 };
 
 userSchema.methods.toJSON = function () {
   const user = this.toObject();
   delete user.password;
+  delete user.secrets;
+  delete user.__v;
   return user;
 };
 

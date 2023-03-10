@@ -19,6 +19,7 @@ const authRoute = require("./routes/auth.route");
 const notificationRoute = require("./routes/notification.route");
 const otpRoute = require("./routes/otp.route");
 const privilegeRoute = require("./routes/privilege.route");
+const secretQuestionRoute  = require("./routes/secretQuestion.route");
 const bankoneRoute = require("./routes/bankone.route");
 
 
@@ -68,7 +69,8 @@ app.use("/api/audit_trails", trailRoute);
 app.use("/api/requests", requestRoute);
 app.use("/api/notifications", notificationRoute); 
 app.use("/api/otp", otpRoute);
-app.use("/api/privileges", privilegeRoute); 
+app.use("/api/privileges", privilegeRoute);
+app.use("/api/secret_questions", secretQuestionRoute);
 app.use("/api/ticket", adminRequest);
 app.use("/api/bank", bankoneRoute);
 

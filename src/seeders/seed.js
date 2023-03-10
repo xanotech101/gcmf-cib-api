@@ -2,6 +2,7 @@
 require("dotenv").config();
 const mongoose = require("mongoose");
 const seedPrivileges = require("./privilege.seed");
+const seedSecretQuestions = require("./secretQuestions.seeds");
 
 mongoose
   .set("strictQuery", false)
@@ -14,6 +15,7 @@ mongoose
 
 const seedDb = async () => {
   await seedPrivileges();
+  await seedSecretQuestions();
 };
 
 seedDb().then(() => {

@@ -2,6 +2,7 @@ const User = require("../../model/user.model");
 const { validateChangePasswordSchema } = require("../../utils/utils");
 const bcrypt = require("bcrypt");
 const { PER_PAGE } = require("../../utils/constants");
+const securityQuestionService = require("../../services/secretQuestion.service");
 
 const getOrganizationUsers = async (req, res) => {
   const { organizationId } = req.user;
@@ -310,6 +311,45 @@ const deleteAnyUser = async (req, res) => {
   }
 };
 
+const createSecurityQuestions = async (req, res) => {
+  const { email, secretQuestions } = req.body;
+  try {
+    const user = await User.findOne({ email });
+
+  if (!user) {
+    return res.status(400).json({
+      message: "User does not exist",
+      data: null,
+      status: "failed",
+    });
+  }
+
+    // //  loop through the array of security questions and hash the answer for each one of them
+    // for (let i = 0; i < secretQuestions.length; i++) {
+    //   secretQuestions[i].answer = await securityQuestionService.hashAnswer(secretQuestions[i].answer);
+    // }
+
+    user.secretQuestions = secretQuestions;
+    user.is2FAEnabled = true;
+
+    await user.save();
+
+    //up date the user
+    res.status(200).json({
+      message: "Security questions created successfully",
+      data: user,
+      status: "success",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      message: error.message,
+      data: null,
+      status: "failed",
+    });
+  }
+};
+
 module.exports = {
   getOrganizationUsers,
   getUserProfile,
@@ -318,4 +358,5 @@ module.exports = {
   getAllUsers,
   deleteNonAdminUsers,
   deleteAnyUser,
+  createSecurityQuestions,
 };
