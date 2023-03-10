@@ -644,6 +644,11 @@ const verifierApproveRequest = async (req, res) => {
 
     const authorizers = request.mandate.authorisers;
 
+
+
+
+    
+
     // notify initiator and authorizers
     await notificationService.createNotifications([
       {

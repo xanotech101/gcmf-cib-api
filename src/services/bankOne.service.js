@@ -36,6 +36,7 @@ class BankOneService {
   ) {
     try {
       const { data } = await axios.get(
+
         `${config.transactionHistory}?authtoken=${authToken}&accountNumber=${accountNumber}&fromDate=${fromDate}&toDate=${toDate}&institutionCode=${institutionCode}&numberOfItems=${numberOfItems}`
       );
       return data;

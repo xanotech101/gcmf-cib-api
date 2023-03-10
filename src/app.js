@@ -70,7 +70,7 @@ app.use("/api/notifications", notificationRoute);
 app.use("/api/otp", otpRoute);
 app.use("/api/privileges", privilegeRoute); 
 app.use("/api/ticket", adminRequest);
-// app.use("/api/account", bankoneRoute);
+app.use("/api/bank", bankoneRoute);
 
 
 
