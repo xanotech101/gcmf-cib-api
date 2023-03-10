@@ -4,7 +4,6 @@ const authSchemas = {
   login: Joi.object().keys({
     email: Joi.string().min(6).max(40).trim().lowercase().required().email(),
     password: Joi.string().min(8).required().label("Password"),
-    answers: Joi.array().required(),
   }),
 
   forgetPassword: Joi.object().keys({

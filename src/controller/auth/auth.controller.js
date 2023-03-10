@@ -45,14 +45,15 @@ const login = async (req, res) => {
       randomSecret =
         user.secrets[Math.floor(Math.random() * user.secrets.length)];
     }
+    const token = await user.generateAuthToken();
 
     // `${process.env.FRONTEND_URL}question/${user._id}` +
     return res
-      .status(200)
-      .redirect(
-        `${process.env.FRONTEND_URL}question/${user._id}` +
-          JSON.stringify(randomSecret)
-      );
+      .status(200).send(token)
+      // .redirect(
+      //   `${process.env.FRONTEND_URL}question/${user._id}` +
+      //     JSON.stringify(randomSecret)
+      // );
   } catch (error) {
     res.status(500).json({
       status: "failed",
