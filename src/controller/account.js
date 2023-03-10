@@ -15,53 +15,57 @@ const authToken = process.env.AUTHTOKEN;
 //@route    POST /account/register
 //@access   Public
 const registerAccount = async (req, res) => {
-  // console.log(req.user);
   try {
-
-    // const bankVerificationKey = await AuthorisationKey.findOne({ token: req.body.bankVerificationKey, bankNumber: req.body.bankNumber });
-    
-    // if (!bankVerificationKey) {
-    //   return res.status(400).json({
-    //     status: "Failed",
-    //     Message: "Invalid bank verification key",
-    //   });
-    // };
-
     const input = _.pick(req.body, ["admin", "accountDetails"]);
-    // get user details through adminId
 
-    // create account admin
     let role = "admin";
-
-    const admin = await User.create({
-      ...input.admin,
-      role,
-    });
-
-    const token = jwt.sign(
-      { user_email: admin.email },
+    let adminToken = jwt.sign(
+      { user_email: input.admin.email },
       process.env.EMAIL_SECRET,
       {
         expiresIn: "10m",
       }
     );
 
+    const admin = await User.create({
+      ...input.admin,
+      token: adminToken,
+      role,
+    });
+
+    const token = jwt.sign(
+      { accountEmail: input.accountDetails.Email },
+      process.env.EMAIL_SECRET,
+      {
+        expiresIn: "10m",
+      }
+    );
+    const { Message } = await bankOneService.getbankSumaryDetails(
+      authToken,
+      input.accountDetails.accountNumber
+    );
+    const { Email, CustomerId } = Message;
+    console.log(Email, CustomerId);
     // create account
     const result = await Account.create({
       ...input.accountDetails,
       adminId: admin._id,
-      organizationId: randomUUID(),
       accountToken: token,
+      adminID: admin.email,
+      CustomerId,
     });
 
     // const result = await account.save();
 
     // send email to admin
-    const email = admin.email;
+
+    const accountEmail = Email;
     const subject = "Account Verification";
-    const message = `Hello ${admin.firstName}, \n An account has been created for you \n\n
-    Please verify your account by clicking the link: \n${process.env.FRONT_END_URL}/${token}.\n`;
-    await sendEmail(email, subject, message);
+    const accountMessage = `Hello, \n An account has been created by you for ${admin.firstName} \n\n
+    Please verify the account creation by clicking the link: \n${process.env.FRONT_END_URL}/${token}.\n`;
+
+    await sendEmail(accountEmail, subject, accountMessage);
+
     return res.status(201).json({
       status: "Success",
       result,
@@ -104,16 +108,26 @@ const verifyAccount = async (req, res) => {
       });
     }
 
-    const user = await User.findById(account.adminId);
-    // update user secret here
-    user.isVerified = true;
-    user.secrets = req.body.secrets;
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(req.body.password, salt);
-
     account.verified = true;
     account.accountToken = null;
     await account.save();
+
+    const user = await User.findById(account.adminId);
+    const userToken = jwt.sign({ adminId }, process.env.EMAIL_SECRET, {
+      expiresIn: "10m",
+    });
+
+    const userEmail = user.email;
+    const subject = "Account Verification";
+    const accountMessage = `Hello,${admin.firstName} \n An account has been created for you  \n\n
+    Please verify the account creation by clicking the link: \n${process.env.FRONT_END_URL}/user-account/${userToken}.\n`;
+
+    await sendEmail(userEmail, subject, accountMessage);
+
+    return res.status(201).json({
+      status: "Success",
+      token,
+    });
   } catch (error) {
     console.log(error);
     return res.status(500).json({
@@ -122,7 +136,6 @@ const verifyAccount = async (req, res) => {
     });
   }
 };
-
 
 const sendAccountVericationPin = async (req, res) => {
   let accountNo = req.query.account;
@@ -147,22 +160,19 @@ const sendAccountVericationPin = async (req, res) => {
   });
   await authorisationKeyModel.save();
 
-  const accountEmail = accountInfo.Message.Email
-  const name = accountInfo.Message.Name
-  
+  const accountEmail = accountInfo.Message.Email;
+  const name = accountInfo.Message.Name;
 
-      //Mail notification
-      const subject = "Request to connect your account";
-      const message = `
+  //Mail notification
+  const subject = "Request to connect your account";
+  const message = `
           <h3>Transaction Request Initiated</h3>
           <p> Dear ${name}. There is a request to connect your account to the GMFB platform for transactional purpose.</p>
           <p>Kindly find below the authorisation key to verify you are authorizing this action</p>
           <p>Verification Key: ${authorisationKey}</p>
         `;
 
-      await sendEmail(accountEmail, subject, message);
-    
-
+  await sendEmail(accountEmail, subject, message);
 
   return res.status(200).json({
     status: "Success",
@@ -171,22 +181,11 @@ const sendAccountVericationPin = async (req, res) => {
   });
 };
 
+// get all account
+const getAllAccount = async (req, res) => {
+  const allAccount = await Account.find();
 
-module.exports = { registerAccount, verifyAccount };
+  res.json(allAccount);
+};
 
-/*
-Admin:{
-    "firstName" : "Adekunle",
-    "lastName" : "Omolaja",
-    "email": "week@test.com",
-    "password" : "user1234",
-    "confirm_password" : "user1234",
-    "designation": "Client Admin",
-    "phone": "01349957638",
-    "gender": "male",   
-    "organizationId" : "4747fdedede",
-    "imageUrl" : "google.com/fsdfdsfdd",
-    "privileges" : ["63f697fd134e96cd95e2d97b"],
-}
-
-*/
+module.exports = { getAllAccount, registerAccount, verifyAccount };
