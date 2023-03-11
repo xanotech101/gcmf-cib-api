@@ -3,13 +3,19 @@ const jwt = require("jsonwebtoken");
 
 const accountSchema = new mongoose.Schema(
   {
-    name: String,
+    accountName: String,
     accountNumber: {
       type: String,
       required: [true, "Please enter an account number"],
       unique: true,
     },
+    accountToken: String,
+    adminID: String,
     customerID: String,
+    verified: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
