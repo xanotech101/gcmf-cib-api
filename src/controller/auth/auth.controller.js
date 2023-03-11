@@ -281,6 +281,7 @@ const resetPassword = async (req, res) => {
 const registerUser = async (req, res) => {
   try {
     const userExits = await User.findOne({ email: req.body.email });
+    console.log("fffff")
     if (userExits) {
       return res.status(400).send({
         status: "failed",
@@ -295,6 +296,7 @@ const registerUser = async (req, res) => {
     } else if (req.path === "/admin/register") {
       role = "admin";
     }
+
     const user = new User({
       firstName: req.body.firstName,
       lastName: req.body.lastName,
@@ -337,7 +339,7 @@ const registerUser = async (req, res) => {
     <p>${link}</p>
   `;
 
-    // await sendEmail(user.email, subject, message);
+    await sendEmail(user.email, subject, message);
 
     await user.save();
 
