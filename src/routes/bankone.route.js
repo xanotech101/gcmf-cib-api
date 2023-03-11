@@ -26,7 +26,7 @@ router.get("/transactions/:account", adminAuth, getTransactionsPaginated);
 router.post("/transfer/interbank", adminAuth, interbankTransfer);
 router.post("/transfer/intrabank", adminAuth, intrabankTransfer);
 router.post("/details", adminAuth, getAccountDetails);
-router.post("/info", adminAuth, getAccountInfo);
+router.get("/info", adminAuth, getAccountInfo);
 router.post("/status", adminAuth, getTransactionStatus);
 
 module.exports = router;

@@ -4,8 +4,19 @@ const authSchemas = {
   login: Joi.object().keys({
     email: Joi.string().min(6).max(40).trim().lowercase().required().email(),
     password: Joi.string().min(8).required().label("Password"),
-    answers: Joi.array().required(),
   }),
+  verifyUserWithSecret: Joi.object()
+    .keys({
+      password: Joi.string().min(8).required().label("Password"),
+      answers: Joi.array().required(),
+      confirm_password: Joi.any()
+        .equal(Joi.ref("password"))
+        .required()
+        .label("Confirm password")
+        .messages({ "any.only": "{{#label}} does not match" }),
+      token: Joi.string(),
+    })
+    .with("password", "confirm_password"),
 
   forgetPassword: Joi.object().keys({
     email: Joi.string().min(6).max(40).trim().lowercase().required().email(),

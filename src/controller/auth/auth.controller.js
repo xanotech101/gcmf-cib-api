@@ -39,20 +39,22 @@ const login = async (req, res) => {
       });
     }
     // get one  random user secret questions
-    let randomSecret = null;
+    let randomSecret = null,
+      token;
     // redirect to question page front end
     if (user.secrets.length > 0) {
       randomSecret =
         user.secrets[Math.floor(Math.random() * user.secrets.length)];
+      return res.status(200).send(randomSecret.question);
+      // .redirect(
+      //   `${process.env.FRONTEND_URL}question/${user._id}` +
+      //     JSON.stringify(randomSecret)
+      // );
+    } else {
+      // `${process.env.FRONTEND_URL}question/${user._id}` +
+      token = await user.generateAuthToken();
+      return res.status(200).send(token);
     }
-
-    // `${process.env.FRONTEND_URL}question/${user._id}` +
-    return res
-      .status(200)
-      .redirect(
-        `${process.env.FRONTEND_URL}question/${user._id}` +
-          JSON.stringify(randomSecret)
-      );
   } catch (error) {
     res.status(500).json({
       status: "failed",
@@ -217,6 +219,58 @@ const verifyUser = async (req, res) => {
     });
   }
 };
+const verifyUserWithSecret = async (req, res) => {
+  try {
+    const decoded = jwt.verify(req.params.token, process.env.EMAIL_SECRET);
+    const { adminID } = decoded;
+    // console.log(decoded);
+
+    if (!adminID) {
+      res.status(400).json({
+        status: "failed",
+        Message: "Invalid token",
+        data: null,
+      });
+    }
+
+    const user = await User.findById(adminID);
+
+    if (!user) {
+      return res.status(400).json({
+        status: "failed",
+        Message: "User not found",
+        data: null,
+      });
+    }
+
+    if (user.isVerified)
+      return res
+        .status(400)
+        .json({ message: "User is already verified on the platform" });
+    if (user.token == null)
+      return res.status(400).json({ message: "Invalid token" });
+
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(req.body.password, salt);
+    user.secrets = req.body.secrets;
+    user.isVerified = true;
+    user.token = null;
+    await user.save();
+
+    return res.status(200).json({
+      message: "User verified successfully",
+      data: null,
+      status: "success",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      status: "failed",
+      Message: "Unable to verify user",
+      data: null,
+    });
+  }
+};
 
 const resetPassword = async (req, res) => {
   try {
@@ -338,4 +392,31 @@ module.exports = {
   resetPassword,
   registerUser,
   finalLogin,
+  verifyUserWithSecret,
 };
+
+/*
+sample secret question
+  "secrets": [
+    {
+      "question": "What was your first pet's name?",
+      "answer": "deve"
+    },
+    {
+      "question": "What is your mother's maiden name?",
+      "answer": "joe"
+    },
+    {
+      "question": "What was the name of your elementary school?",
+      "answer": "ade"
+    },
+    {
+      "question": "What is your favorite color?",
+      "answer": "Blue"
+    },
+    {
+      "question": "What city were you born in?",
+      "answer": "Oyo"
+    }
+  ]
+*/

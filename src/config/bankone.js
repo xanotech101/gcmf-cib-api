@@ -6,7 +6,7 @@ const bankone = {
   getAccountByCustomerID:
     "http://52.168.85.231/BankOneWebAPI/api/Account/GetAccountsByCustomerId/2/",
   transactionHistory:
-    "http://52.168.85.231/BankOneWebAPI/api/Account/GetTransactions/2?",
+    "http://52.168.85.231/BankOneWebAPI/api/Account/GetTransactions/2",
   accountStatement:
     "http://52.168.85.231/BankOneWebAPI/api/Account/GenerateAccountStatement2/2",
   interbankTransfer:

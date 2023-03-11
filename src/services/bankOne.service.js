@@ -32,7 +32,7 @@ class BankOneService {
     fromDate,
     toDate,
     institutionCode,
-   numberOfItems
+    numberOfItems
   ) {
     try {
       const { data } = await axios.get(
@@ -194,10 +194,9 @@ class BankOneService {
     }
   }
 
-
- async getAccountInfo(authtoken, accountNumber, institutionCode) {
+  async getAccountInfo(authtoken, accountNumber, institutionCode) {
     try {
-        const { data } = await axios.get(
+      const { data } = await axios.get(
         `${config.getAccountInfo}?authtoken=${authToken}&accountNumber=${accountNumber}&institutionCode=${institutionCode}`
       );
       return data;
@@ -205,22 +204,22 @@ class BankOneService {
       console.log(error);
       return null;
     }
-}
-  
- async transactionStatus(
+  }
+
+  async transactionStatus(
     RetrievalReference,
     TransactionDate,
     TransactionType,
     Amount,
-    Token,
+    Token
   ) {
     try {
       const { data } = await axios.post(`${config.transactionStatus}`, {
         RetrievalReference,
-    TransactionDate,
-    TransactionType,
-    Amount,
-    Token,
+        TransactionDate,
+        TransactionType,
+        Amount,
+        Token,
       });
       return data;
     } catch (error) {
@@ -229,25 +228,22 @@ class BankOneService {
     }
   }
 
-
-
-
   async getIntrabankTransfer(
     Amount,
     FromAccountNumber,
     ToAccountNumber,
     RetrievalReference,
     Narration,
-    AuthenticationKey,
+    AuthenticationKey
   ) {
     try {
       const { data } = await axios.post(`${config.intrabankTransfer}`, {
-    Amount,
-    FromAccountNumber,
-    ToAccountNumber,
-    RetrievalReference,
-    Narration,
-    AuthenticationKey,
+        Amount,
+        FromAccountNumber,
+        ToAccountNumber,
+        RetrievalReference,
+        Narration,
+        AuthenticationKey,
       });
       return data;
     } catch (error) {
@@ -255,8 +251,17 @@ class BankOneService {
     }
   }
 
-
-
+  async getbankSumaryDetails(authToken, accountNumber) {
+    try {
+      const { data } = await axios.get(
+        `${config.getAccountInfo}?authtoken=${authToken}&accountNumber=${accountNumber}`
+      );
+      return data;
+    } catch (error) {
+      console.log(error);
+      return null;
+    }
+  }
 }
 
 

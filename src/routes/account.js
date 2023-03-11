@@ -3,17 +3,24 @@ const { validate, accountSchemas } = require("../validations");
 const { superUserAuth, adminAuth } = require("../middleware/auth");
 
 const router = express.Router();
-const { registerAccount, verifyAccount } = require("../controller/account");
+const {
+  getAllAccount,
+  registerAccount,
+  verifyAccount,
+} = require("../controller/account");
 
 router.post(
   "/register",
   superUserAuth,
-  validate(accountSchemas.createAccount, "body"),
+  // validate(accountSchemas.createAccount, "body"),
   registerAccount
 );
-router.post(
+
+router.get("/all_accounts", getAllAccount);
+
+router.get(
   "/verify-account/:token",
-  validate(accountSchemas.verifyAccount, "params"),
+  // validate(accountSchemas.verifyAccount, "params"),
   verifyAccount
 );
 

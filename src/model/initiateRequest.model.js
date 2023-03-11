@@ -23,7 +23,10 @@ const initiateRequestSchema = new mongoose.Schema(
     transactionReference: String,
     organizationId: String,
     numberOfAuthorisers: Number,
-    transferStatus: String,
+    transferStatus: {
+      type: String,
+      enum: ["pending", "successful", "failed"],
+    },
     status: {
       type: String,
       enum: [

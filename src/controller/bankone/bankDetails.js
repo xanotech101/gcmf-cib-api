@@ -1,5 +1,6 @@
 const bankOneService = require("../../services/bankOne.service");
 const authToken = process.env.AUTHTOKEN;
+const { sendEmail } = require("../../utils/emailService");
 
 const getAccountByAccountNo = async (req, res) => {
   let accountNo = req.params.account || "00680011010004232";
@@ -45,22 +46,22 @@ const getAccountByCustomerID = async (req, res) => {
 };
 
 const getTransactionHistory = async (req, res) => {
-  const authToken = req.query.authToken;
-    const accountNumber = req.query.accountNumber;
+  const accountNumber = req.query.accountNumber;
   const fromDate = req.query.fromDate;
   const toDate = req.query.toDate;
   const institutionCode = req.query.institutionCode;
   const numberOfItems = req.query.numberOfItems;
-
+  const authtoken = "4c398863-d777-4afa-bd89-dd01859740d1";
   const transHistory = await bankOneService.transactionHistory(
-    authToken,
+    authtoken,
     accountNumber,
     fromDate,
     toDate,
     institutionCode,
     numberOfItems
   );
-
+  console.log("transactionHistory", transHistory)
+  
   if (!transHistory) {
     return res.status(500).json({
       status: "Failed",
@@ -227,10 +228,12 @@ const interbankTransfer = async (req, res) => {
 
 
 const getAccountInfo = async (req, res) => {
-  let accountNo = req.query.account;
-    let institutionCode = req.query.institutionCode;
-
-  const accountInfo = await bankOneService.getAccountInfo(authToken, account, institutionCode);
+  let accountNumber = req.query.accountNumber;
+console.log("working here")
+  const accountInfo = await bankOneService.getbankSumaryDetails(
+    authToken,
+    accountNumber
+  );
   if (!accountInfo) {
     return res.status(500).json({
       status: "Failed",

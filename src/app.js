@@ -8,6 +8,7 @@ const logger = require("morgan");
 
 
 const userRoute = require("./routes/user.route");
+const adminRequest = require("./routes/adminRequest");
 const tokenRoute = require("./routes/csrfToken");
 const accountRoute = require("./routes/account");
 const mandateRoute = require("./routes/mandate.route");
@@ -67,8 +68,9 @@ app.use("/api/audit_trails", trailRoute);
 app.use("/api/requests", requestRoute);
 app.use("/api/notifications", notificationRoute); 
 app.use("/api/otp", otpRoute);
-app.use("/api/privileges", privilegeRoute);
-// app.use("/api/account", bankoneRoute);
+app.use("/api/privileges", privilegeRoute); 
+app.use("/api/ticket", adminRequest);
+app.use("/api/bank", bankoneRoute);
 
 
 
