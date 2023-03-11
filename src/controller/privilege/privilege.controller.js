@@ -1,6 +1,7 @@
 const Privilege = require("../../model/privilege.model");
 const { sendEmail } = require("../../utils/emailService");
 const User = require("../../model/user.model");
+const jwt = require("jsonwebtoken");
 
 const getAllPrivileges = async (req, res) => {
   try {
@@ -35,7 +36,7 @@ const roleSwitchMailNotification = async (req, res) => {
       });
     }
 
-    const user = await User.find({ email: email, role: currentRole });
+    const user = await User.findOne({ email: email, role: currentRole });
 
     const sender = await User.findById(req.user._id);
 
@@ -57,20 +58,21 @@ const roleSwitchMailNotification = async (req, res) => {
       },
       process.env.EMAIL_SECRET,
       {
-        expiresIn: "30m",
+        expiresIn: "20m",
       }
     );
 
     user.token = token;
+    console.log(user.email);
 
-    const link = `${process.env.FRONTEND_URL}/switch-role/${token}`;
+    const link = `${process.env.FRONTEND_URL}/${token}`;
     //Mail notification
     const subject = "Request to Switch Roles";
     const message = `
           <h3>Request to Switch Roles</h3>
           <p> Dear ${user.firstName}. A request was sent by ${sender.firstName} to switch your role from ${currentRole} to ${newRole}.</p>
           <p>Kindly click the link below to confirm the request</p>
-          <p>Amount: ${result.amount}</p>
+          <p>${link}</p>
         `;
 
     await sendEmail(user.email, subject, message);

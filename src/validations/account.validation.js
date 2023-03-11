@@ -1,12 +1,22 @@
 const Joi = require("joi");
 
 const accountSchemas = {
-  createAccount: Joi.object().keys({
-    organizationId: Joi.string().max(40).trim().lowercase().required(),
-    accountName: Joi.string().max(40).trim().lowercase().required(),
-    accountNumber: Joi.string().max(40).trim().lowercase().required(),
-    adminId: Joi.string().max(40).trim().lowercase().required(),
-    address: Joi.string().max(40).trim().lowercase().required(),
+  createAccount: Joi.object({
+    accountDetails: Joi.object({
+      accountNumber: Joi.string()
+        .pattern(/^[0-9]+$/)
+        .required(),
+      accountName: Joi.string().required(),
+    }).required(),
+    admin: Joi.object({
+      firstName: Joi.string().required(),
+      lastName: Joi.string().required(),
+      email: Joi.string().email().required(),
+      phone: Joi.string().pattern(/^\d+$/).length(11).required(),
+      gender: Joi.string().valid("male", "female").required(),
+      imageUrl: Joi.string().required(),
+      privileges: Joi.array().items(Joi.string()).required(),
+    }).required(),
   }),
 
   verifyAccount: Joi.object()

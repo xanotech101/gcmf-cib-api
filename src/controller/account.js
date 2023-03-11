@@ -29,29 +29,29 @@ const registerAccount = async (req, res) => {
 
     const admin = await User.create({
       ...input.admin,
-      token: adminToken,
+      token: "",
       role,
     });
 
-    const token = jwt.sign(
-      { accountEmail: input.accountDetails.Email },
-      process.env.EMAIL_SECRET,
-      {
-        expiresIn: "10m",
-      }
-    );
     const { Message } = await bankOneService.getbankSumaryDetails(
       authToken,
       input.accountDetails.accountNumber
     );
     const { Email, CustomerId } = Message;
-    console.log(Email, CustomerId);
+    // console.log(Email, CustomerId);
+    const token = jwt.sign(
+      { accountDetails: input.accountDetails.accountNumber },
+      process.env.EMAIL_SECRET,
+      {
+        expiresIn: "10h",
+      }
+    );
     // create account
     const result = await Account.create({
       ...input.accountDetails,
       adminId: admin._id,
       accountToken: token,
-      adminID: admin.email,
+      adminID: admin._id,
       CustomerId,
     });
 
@@ -79,13 +79,12 @@ const registerAccount = async (req, res) => {
     });
   }
 };
-
 //  verify account
 const verifyAccount = async (req, res) => {
   try {
     const token = req.params.token;
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.EMAIL_SECRET);
     if (!decoded) {
       return res.status(400).json({
         status: "Failed",
@@ -93,7 +92,10 @@ const verifyAccount = async (req, res) => {
       });
     }
 
-    const account = Account.findOne({ accountToken: token });
+    const account = await Account.findOne({
+      accountNumber: decoded.accountDetails,
+    });
+
     if (!account) {
       return res.status(400).json({
         status: "Failed",
@@ -108,25 +110,31 @@ const verifyAccount = async (req, res) => {
       });
     }
 
-    account.verified = true;
-    account.accountToken = null;
-    await account.save();
-
-    const user = await User.findById(account.adminId);
-    const userToken = jwt.sign({ adminId }, process.env.EMAIL_SECRET, {
-      expiresIn: "10m",
-    });
+    const user = await User.findById(account.adminID);
+    const userToken = jwt.sign(
+      { adminID: account.adminID },
+      process.env.EMAIL_SECRET,
+      {
+        expiresIn: "10h",
+      }
+    );
 
     const userEmail = user.email;
     const subject = "Account Verification";
-    const accountMessage = `Hello,${admin.firstName} \n An account has been created for you  \n\n
+    const accountMessage = `Hello,${user.firstName} ${user.lastName} \n An account has been created for you  \n\n
     Please verify the account creation by clicking the link: \n${process.env.FRONT_END_URL}/user-account/${userToken}.\n`;
 
     await sendEmail(userEmail, subject, accountMessage);
 
+    account.verified = true;
+    account.accountToken = null;
+
+    user.token = userToken;
+    await account.save();
+    await user.save();
     return res.status(201).json({
       status: "Success",
-      token,
+      userToken,
     });
   } catch (error) {
     console.log(error);

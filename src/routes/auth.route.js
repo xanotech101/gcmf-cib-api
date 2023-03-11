@@ -9,16 +9,13 @@ const {
   resetPassword,
   verifyUser,
   registerUser,
+  verifyUserWithSecret,
 } = require("../controller/auth/auth.controller");
 
 const createAuthQuestions = require("../controller/authQuestion/authQuestion");
 //general route
 router.post("/login", validate(authSchemas.login, "body"), login);
-router.post(
-  "/register",
-  adminAuth,
-  registerUser
-);
+router.post("/register", adminAuth, registerUser);
 
 router.post(
   "/register_confirmation/:token",
@@ -32,7 +29,7 @@ router.post(
 );
 router.post(
   "/reset_password",
-validate(authSchemas.resetPassword, "body"),
+  validate(authSchemas.resetPassword, "body"),
   resetPassword
 );
 
@@ -42,7 +39,7 @@ router.post(
   adminAuth,
   validate(authSchemas.register, "body"),
   registerUser
-);  
+);
 
 //super admin route
 router.post(
@@ -51,6 +48,10 @@ router.post(
   registerUser
 );
 
-router.post("/secret_question", createAuthQuestions);
+router.post(
+  "/verify_secret_question/:token",
+  validate(authSchemas.verifyUserWithSecret, "body"),
+  verifyUserWithSecret
+);
 
 module.exports = router;
