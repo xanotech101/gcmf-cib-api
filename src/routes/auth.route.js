@@ -9,7 +9,7 @@ const {
   resetPassword,
   verifyUser,
   registerUser,
-  preLogin
+  preLogin,
 } = require("../controller/auth/auth.controller");
 
 const createAuthQuestions = require("../controller/authQuestion/authQuestion");
@@ -55,7 +55,6 @@ router.post(
   validate(authSchemas.register, "body"),
   registerUser
 );
-
 
 router.post("/secret_question", createAuthQuestions);
 
