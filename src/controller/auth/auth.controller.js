@@ -41,7 +41,6 @@ const preLogin = async (req, res) => {
       const randomSecretQuestion = user.secretQuestions[
         Math.floor(Math.random() * user.secretQuestions.length)
       ];
-
       //query secretquestion db to get the question
       const secretQuestion = await secretQuestionService.getQuestionById(randomSecretQuestion.question)
 
@@ -141,6 +140,11 @@ const login = async (req, res) => {
   }
 };
 
+
+
+//@desc     confirm email inorder to change user password. Send email to user
+//@route    POST /users/send_password_reset_link"
+//@access   Public
 const forgetPassword = async (req, res) => {
   try {
     const user = await User.findOne({ email: req.body.email });
@@ -191,6 +195,8 @@ const forgetPassword = async (req, res) => {
     });
   }
 };
+
+
 
 const verifyUser = async (req, res) => {
   try {
@@ -281,6 +287,7 @@ const resetPassword = async (req, res) => {
 const registerUser = async (req, res) => {
   try {
     const userExits = await User.findOne({ email: req.body.email });
+    console.log("fffff")
     if (userExits) {
       return res.status(400).send({
         status: "failed",
@@ -295,6 +302,7 @@ const registerUser = async (req, res) => {
     } else if (req.path === "/admin/register") {
       role = "admin";
     }
+
     const user = new User({
       firstName: req.body.firstName,
       lastName: req.body.lastName,
@@ -337,7 +345,7 @@ const registerUser = async (req, res) => {
     <p>${link}</p>
   `;
 
-    // await sendEmail(user.email, subject, message);
+    await sendEmail(user.email, subject, message);
 
     await user.save();
 
