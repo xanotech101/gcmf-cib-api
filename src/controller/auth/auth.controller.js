@@ -41,7 +41,6 @@ const preLogin = async (req, res) => {
       const randomSecretQuestion = user.secretQuestions[
         Math.floor(Math.random() * user.secretQuestions.length)
       ];
-
       //query secretquestion db to get the question
       const secretQuestion = await secretQuestionService.getQuestionById(randomSecretQuestion.question)
 
@@ -92,8 +91,6 @@ const login = async (req, res) => {
         status: "failed",
       });
     }
-
-    console.log("🚀 ~ file: auth.controller.js:89 ~ login ~ secretQuestion:", secretQuestion, answer)
   
     const isAnswerCorrect = secretQuestion.answer === answer
 
@@ -141,6 +138,11 @@ const login = async (req, res) => {
   }
 };
 
+
+
+//@desc     confirm email inorder to change user password. Send email to user
+//@route    POST /users/send_password_reset_link"
+//@access   Public
 const forgetPassword = async (req, res) => {
   try {
     const user = await User.findOne({ email: req.body.email });
@@ -148,7 +150,7 @@ const forgetPassword = async (req, res) => {
     if (!user) {
       res.status(400).json({
         message:
-          "If the mail you inputed is registered on the platform, you will get a mail to change you password",
+          "If the mail you entered is registered on the platform, you will get a mail to change you password",
         data: null,
         status: "failed",
       });
@@ -191,6 +193,8 @@ const forgetPassword = async (req, res) => {
     });
   }
 };
+
+
 
 const verifyUser = async (req, res) => {
   try {
@@ -281,6 +285,7 @@ const resetPassword = async (req, res) => {
 const registerUser = async (req, res) => {
   try {
     const userExits = await User.findOne({ email: req.body.email });
+    console.log("fffff")
     if (userExits) {
       return res.status(400).send({
         status: "failed",
@@ -295,6 +300,7 @@ const registerUser = async (req, res) => {
     } else if (req.path === "/admin/register") {
       role = "admin";
     }
+
     const user = new User({
       firstName: req.body.firstName,
       lastName: req.body.lastName,
@@ -308,11 +314,11 @@ const registerUser = async (req, res) => {
       secrets: req.body.secrets,
       role,
     });
-console.log("fffffff")
+
     //Hash password
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(user.password, salt);
-console.log("ddddddd");
+
     //Email Details
     const verificationToken = jwt.sign(
       { user_email: user.email },
@@ -321,9 +327,9 @@ console.log("ddddddd");
         expiresIn: "30m",
       }
     );
-console.log("ssssss");
+
     user.verificationToken = verificationToken;
-console.log("bbbbb");
+
     const link = `${process.env.FRONTEND_URL}/verify-account/${verificationToken}`;
 
     const subject = "Welcome on Board";
@@ -335,12 +341,11 @@ console.log("bbbbb");
     <p>If the above link is not working, You can click the link below.</p>
     <p>${link}</p>
   `;
-console.log("fffffff", user);
-    // await sendEmail(user.email, subject, message);
-console.log("rrrrrr");
-    let result = await user.save();
-    
-console.log("fffffff", result);
+
+    await sendEmail(user.email, subject, message);
+
+    const result = await user.save();
+
     return res.status(201).json({
       message:
         "Verification link has been sent to your email. To continue, please verify your email.",

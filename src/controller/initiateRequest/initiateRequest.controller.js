@@ -9,6 +9,7 @@ const mongoose = require("mongoose");
 const Otp = require("../../model/otp.model");
 const { userService , auditTrailService, notificationService} = require("../../services");
 const { getDateAndTime } = require("../../utils/utils");
+const bankOneService = require("../../services/bankOne.service");
 
 const initiateRequest = async (req, res) => {
   try {
@@ -400,6 +401,13 @@ const declineRequest = async (req, res) => {
       });
     }
 
+    if (request.status === "approved") {
+        return res.status(401).json({
+        message: "You can no longer edit this request after the verifier has approved",
+        status: "failed",
+      });
+    }
+
     let duplicate = false;
     for (let i = 0; i < request.authorisersAction.length; i++) {
       let transaction = request.authorisersAction[i];
@@ -507,6 +515,15 @@ const approveRequest = async (req, res) => {
         status: "failed",
       });
     }
+    
+        if (request.status === "approved") {
+          return res.status(401).json({
+            message:
+              "You can no longer edit this request after the verifier has approved",
+            status: "failed",
+          });
+        }
+
     
     const otpDetails = await Otp.findOne({
       otp: req.body.otp,
@@ -640,7 +657,7 @@ const verifierApproveRequest = async (req, res) => {
       reason: req.body.reason,
     };
     request.verifierAction = verifierAction;
-    await request.save();
+    const account = await request.save();
 
     const authorizers = request.mandate.authorisers;
 
@@ -684,10 +701,41 @@ const verifierApproveRequest = async (req, res) => {
     // delete otp from database
     await Otp.findByIdAndDelete(otpDetails._id);
 
-    return res.status(200).json({
-      message: "Request verified successfully",
-      status: "success",
+
+    //Call Transfer Endpoint and make transfer
+    const transfer = await bankOneService.getInterbankTransfer(
+    account.Amount,
+    account.Payer,
+    account.ReceiverAccountNumber,
+    account.PayerAccountNumber,
+    account.ReceiverAccountType,
+   account. ReceiverBankCode,
+   account. ReceiverPhoneNumber,
+    account.ReceiverName,
+    account.ReceiverBVN,
+    account.ReceiverKYC,
+   account.Narration,
+   account.TransactionReference,
+    account.NIPSessionID
+  )
+
+  if (!transfer) {
+    return res.status(500).json({
+      status: "Failed",
+      message: "Unable to get bank account details",
     });
+  }
+
+  return res.status(200).json({
+    status: "Success",
+    message: "account.amount has been transfered to the client successfully",
+    data: transfer,
+  });
+
+    // return res.status(200).json({
+    //   message: "Request verified successfully",
+    //   status: "success",
+    // });
   } catch (error) {
     console.log(error);
     res.status(500).json({

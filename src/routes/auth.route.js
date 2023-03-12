@@ -9,7 +9,7 @@ const {
   resetPassword,
   verifyUser,
   registerUser,
-  preLogin
+  preLogin,
 } = require("../controller/auth/auth.controller");
 
 const createAuthQuestions = require("../controller/authQuestion/authQuestion");
@@ -17,17 +17,19 @@ const createAuthQuestions = require("../controller/authQuestion/authQuestion");
 //general route
 router.post("/pre_login", validate(authSchemas.preLogin, "body"), preLogin);
 router.post("/login", validate(authSchemas.login, "body"), login);
-router.post(
-  "/register",
-  adminAuth,
-  registerUser
-);
+router.post("/register", adminAuth, registerUser);
 
 router.post(
   "/register_confirmation/:token",
   validate(authSchemas.verifyUser, "params"),
   verifyUser
 );
+// router.get(
+//   "/verify-account/:token",
+//   validate(authSchemas.verifyUser, "params"),
+//   verifyUser
+// );
+
 router.post(
   "/send_password_reset_link",
   validate(authSchemas.forgetPassword, "body"),
@@ -35,7 +37,7 @@ router.post(
 );
 router.post(
   "/reset_password",
-validate(authSchemas.resetPassword, "body"),
+  validate(authSchemas.resetPassword, "body"),
   resetPassword
 );
 
@@ -45,7 +47,7 @@ router.post(
   adminAuth,
   validate(authSchemas.register, "body"),
   registerUser
-);  
+);
 
 //super admin route
 router.post(
