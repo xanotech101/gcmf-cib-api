@@ -41,7 +41,6 @@ const preLogin = async (req, res) => {
       const randomSecretQuestion = user.secretQuestions[
         Math.floor(Math.random() * user.secretQuestions.length)
       ];
-
       //query secretquestion db to get the question
       const secretQuestion = await secretQuestionService.getQuestionById(randomSecretQuestion.question)
 
@@ -141,6 +140,11 @@ const login = async (req, res) => {
   }
 };
 
+
+
+//@desc     confirm email inorder to change user password. Send email to user
+//@route    POST /users/send_password_reset_link"
+//@access   Public
 const forgetPassword = async (req, res) => {
   try {
     const user = await User.findOne({ email: req.body.email });
@@ -191,6 +195,8 @@ const forgetPassword = async (req, res) => {
     });
   }
 };
+
+
 
 const verifyUser = async (req, res) => {
   try {

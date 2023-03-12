@@ -14,19 +14,20 @@ const {
   getAccountInfo,
   getTransactionStatus
 } = require("../controller/bankone/bankDetails");
-const { adminAuth } = require("../middleware/auth");
+const { adminAuth, allUsersAuth } = require("../middleware/auth");
 
 
-router.get("/detail/:customerId", adminAuth, getAccountByCustomerID);
-router.get("/balance", adminAuth, getAccountByAccountNo);
-router.get("/history", adminAuth, getTransactionHistory);
-router.get("/statement/:account", adminAuth, getAccountStatement);
-router.post("/name-enquiry", adminAuth, getNameEnquiry);
-router.get("/transactions/:account", adminAuth, getTransactionsPaginated);
+router.get("/detail/:customerId", allUsersAuth, getAccountByCustomerID);
+router.get("/balance", allUsersAuth, getAccountByAccountNo);
+router.get("/history", allUsersAuth, getTransactionHistory);
+router.get("/statement/:account", allUsersAuth, getAccountStatement);
+router.post("/name-enquiry", allUsersAuth, getNameEnquiry);
+router.get("/transactions/:account", allUsersAuth, getTransactionsPaginated);
 router.post("/transfer/interbank", adminAuth, interbankTransfer);
 router.post("/transfer/intrabank", adminAuth, intrabankTransfer);
-router.post("/details", adminAuth, getAccountDetails);
-router.get("/info", adminAuth, getAccountInfo);
-router.post("/status", adminAuth, getTransactionStatus);
+router.post("/details", allUsersAuth, getAccountDetails);
+router.get("/info", allUsersAuth, getAccountInfo);
+router.post("/status", allUsersAuth, getTransactionStatus);
+
 
 module.exports = router;
