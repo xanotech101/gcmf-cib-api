@@ -10,7 +10,10 @@ const accountSchema = new mongoose.Schema(
       unique: true,
     },
     accountToken: String,
-    adminID: String,
+    adminID: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
     customerID: String,
     verified: {
       type: Boolean,

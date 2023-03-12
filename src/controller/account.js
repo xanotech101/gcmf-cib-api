@@ -192,9 +192,12 @@ const verifyAccount = async (req, res) => {
 
 // get all account
 const getAllAccount = async (req, res) => {
-  const allAccount = await Account.find();
+  const allAccount = await Account.find().populate("adminID");
 
-  res.json(allAccount);
+  res.status(200).json({
+    status: "Success",
+    data: allAccount,
+  })
 };
 
 module.exports = { getAllAccount, registerAccount, verifyAccount };
