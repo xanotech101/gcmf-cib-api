@@ -33,11 +33,6 @@ const registerAccount = async (req, res) => {
       role,
     });
 
-    const { Message } = await bankOneService.getbankSumaryDetails(
-      authToken,
-      input.accountDetails.accountNumber
-    );
-    const { Email, CustomerId } = Message;
     // console.log(Email, CustomerId);
     const token = jwt.sign(
       { accountDetails: input.accountDetails.accountNumber },
@@ -52,24 +47,24 @@ const registerAccount = async (req, res) => {
       adminId: admin._id,
       accountToken: token,
       adminID: admin._id,
-      CustomerId,
+      customerID: input.accountDetails.customerID,
     });
 
-    // const result = await account.save();
+    // update admin organization id
+    admin.organizationId = result._id;
+    await admin.save();
 
     // send email to admin
-
-    const accountEmail = Email;
+    const accountEmail = input.accountDetails.email;
     const subject = "Account Verification";
     const accountMessage = `Hello, \n An account has been created by you for ${admin.firstName} \n\n
-    Please verify the account creation by clicking the link: \n${process.env.FRONT_END_URL}/${token}.\n`;
+    Please verify the account creation by clicking the link: \n${process.env.FRONT_END_URL}/admin/verify-account/${token}.\n`;
 
     await sendEmail(accountEmail, subject, accountMessage);
 
     return res.status(201).json({
       status: "Success",
       result,
-      token,
     });
   } catch (error) {
     console.log(error);
@@ -113,7 +108,7 @@ const verifyAccount = async (req, res) => {
 
     const user = await User.findById(account.adminID);
     const userToken = jwt.sign(
-      { adminID: account.adminID },
+      { email: user.email },
       process.env.EMAIL_SECRET,
       {
         expiresIn: "10h",
@@ -192,12 +187,20 @@ const verifyAccount = async (req, res) => {
 
 // get all account
 const getAllAccount = async (req, res) => {
-  const allAccount = await Account.find().populate("adminID");
-
-  res.status(200).json({
-    status: "Success",
-    data: allAccount,
-  })
+  const getAllAccount = async (req, res) => {
+    try {
+      const allAccount = await Account.find().populate("adminID");
+      res.status(200).json({
+        status: "Success",
+        data: allAccount,
+      });
+    } catch (error) {
+      res.status(500).send({
+        status: "Failed",
+        message: "Unable to get all account",
+      });
+    }
+  };
 };
 
 module.exports = { getAllAccount, registerAccount, verifyAccount };

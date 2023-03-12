@@ -91,8 +91,6 @@ const login = async (req, res) => {
         status: "failed",
       });
     }
-
-    console.log("🚀 ~ file: auth.controller.js:89 ~ login ~ secretQuestion:", secretQuestion, answer)
   
     const isAnswerCorrect = secretQuestion.answer === answer
 
@@ -152,7 +150,7 @@ const forgetPassword = async (req, res) => {
     if (!user) {
       res.status(400).json({
         message:
-          "If the mail you inputed is registered on the platform, you will get a mail to change you password",
+          "If the mail you entered is registered on the platform, you will get a mail to change you password",
         data: null,
         status: "failed",
       });

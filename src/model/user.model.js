@@ -43,23 +43,15 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    secretQuestions: {
-      type: [
+    secretQuestions: [
         {
           question: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "SecretQuestion",
           },
           answer: String,
-        },
-      ],
-      validate: {
-        validator: function (v) {
-          return v.length === 3;
-        },
-        message: "You must provide 3 secret questions",
-      }
-    },
+        }
+    ],
   },
   {
     timestamps: true,
