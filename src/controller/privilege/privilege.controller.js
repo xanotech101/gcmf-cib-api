@@ -38,19 +38,18 @@ const roleSwitchMailNotification = async (req, res) => {
 
     const user = await User.find({ email: email, role: currentRole });
 
-    const sender = await User.findById(req.user._id);
-
     if (!user) {
       return res.status(404).json({
         message: "User doesnt exist or user role specified doesnt match",
         status: "failed",
       });
     }
-
+  
+        const sender = await User.findById(req.user._id);
     //Email Details
     const token = jwt.sign(
       {
-        user_email: user.email,
+        user_email: req.body.email,
         currentRole: req.body.currentRole,
         currentPrivilege: req.body.currentPrivilege,
         newRole: req.body.newRole,
@@ -64,7 +63,7 @@ const roleSwitchMailNotification = async (req, res) => {
 
     user.token = token;
 
-    const link = `${process.env.FRONTEND_URL}/switch-role/${token}`;
+    const link = `${process.env.FRONTEND_URL}/${token}`;
     //Mail notification
     const subject = "Request to Switch Roles";
     const message = `
@@ -74,7 +73,8 @@ const roleSwitchMailNotification = async (req, res) => {
           <p>Amount: ${link}</p>
         `;
 
-    await sendEmail(user.email, subject, message);
+    await sendEmail(req.body.email, subject, message);
+
 
     res.status(200).json({
       message: "Successfully notified user of role switch",
@@ -92,9 +92,10 @@ const roleSwitchMailNotification = async (req, res) => {
 
 const updateUserRole = async (req, res) => {
   try {
+    console.log("kkkkkkk")
     const decoded = jwt.verify(req.params.token, process.env.EMAIL_SECRET);
     const mail = decoded;
-
+  
     if (!mail) {
       res.status(400).json({
         status: "failed",
@@ -102,8 +103,9 @@ const updateUserRole = async (req, res) => {
         data: null,
       });
     }
-
+  console.log("jjjjj", mail)
     const user = await User.findOne({ email: mail.user_email });
+   console.log("jjjjj")
 
     if (!user) {
       return res.status(400).json({
@@ -114,10 +116,10 @@ const updateUserRole = async (req, res) => {
     }
 
     const privilege = Privilege.find({ name: mail.newPrivilege });
-
+   console.log("heelooooo", privilege);
     user.role = mail.newRole;
     user.privileges = privilege
-
+   console.log("looooo");
     let mine = await User.findById(req.user._id);
     if (mine.role === "admin" && user.role !== "user") {
        return res.status(401).json({
@@ -126,16 +128,16 @@ const updateUserRole = async (req, res) => {
          data: null,
        });
     }
-
+   console.log("rrreelooooo");
     const switchRole = await user.save();
-
+console.log("roooopsss");
     return res.status(200).json({
       message: "Successfully switched user role and privilege",
       data: { switchRole },
       status: "success",
     });
   } catch (error) {
-    console.log(error);
+    // console.log(error);
     res.status(500).json({
       message: error.message,
       status: "failed",

@@ -8,8 +8,8 @@ const {
 } = require("../controller/privilege/privilege.controller");
 const { adminAuth } = require("../middleware/auth");
 
-router.get("/", adminAuth, getAllPrivileges);
+router.get("/", allUserAuth, getAllPrivileges);
 router.post("/", adminAuth, roleSwitchMailNotification);
-router.get("/:token", adminAuth, updateUserRole);
+router.patch("/:token", adminAuth, updateUserRole);
 
 module.exports = router;
