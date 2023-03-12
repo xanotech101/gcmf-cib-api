@@ -300,7 +300,6 @@ const registerUser = async (req, res) => {
       lastName: req.body.lastName,
       password: req.body.password,
       email: req.body.email,
-      designation: req.body.designation,
       phone: req.body.phone,
       gender: req.body.gender,
       organizationId: req.body.organizationId,
@@ -309,11 +308,11 @@ const registerUser = async (req, res) => {
       secrets: req.body.secrets,
       role,
     });
-
+console.log("fffffff")
     //Hash password
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(user.password, salt);
-
+console.log("ddddddd");
     //Email Details
     const verificationToken = jwt.sign(
       { user_email: user.email },
@@ -322,9 +321,9 @@ const registerUser = async (req, res) => {
         expiresIn: "30m",
       }
     );
-
+console.log("ssssss");
     user.verificationToken = verificationToken;
-
+console.log("bbbbb");
     const link = `${process.env.FRONTEND_URL}/verify-account/${verificationToken}`;
 
     const subject = "Welcome on Board";
@@ -336,18 +335,20 @@ const registerUser = async (req, res) => {
     <p>If the above link is not working, You can click the link below.</p>
     <p>${link}</p>
   `;
-
+console.log("fffffff", user);
     // await sendEmail(user.email, subject, message);
-
-    await user.save();
-
+console.log("rrrrrr");
+    let result = await user.save();
+    
+console.log("fffffff", result);
     return res.status(201).json({
       message:
         "Verification link has been sent to your email. To continue, please verify your email.",
       status: "success",
-      data: { user },
+      data: { result },
     });
   } catch (error) {
+    console.log(error);
     return res.status(500).json({
       status: "failed",
       data: null,
