@@ -6,6 +6,7 @@ const securityQuestionService = require("../../services/secretQuestion.service")
 
 const getOrganizationUsers = async (req, res) => {
   const { organizationId } = req.user;
+  console.log("🚀 ~ file: user.controller.js:9 ~ getOrganizationUsers ~ organizationId:", organizationId)
   try {
     const { perPage, page } = req.query;
 
@@ -312,7 +313,7 @@ const deleteAnyUser = async (req, res) => {
 };
 
 const createSecurityQuestions = async (req, res) => {
-  const { email, secretQuestions } = req.body;
+  const { email, secretQuestions, password } = req.body;
   try {
     const user = await User.findOne({ email });
 
@@ -331,6 +332,11 @@ const createSecurityQuestions = async (req, res) => {
 
     user.secretQuestions = secretQuestions;
     user.is2FAEnabled = true;
+
+    if(password){
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(password, salt);
+    }
 
     await user.save();
 

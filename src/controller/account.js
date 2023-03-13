@@ -125,7 +125,7 @@ const verifyAccount = async (req, res) => {
     account.verified = true;
     account.accountToken = null;
 
-    user.token = userToken;
+    user.verificationToken = userToken;
     await account.save();
     await user.save();
     return res.status(201).json({
@@ -187,20 +187,18 @@ const verifyAccount = async (req, res) => {
 
 // get all account
 const getAllAccount = async (req, res) => {
-  const getAllAccount = async (req, res) => {
-    try {
-      const allAccount = await Account.find().populate("adminID");
-      res.status(200).json({
-        status: "Success",
-        data: allAccount,
-      });
-    } catch (error) {
-      res.status(500).send({
-        status: "Failed",
-        message: "Unable to get all account",
-      });
-    }
-  };
+  try {
+    const allAccount = await Account.find().populate("adminID");
+    res.status(200).json({
+      status: "Success",
+      data: allAccount,
+    });
+  } catch (error) {
+    res.status(500).send({
+      status: "Failed",
+      message: "Unable to get all account",
+    });
+  }
 };
 
 module.exports = { getAllAccount, registerAccount, verifyAccount };

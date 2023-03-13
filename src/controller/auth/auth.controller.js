@@ -199,6 +199,7 @@ const forgetPassword = async (req, res) => {
 const verifyUser = async (req, res) => {
   try {
     const decoded = jwt.verify(req.params.token, process.env.EMAIL_SECRET);
+    // const { password, securityQuestion } = req.body
     const mail = decoded;
 
     if (!mail) {
@@ -209,7 +210,7 @@ const verifyUser = async (req, res) => {
       });
     }
 
-    const user = await User.findOne({ email: mail.user_email });
+    const user = await User.findOne({ email: mail.email });
 
     if (!user) {
       return res.status(400).json({
@@ -231,11 +232,14 @@ const verifyUser = async (req, res) => {
 
     user.isVerified = true;
     user.verificationToken = null;
+
+
+
     await user.save();
 
     return res.status(200).json({
       message: "User verified successfully",
-      data: null,
+      data: user,
       status: "success",
     });
   } catch (error) {
