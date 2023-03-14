@@ -10,6 +10,7 @@ const { sendEmail } = require("../utils/emailService");
 const { randomUUID } = require("crypto");
 const bankOneService = require("../services/bankOne.service");
 const authToken = process.env.AUTHTOKEN;
+const Privilege = require("../model/privilege.model");
 
 //@desc     register an account
 //@route    POST /account/register
@@ -17,7 +18,8 @@ const authToken = process.env.AUTHTOKEN;
 const registerAccount = async (req, res) => {
   try {
     const input = _.pick(req.body, ["admin", "accountDetails"]);
-
+    const {privileges} = await Privilege.find();
+    let priviledgeList = privileges.map(privilege => privilege._id)
     let role = "admin";
     let adminToken = jwt.sign(
       { user_email: input.admin.email },
@@ -31,6 +33,7 @@ const registerAccount = async (req, res) => {
       ...input.admin,
       token: "",
       role,
+      privileges: priviledgeList
     });
 
     // console.log(Email, CustomerId);

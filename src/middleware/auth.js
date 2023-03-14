@@ -43,8 +43,10 @@ function adminAuth(req, res, next) {
     }
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const arr = decoded.privileges;
+    const role = decoded.role
 
     console.log('arr ', arr)
+   
 
     if (!arr.includes("admin") && !arr.includes("superUser")) {
       return res.status(403).json({
