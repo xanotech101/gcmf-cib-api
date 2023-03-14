@@ -2,16 +2,20 @@ const bankOneService = require("../../services/bankOne.service");
 const authToken = process.env.AUTHTOKEN;
 const { sendEmail } = require("../../utils/emailService");
 const Account = require("../../model/account");
+const User = require("../../model/user.model");
 
 const getAccountByAccountNo = async (req, res) => {
 
   try {
 
   
-  const user = req.user._id;
-  const adminInfo = await Account.findOne({ adminID: user })
+
+  const mine = await User.findById(req.user._id);
+
+  const adminInfo = await Account.findById(mine.organizationId)
   
   let accountNo = adminInfo.accountNumber
+  console.log('here ', adminInfo)
   const accountDetails = await bankOneService.accountByAccountNo(
     accountNo,
     authToken
