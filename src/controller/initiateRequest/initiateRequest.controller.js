@@ -113,6 +113,7 @@ const initiateRequest = async (req, res) => {
 const getAllInitiatorRequests = async (req, res) => {
   const { perPage, page } = req.query;
   console.log(req.user._id);
+  const mine = await User.findById(req.user._id)
   const organizationId = mine.organizationId;
 
   const options = {
