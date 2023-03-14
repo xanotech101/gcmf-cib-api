@@ -5,10 +5,6 @@ const jwt = require("jsonwebtoken");
 
 const getAllPrivileges = async (req, res) => {
   try {
-    var host = req.headers.host;
-var origin = req.headers.origin;
-console.log('header ', host)
-console.log('origin ', origin)
     const privileges = await Privilege.find();
     res.status(200).json({
       message: "Successfully fetched privileges",
