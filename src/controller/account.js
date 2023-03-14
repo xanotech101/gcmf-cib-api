@@ -58,11 +58,10 @@ const registerAccount = async (req, res) => {
     await admin.save();
 
     // send email to admin
-    var origin = req.headers.origin;
     const accountEmail = input.accountDetails.email;
     const subject = "Account Verification";
     const accountMessage = `Hello, \n An account has been created by you for ${admin.firstName} \n\n
-    Please verify the account creation by clicking the link: \n${origin}/admin/verify-account/${token}.\n`;
+    Please verify the account creation by clicking the link: \n${process.env.FRONTEND_URL}/admin/verify-account/${token}.\n`;
 
     await sendEmail(accountEmail, subject, accountMessage);
 
@@ -118,12 +117,11 @@ const verifyAccount = async (req, res) => {
         expiresIn: "10h",
       }
     );
-    
-    var origin = req.headers.origin;
+
     const userEmail = user.email;
     const subject = "Account Verification";
     const accountMessage = `Hello,${user.firstName} ${user.lastName} \n An account has been created for you  \n\n
-    Please verify the account creation by clicking the link: \n${origin}/user-account/${userToken}.\n`;
+    Please verify the account creation by clicking the link: \n${process.env.FRONTEND_URL}/user-account/${userToken}.\n`;
 
     await sendEmail(userEmail, subject, accountMessage);
 
