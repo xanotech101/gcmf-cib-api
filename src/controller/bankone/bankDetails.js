@@ -4,6 +4,10 @@ const { sendEmail } = require("../../utils/emailService");
 const Account = require("../../model/account");
 
 const getAccountByAccountNo = async (req, res) => {
+
+  try {
+
+  
   const user = req.user._id;
   const adminInfo = await Account.findOne({ adminID: user })
   
@@ -25,7 +29,11 @@ const getAccountByAccountNo = async (req, res) => {
     message: "Account Details retrieved successfully",
     data: accountDetails,
   });
-};
+} catch(e) {
+  console.log(e)
+}
+}
+
 
 const getAccountByCustomerID = async (req, res) => {
   let customerId = req.params.customerId || "004232";
