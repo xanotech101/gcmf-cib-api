@@ -36,7 +36,7 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       required: true,
-      enum: ["super-admin", "admin", "user"],
+      enum: ["system-admin", "super-admin", "admin", "user"],
     },
     verificationToken: String,
     is2FAEnabled: {
