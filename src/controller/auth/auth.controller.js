@@ -208,9 +208,9 @@ const verifyUser = async (req, res) => {
         data: null,
       });
     }
-
-    const user = await User.findOne({ email: mail.email });
-
+  
+    const user = await User.findOne({ email: mail.user_email ?? mail.email });
+  
     if (!user) {
       return res.status(400).json({
         status: "failed",

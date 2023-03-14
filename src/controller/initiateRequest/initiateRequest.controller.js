@@ -48,7 +48,7 @@ const initiateRequest = async (req, res) => {
 
     if (!mandate) {
       return res.status(404).json({
-        message: "No mandate found",
+        message: "No mandate found for this amount",
         status: "failed",
       });
     }
