@@ -23,7 +23,7 @@ const getOrganizationUsers = async (req, res) => {
         {
           $match: {
             organizationId,
-            privileges: privilege ? { $in: [privilege] } : { $exists: true },
+            // privileges: privilege ? { $in: [privilege] } : { $exists: true },
           },
         },
         {
