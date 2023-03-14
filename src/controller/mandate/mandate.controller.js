@@ -14,7 +14,7 @@ const registerMandate = async (req, res) => {
         status: "failed",
       });
     }
-
+    
     let amount = await Mandate.find({}).select("name minAmount maxAmount");
 
     let mandateCheckFailed;
@@ -44,12 +44,14 @@ const registerMandate = async (req, res) => {
         });
       }
     }
+    const mine = await User.findById(req.user._id);
 
     const mandate = new Mandate({
       name: req.body.name,
       minAmount: req.body.minAmount,
       maxAmount: req.body.maxAmount,
       authorisers: req.body.authorisers,
+      organizationId: mine.organizationId,
       verifier: req.body.verifier,
     });
 
