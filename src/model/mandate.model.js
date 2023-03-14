@@ -7,6 +7,7 @@ const mandateSchema = new mongoose.Schema(
     },
     minAmount: Number,
     maxAmount: Number,
+    organizationId: String,
     authorisers: [
       {
         type: mongoose.Schema.Types.ObjectId,

@@ -1,6 +1,7 @@
 const Mandate = require("../../model/mandate.model");
 const { validateUpdateMandateSchema } = require("../../utils/utils");
 const { PER_PAGE } = require("../../utils/constants");
+const User = require("../../model/user.model");
 
 //@desc     register a mandate
 //@route    POST /mandate/register
@@ -130,7 +131,7 @@ const updateMandate = async (req, res) => {
 
 const getAllMandates = async (req, res) => {
   const { perPage, page } = req.query;
-
+ 
   const options = {
     page: page || 1,
     limit: perPage || PER_PAGE,
@@ -138,7 +139,14 @@ const getAllMandates = async (req, res) => {
   };
 
   try {
+    const mine = await User.findById(req.user._id)
+    const organizationId = mine.organizationId;
     const mandates = await Mandate.aggregate([
+      {
+        $match: {
+          organizationId,       
+        },
+      },
       {
         $lookup: {
           from: "users",

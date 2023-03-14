@@ -6,9 +6,9 @@ const {
   roleSwitchMailNotification,
   updateUserRole,
 } = require("../controller/privilege/privilege.controller");
-const { adminAuth, allUserAuth } = require("../middleware/auth");
+const { adminAuth, allUsersAuth } = require("../middleware/auth");
 
-// router.get("/", allUserAuth, getAllPrivileges);
+router.get("/", allUsersAuth, getAllPrivileges);
 router.post("/", adminAuth, roleSwitchMailNotification);
 router.patch("/:token", adminAuth, updateUserRole);
 

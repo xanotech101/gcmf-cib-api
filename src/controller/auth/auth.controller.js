@@ -287,6 +287,7 @@ const resetPassword = async (req, res) => {
 
 const registerUser = async (req, res) => {
   try {
+    const { organizationId } = req.user;
     const userExits = await User.findOne({ email: req.body.email });
     console.log("fffff")
     if (userExits) {
@@ -311,7 +312,7 @@ const registerUser = async (req, res) => {
       email: req.body.email,
       phone: req.body.phone,
       gender: req.body.gender,
-      organizationId: req.body.organizationId,
+      organizationId: organizationId,
       imageUrl: req.body.imageUrl,
       privileges: req.body.privileges,
       secrets: req.body.secrets,
