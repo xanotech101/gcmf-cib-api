@@ -113,6 +113,7 @@ const initiateRequest = async (req, res) => {
 const getAllInitiatorRequests = async (req, res) => {
   const { perPage, page } = req.query;
   console.log(req.user._id);
+  const organizationId = mine.organizationId;
 
   const options = {
     page: page || 1,
@@ -124,6 +125,7 @@ const getAllInitiatorRequests = async (req, res) => {
     const requests = await InitiateRequest.aggregate([
       {
         $match: {
+          organizationId,
           initiator: mongoose.Types.ObjectId(req.user._id),
         },
       },
@@ -272,7 +274,8 @@ const getAllRequestPerOrganization = async (req, res) => {
     const request = await InitiateRequest.aggregate([
       {
         $match: {
-          initiator: mongoose.Types.ObjectId(req.user._id),
+          organizationId,
+          // initiator: mongoose.Types.ObjectId(req.user._id),
         },
       },
       {

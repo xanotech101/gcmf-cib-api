@@ -24,7 +24,7 @@ router.post("/change-password", allUsersAuth, changePassword);
 router.post("/secret-questions/create", createSecurityQuestions)
 
 //admin routes
-router.get("/allbranchusers", adminAuth, getOrganizationUsers);
+router.get("/allbranchusers", allUsersAuth, getOrganizationUsers);
 router.get("/all", adminAuth, getAllUsers);
 router.delete("/delete_user", superUserAuth, deleteAnyUser);
 router.delete("/delete_nonadmin", adminAuth, deleteNonAdminUsers);

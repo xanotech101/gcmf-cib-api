@@ -32,6 +32,7 @@ function superUserAuth(req, res, next) {
 function adminAuth(req, res, next) {
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(" ")[1];
+  console.log('token ', token)
   try {
     if (!token) {
       return res.sendStatus(401).send({
@@ -42,6 +43,8 @@ function adminAuth(req, res, next) {
     }
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const arr = decoded.privileges;
+
+    console.log('arr ', arr)
 
     if (!arr.includes("admin") && !arr.includes("superUser")) {
       return res.status(403).json({
