@@ -18,7 +18,7 @@ const Privilege = require("../model/privilege.model");
 const registerAccount = async (req, res) => {
   try {
     const input = _.pick(req.body, ["admin", "accountDetails"]);
-    const {privileges} = await Privilege.find();
+    const privileges = await Privilege.find();
     let priviledgeList = privileges.map(privilege => privilege._id)
     let role = "admin";
     let adminToken = jwt.sign(
