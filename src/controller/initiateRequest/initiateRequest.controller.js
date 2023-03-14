@@ -38,6 +38,7 @@ const initiateRequest = async (req, res) => {
     });
 
     const mandate = await Mandate.findOne({
+      organizationId: mine.organizationId,
       minAmount: { $lte: request.amount },
       maxAmount: { $gte: request.amount },
     }).populate({
