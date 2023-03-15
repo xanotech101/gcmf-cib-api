@@ -25,10 +25,7 @@ const userSchema = new mongoose.Schema(
     },
     phone: String,
     gender: String,
-    organizationId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Account",
-    },
+    organizationId: String,
     imageUrl: String,
     privileges: [
       {

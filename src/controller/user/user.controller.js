@@ -116,7 +116,7 @@ const getOrganizationUsers = async (req, res) => {
 
 const getUserProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).populate('organizationId');
+    const user = await User.findById(req.user._id);
     res.status(200).json({
       message: "Successfully fetched user",
       data: { user },
