@@ -11,6 +11,7 @@ const getAllAuditTrail = async (req, res) => {
   };
 
   try {
+    
     const result = await AuditTrail.aggregate([
       {
         $lookup: {
@@ -71,10 +72,11 @@ const getOrganizationAuditTrail = async (req, res) => {
   };
 
   try {
-    const organization = await User.findById(req.user._id)
+    const mine = await User.findById(req.user._id)
+    const organizationId = mine.organizationId.toString();
     const result = await AuditTrail.aggregate([
       {
-        $match: { organization: organization },
+        $match: { organization: organizationId },
       },
       {
         $lookup: {
