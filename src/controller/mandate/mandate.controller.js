@@ -2,6 +2,7 @@ const Mandate = require("../../model/mandate.model");
 const { validateUpdateMandateSchema } = require("../../utils/utils");
 const { PER_PAGE } = require("../../utils/constants");
 const User = require("../../model/user.model");
+const Joi = require("joi");
 
 //@desc     register a mandate
 //@route    POST /mandate/register
@@ -77,7 +78,19 @@ const registerMandate = async (req, res) => {
 //@access   Public
 const updateMandate = async (req, res) => {
   try {
-    const { error } = validateUpdateMandateSchema(req.body);
+
+    const updateMandate = (mandate) => (payload) =>
+    mandate.validate(payload, { abortEarly: false });
+  const updatemandateSchema = Joi.object().keys({
+    name: Joi.string().lowercase(),
+    minAmount: Joi.number(),
+    maxAmount: Joi.number(),
+    authorisers: Joi.array().items(Joi.string().length(24).trim()),
+    verifier: Joi.array().items(Joi.string().length(24).trim()),
+  });
+
+    const { error } =  updateMandate(req.body)
+    // validateUpdateMandateSchema(req.body);
     if (error) return res.status(400).send(error.details[0].message);
 
     const mandate = await Mandate.findOne({ name: req.body.name });
