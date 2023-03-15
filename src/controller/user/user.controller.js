@@ -221,7 +221,12 @@ const updateUserPriviledge = async (req, res) => {
 const changePassword = async (req, res) => {
   const { _id } = req.user;
   try {
-    const { error } = validateChangePasswordSchema(req.body);
+
+   
+const validateChangePassword = (user) => (payload) =>
+  user.validate(payload, { abortEarly: false });
+
+    const { error } = validateChangePassword(req.body);
     if (error) {
       return res.status(400).json({
         status: "failed",
@@ -260,6 +265,7 @@ const changePassword = async (req, res) => {
     await user.save();
     return res.status(200).json({ message: "Password changed successfully" });
   } catch (error) {
+    console.log('passowrd ', error)
     return res.status(500).json({
       status: "Failed",
       Message: "Unable to change user password",

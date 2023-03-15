@@ -81,13 +81,7 @@ const updateMandate = async (req, res) => {
 
     const updateMandate = (mandate) => (payload) =>
     mandate.validate(payload, { abortEarly: false });
-  const updatemandateSchema = Joi.object().keys({
-    name: Joi.string().lowercase(),
-    minAmount: Joi.number(),
-    maxAmount: Joi.number(),
-    authorisers: Joi.array().items(Joi.string().length(24).trim()),
-    verifier: Joi.array().items(Joi.string().length(24).trim()),
-  });
+
 
     const { error } =  updateMandate(req.body)
     // validateUpdateMandateSchema(req.body);
