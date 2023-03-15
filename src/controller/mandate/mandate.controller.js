@@ -121,6 +121,7 @@ const updateMandate = async (req, res) => {
     mandate.minAmount = req.body.minAmount;
     mandate.maxAmount = req.body.maxAmount;
     mandate.authorisers = req.body.authorisers;
+    mandate.verifier = req.body.verifier ??  mandate.verifier
     mandate.numberOfAuthorisers = req.body.authorisers?.length ?? mandate.numberOfAuthorisers 
 
     if (!mandate)
