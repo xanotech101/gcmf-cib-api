@@ -661,7 +661,7 @@ const verifierApproveRequest = async (req, res) => {
     }
 
     // update request
-    request.status = "approved";
+    request.status = "disburse pending";
     const verifierAction = {
       status: "approved",
       reason: req.body.reason,
@@ -751,6 +751,9 @@ console.log('payload ', payload)
       message: transfer.ResponseMessage,
     });
   } else if (transfer.IsSuccessful && transfer.ResponseCode == "00") {
+      // update request if disburse is successful
+  request.status = "approved";
+  await request.save();
     return res.status(200).json({
       status: "Success",
       message: `${account.amount} has been transfered to the client successfully`,
@@ -758,6 +761,11 @@ console.log('payload ', payload)
     });
   
   }
+ 
+  // update request if disburse is successful
+  request.status = "approved";
+ await request.save();
+
 
   return res.status(200).json({
     status: "Success",
