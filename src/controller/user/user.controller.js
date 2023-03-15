@@ -20,7 +20,7 @@ const getOrganizationUsers = async (req, res) => {
 
     const { privilege, withPagination } = req.query;
 
-    const privilegeId = await Privilege.findOne({ name: privilege })?._id || null;
+    const privilegeId = (await Privilege.findOne({ name: privilege })?._id) || null;
 
     if (withPagination === "true") {
       const users = await User.aggregate([
@@ -178,6 +178,33 @@ const updateUserProfile = async (req, res) => {
 
     res.status(200).json({
       message: "Successfully updated your profile",
+      data: { user },
+      status: "success",
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: error.message,
+      data: null,
+      status: "failed",
+    });
+  }
+};
+
+const updateUserPriviledge = async (req, res) => {
+  try {
+    const { privileges, id } = req.body;
+    const user = await User.findById(id);
+
+   
+
+    user.privileges = privileges;
+   
+
+    await user.save();
+
+    res.status(200).json({
+      message: "Successfully updated",
       data: { user },
       status: "success",
     });
@@ -396,4 +423,5 @@ module.exports = {
   deleteNonAdminUsers,
   deleteAnyUser,
   createSecurityQuestions,
+  updateUserPriviledge
 };
