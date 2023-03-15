@@ -164,6 +164,24 @@ const getUserProfile = async (req, res) => {
   }
 };
 
+const getUserProfileById = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).populate('organizationId');
+    res.status(200).json({
+      message: "Successfully fetched user",
+      data: { user },
+      status: "success",
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: error.message,
+      data: null,
+      status: "failed",
+    });
+  }
+};
+
 const updateUserProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
@@ -430,5 +448,6 @@ module.exports = {
   deleteNonAdminUsers,
   deleteAnyUser,
   createSecurityQuestions,
-  updateUserPriviledge
+  updateUserPriviledge,
+  getUserProfileById
 };

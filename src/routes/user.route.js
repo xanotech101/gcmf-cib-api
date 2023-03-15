@@ -8,7 +8,8 @@ const {
   deleteNonAdminUsers,
   deleteAnyUser,
   createSecurityQuestions,
-  updateUserPriviledge
+  updateUserPriviledge,
+  getUserProfileById
 } = require("../controller/user/user.controller");
 const {
   adminAuth,
@@ -20,6 +21,8 @@ const router = express.Router();
 
 //general route
 router.get("/profile", allUsersAuth, getUserProfile);
+router.get("/profile/:id", adminAuth, getUserProfileById);
+
 router.put("/profile", adminAuth, updateUserProfile);
 router.put("/userPrivilege", adminAuth, updateUserPriviledge);
 router.post("/change-password", allUsersAuth, changePassword);
