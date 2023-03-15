@@ -22,7 +22,7 @@ router.post(
 );
 router.put("/update", adminAuth, updateMandate);
 router.get("/all", allUsersAuth, getAllMandates);
-router.get("/:id", allUsersAuth);
+router.get("/:id", allUsersAuth, getSingleMandate);
 
 
 
