@@ -8,7 +8,6 @@ const Privilege = require("../../model/privilege.model");
 
 const getOrganizationUsers = async (req, res) => {
   const { organizationId } = req.user;
-  console.log("🚀 ~ file: user.controller.js:9 ~ getOrganizationUsers ~ organizationId:", organizationId)
   try {
     const { perPage, page } = req.query;
 
@@ -147,7 +146,9 @@ const getOrganizationUsers = async (req, res) => {
 
 const getUserProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).populate('organizationId');
+    // find user by id and populate organization and privilege
+
+    const user = await User.findById(req.user._id).populate('privileges organizationId')
     res.status(200).json({
       message: "Successfully fetched user",
       data: { user },
