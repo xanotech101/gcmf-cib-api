@@ -53,7 +53,7 @@ const registerMandate = async (req, res) => {
       minAmount: req.body.minAmount,
       maxAmount: req.body.maxAmount,
       authorisers: req.body.authorisers,
-      organizationId: mine.organizationId,
+      organizationId: mine.organizationId.toString(),
       verifier: req.body.verifier,
     });
 
@@ -141,7 +141,7 @@ const getAllMandates = async (req, res) => {
 
   try {
     const mine = await User.findById(req.user._id)
-    const organizationId = mine.organizationId;
+    const organizationId = mine.organizationId.toString();
     const mandates = await Mandate.aggregate([
       {
         $match: {

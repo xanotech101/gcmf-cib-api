@@ -35,12 +35,12 @@ const initiateRequest = async (req, res) => {
       customerName: req.body.customerName,
       firstName: req.body.firstName,
       lastName: req.body.firstName,
-      organizationId: mine.organizationId,
+      organizationId: mine.organizationId.toString(),
       transactionReference: mongoose.Types.ObjectId().toString().substr(0, 12),
     });
 
     const mandate = await Mandate.findOne({
-      organizationId: mine.organizationId,
+      organizationId: mine.organizationId.toString(),
       minAmount: { $lte: request.amount },
       maxAmount: { $gte: request.amount },
     }).populate({
@@ -117,7 +117,7 @@ const getAllInitiatorRequests = async (req, res) => {
   const { perPage, page } = req.query;
   console.log(req.user._id);
   const mine = await User.findById(req.user._id)
-  const organizationId = mine.organizationId;
+  const organizationId = mine.organizationId.toString();
 
   const options = {
     page: page || 1,
@@ -265,7 +265,7 @@ const getAllAssignedRequests = async (req, res) => {
 const getAllRequestPerOrganization = async (req, res) => {
   const { page, perPage } = req.query;
   const mine = await User.findById(req.user._id)
-  const organizationId = mine.organizationId;
+  const organizationId = mine.organizationId.toString();
 
 
   const options = {
