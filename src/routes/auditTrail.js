@@ -4,7 +4,7 @@ const router = express.Router();
 const { getAllAuditTrail, getOrganizationAuditTrail } = require("../controller/auditTrail");
 const { allUsersAuth, superUserAuth } = require("../middleware/auth");
 
-router.get("/all", superUserAuth, getAllAuditTrail);
+router.get("/all", allUsersAuth, getAllAuditTrail);
 router.get("/organization", allUsersAuth, getOrganizationAuditTrail);
 
 
