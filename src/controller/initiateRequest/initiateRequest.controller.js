@@ -700,7 +700,7 @@ const verifierApproveRequest = async (req, res) => {
       type: "transaction",
       transaction: request._id,
       message: `${user.firstName} approved a transaction request on ${date} by ${time}`,
-      organization: mine.organization,
+      organization: mine.organizationId,
     });
 
     await audit.save();
@@ -711,7 +711,7 @@ const verifierApproveRequest = async (req, res) => {
 
     //Call Transfer Endpoint and make transfer
     const transfer = await bankOneService.getInterbankTransfer(
-    account.Amount,
+    account.amount,
     account.Payer,
     account.ReceiverAccountNumber,
     account.PayerAccountNumber,
@@ -733,9 +733,23 @@ const verifierApproveRequest = async (req, res) => {
     });
   }
 
+  if (!transfer.IsSuccessful) {
+    return res.status(500).json({
+      status: "Failed",
+      message: transfer.ResponseMessage,
+    });
+  } else if (transfer.IsSuccessful && transfer.ResponseCode == 00) {
+    return res.status(200).json({
+      status: "Success",
+      message: `${account.amount} has been transfered to the client successfully`,
+      data: transfer,
+    });
+  
+  }
+
   return res.status(200).json({
     status: "Success",
-    message: "account.amount has been transfered to the client successfully",
+    message: `${account.amount} has been transfered to the client successfully`,
     data: transfer,
   });
 
