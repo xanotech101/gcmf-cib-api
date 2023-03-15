@@ -36,7 +36,7 @@ const initiateRequest = async (req, res) => {
       beneficiaryPhoneNumber: req.body.beneficiaryPhoneNumber,
       customerName: req.body.customerName,
       firstName: req.body.firstName,
-      lastName: req.body.firstName,
+      lastName: req.body.lastName,
       organizationId: mine.organizationId.toString(),
       transactionReference: mongoose.Types.ObjectId().toString().substr(0, 12),
     });
@@ -732,13 +732,13 @@ const verifierApproveRequest = async (req, res) => {
    
 }
 
-console.log('payload >>>>> ', payload)
+
     //Call Transfer Endpoint and make transfer
     const transfer = await bankOneService.getInterbankTransfer(
    payload
   )
 
-  console.log('transfer  ', transfer)
+  
 
   if (!transfer) {
     return res.status(500).json({
