@@ -129,36 +129,10 @@ class BankOneService {
   }
 
   async getInterbankTransfer(
-    Amount,
-    Payer,
-    ReceiverAccountNumber,
-    PayerAccountNumber,
-    ReceiverAccountType,
-    ReceiverBankCode,
-    ReceiverPhoneNumber,
-    ReceiverName,
-    ReceiverBVN,
-    ReceiverKYC,
-    Narration,
-    TransactionReference,
-    NIPSessionID
+    payload
   ) {
     try {
-      const { data } = await axios.post(`${config.interbankTransfer}`, {
-        Amount,
-        Payer,
-        ReceiverAccountNumber,
-        PayerAccountNumber,
-        ReceiverAccountType,
-        ReceiverBankCode,
-        ReceiverPhoneNumber,
-        ReceiverName,
-        ReceiverBVN,
-        ReceiverKYC,
-        Narration,
-        TransactionReference,
-        NIPSessionID,
-      });
+      const { data } = await axios.post(`${config.interbankTransfer}`, payload);
       return data;
     } catch (error) {
       return null;

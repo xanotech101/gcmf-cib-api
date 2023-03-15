@@ -36,6 +36,7 @@ const initiateRequestSchema = new mongoose.Schema(
         "awaiting verification",
         "approved",
         "declined",
+        "disburse pending"
       ],
       default: "pending",
     },

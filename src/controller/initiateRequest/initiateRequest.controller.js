@@ -752,8 +752,8 @@ console.log('payload ', payload)
     });
   } else if (transfer.IsSuccessful && transfer.ResponseCode == "00") {
       // update request if disburse is successful
-  request.status = "approved";
-  await request.save();
+    request.status = "approved";
+    await request.save();
     return res.status(200).json({
       status: "Success",
       message: `${account.amount} has been transfered to the client successfully`,
