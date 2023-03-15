@@ -738,6 +738,8 @@ console.log('payload >>>>> ', payload)
    payload
   )
 
+  console.log('transfer  ', transfer)
+
   if (!transfer) {
     return res.status(500).json({
       status: "Failed",
@@ -745,12 +747,12 @@ console.log('payload >>>>> ', payload)
     });
   }
 
-  if (!transfer.IsSuccessful) {
+  if (transfer.IsSuccessful === false) {
     return res.status(500).json({
       status: "Failed",
       message: transfer.ResponseMessage,
     });
-  } else if (transfer.IsSuccessful && transfer.ResponseCode == "00") {
+  } else if (transfer.IsSuccessful == true && transfer.ResponseCode == "00") {
       // update request if disburse is successful
     request.status = "approved";
     await request.save();
