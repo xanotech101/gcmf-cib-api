@@ -22,7 +22,6 @@ const router = express.Router();
 router.get("/profile", allUsersAuth, getUserProfile);
 router.put("/profile", adminAuth, updateUserProfile);
 router.put("/userPrivilege", adminAuth, updateUserPriviledge);
-
 router.post("/change-password", allUsersAuth, changePassword);
 router.post("/secret-questions/create", createSecurityQuestions)
 

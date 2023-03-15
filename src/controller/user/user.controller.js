@@ -169,10 +169,10 @@ const updateUserProfile = async (req, res) => {
 
     const { firstName, lastName, phoneNumber, imageUrl } = req.body;
 
-    user.firstName = firstName;
-    user.lastName = lastName;
-    user.phoneNumber = phoneNumber;
-    user.imageUrl = imageUrl;
+    user.firstName = firstName ?? user.firstName;
+    user.lastName = lastName ?? user.lastName;
+    user.phoneNumber = phoneNumber ?? user.phoneNumber;
+    user.imageUrl = imageUrl ??  user.imageUrl;
 
     await user.save();
 
