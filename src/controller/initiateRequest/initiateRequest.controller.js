@@ -33,6 +33,8 @@ const initiateRequest = async (req, res) => {
       beneficiaryKYC: req.body.beneficiaryKYC,
       beneficiaryPhoneNumber: req.body.beneficiaryPhoneNumber,
       customerName: req.body.customerName,
+      firstName: req.body.firstName,
+      lastName: req.body.firstName,
       organizationId: mine.organizationId,
       transactionReference: mongoose.Types.ObjectId().toString().substr(0, 12),
     });
