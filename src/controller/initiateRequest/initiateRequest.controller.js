@@ -10,6 +10,8 @@ const Otp = require("../../model/otp.model");
 const { userService , auditTrailService, notificationService} = require("../../services");
 const { getDateAndTime } = require("../../utils/utils");
 const bankOneService = require("../../services/bankOne.service");
+const Account = require("../../model/account");
+const authToken = process.env.AUTHTOKEN;
 
 const initiateRequest = async (req, res) => {
   try {
@@ -631,6 +633,7 @@ const approveRequest = async (req, res) => {
 
 const verifierApproveRequest = async (req, res) => {
       const mine = await User.findById(req.user._id);
+      const organization = await Account.findById(mine.organizationId);
   try {
     const _id = req.params.id;
     const userId = req.user._id;
@@ -707,23 +710,32 @@ const verifierApproveRequest = async (req, res) => {
 
     // delete otp from database
     await Otp.findByIdAndDelete(otpDetails._id);
+    const trnxRef = Math.floor(100000000000 + Math.random() * 100000000000).toString().replace('.', '')
 
+   const payload = {
+    "Amount":  account.amount,
+    // "AppzoneAccount": "02230012010015676",
+    "Payer": `${mine.firstName} ${mine.lastName}`,
+    "PayerAccountNumber": organization.accountNumber,
+    "ReceiverAccountNumber": account.beneficiaryAccountNumber,
+    "ReceiverAccountType": account.beneficiaryAccountType,
+    "ReceiverBankCode": account.beneficiaryBankCode,
+    "ReceiverPhoneNumber": account.beneficiaryPhoneNumber,
+    "ReceiverName": `${account.firstName} ${account.lastName}`,
+    "ReceiverBVN": "",
+    "ReceiverKYC": "",
+    "Narration": `trnsf frm ${organization.accountName} to ${account.firstName}`,
+    "TransactionReference": trnxRef,
+    "NIPSessionID": account.NIPSessionID,
+    "Token": authToken,
+  
+   
+}
 
+console.log('payload ', payload)
     //Call Transfer Endpoint and make transfer
     const transfer = await bankOneService.getInterbankTransfer(
-    account.amount,
-    account.Payer,
-    account.ReceiverAccountNumber,
-    account.PayerAccountNumber,
-    account.ReceiverAccountType,
-   account. ReceiverBankCode,
-   account. ReceiverPhoneNumber,
-    account.ReceiverName,
-    account.ReceiverBVN,
-    account.ReceiverKYC,
-   account.Narration,
-   account.TransactionReference,
-    account.NIPSessionID
+   payload
   )
 
   if (!transfer) {
@@ -738,7 +750,7 @@ const verifierApproveRequest = async (req, res) => {
       status: "Failed",
       message: transfer.ResponseMessage,
     });
-  } else if (transfer.IsSuccessful && transfer.ResponseCode == 00) {
+  } else if (transfer.IsSuccessful && transfer.ResponseCode == "00") {
     return res.status(200).json({
       status: "Success",
       message: `${account.amount} has been transfered to the client successfully`,
