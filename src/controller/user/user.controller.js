@@ -3,6 +3,8 @@ const { validateChangePasswordSchema } = require("../../utils/utils");
 const bcrypt = require("bcrypt");
 const { PER_PAGE } = require("../../utils/constants");
 const securityQuestionService = require("../../services/secretQuestion.service");
+const mongoose = require("mongoose");
+const Privilege = require("../../model/privilege.model");
 
 const getOrganizationUsers = async (req, res) => {
   const { organizationId } = req.user;
@@ -17,6 +19,8 @@ const getOrganizationUsers = async (req, res) => {
     };
 
     const { privilege, withPagination } = req.query;
+
+    const privilegeId = await Privilege.findOne({ name: privilege })?._id || null;
 
     if (withPagination === "true") {
       const users = await User.aggregate([
@@ -87,11 +91,38 @@ const getOrganizationUsers = async (req, res) => {
         },
       });
     }
-
-    const users = await User.find({
-      organizationId,
-      // privileges: privilege ? { $in: [privilege] } : { $exists: true },
-    });
+    
+    const users = await User.aggregate([
+      {
+        $match: {
+          organizationId,
+          privileges: privilegeId ? { $in: [privilege] } : { $exists: true },
+        },
+      },
+      {
+        $addFields: {
+          privileges: {
+            $map: {
+              input: "$privileges",
+              as: "privilege",
+              in: {
+                $toObjectId: "$$privilege",
+              },
+            },
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: "privileges",
+          localField: "privileges",
+          foreignField: "_id",
+          as: "privileges",
+          pipeline: [{ $project: { name: 1 } }],
+        },
+      },
+      // populate the privilege to return the name
+    ])
 
     if (!users) {
       res.status(404).json({
