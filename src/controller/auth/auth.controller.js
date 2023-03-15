@@ -308,7 +308,7 @@ const registerUser = async (req, res) => {
     const user = new User({
       firstName: req.body.firstName,
       lastName: req.body.lastName,
-      password: req.body.password,
+      // password: req.body.password,
       email: req.body.email,
       phone: req.body.phone,
       gender: req.body.gender,
@@ -319,9 +319,9 @@ const registerUser = async (req, res) => {
       role,
     });
 
-    //Hash password
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(user.password, salt);
+    // //Hash password
+    // const salt = await bcrypt.genSalt(10);
+    // user.password = await bcrypt.hash(user.password, salt);
 
     //Email Details
     const verificationToken = jwt.sign(
