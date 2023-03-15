@@ -732,7 +732,7 @@ const verifierApproveRequest = async (req, res) => {
    
 }
 
-console.log('payload ', payload)
+console.log('payload >>>>> ', payload)
     //Call Transfer Endpoint and make transfer
     const transfer = await bankOneService.getInterbankTransfer(
    payload
