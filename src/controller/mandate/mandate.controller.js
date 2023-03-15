@@ -8,7 +8,8 @@ const User = require("../../model/user.model");
 //@access   Public
 const registerMandate = async (req, res) => {
   try {
-    const mandateExists = await Mandate.findOne({ name: req.body.name });
+    const { organizationId } = req.user;
+    const mandateExists = await Mandate.findOne({ name: req.body.name, organizationId: organizationId });
     if (mandateExists) {
       return res.status(400).json({
         message: "Mandate name already exists",
