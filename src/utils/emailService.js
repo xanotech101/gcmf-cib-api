@@ -17,7 +17,7 @@ function email(email, title, message) {
 
 
   var mailOptions = {
-    from: '"GCMFB" <otunaiyademilade@gmail.com.com>',
+    from: '"GMFB" <otunaiyademilade@gmail.com.com>',
     to: email,
     subject: title,
     html: message,
