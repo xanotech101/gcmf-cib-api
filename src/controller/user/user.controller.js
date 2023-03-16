@@ -193,14 +193,16 @@ const getUserProfileById = async (req, res) => {
 
 const updateUserProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(req.body.id);
 
-    const { firstName, lastName, phoneNumber, imageUrl } = req.body;
+    const { firstName, lastName, phone, imageUrl } = req.body;
 
     user.firstName = firstName ?? user.firstName;
     user.lastName = lastName ?? user.lastName;
-    user.phoneNumber = phoneNumber ?? user.phoneNumber;
+    user.phone = phone ?? user.phone;
     user.imageUrl = imageUrl ??  user.imageUrl;
+
+    console.log('user', user)
 
     await user.save();
 
