@@ -2,7 +2,6 @@ const User = require("../../model/user.model");
 const { validateChangePasswordSchema } = require("../../utils/utils");
 const bcrypt = require("bcrypt");
 const { PER_PAGE } = require("../../utils/constants");
-const securityQuestionService = require("../../services/secretQuestion.service");
 const mongoose = require("mongoose");
 const Privilege = require("../../model/privilege.model");
 
@@ -10,6 +9,8 @@ const getOrganizationUsers = async (req, res) => {
   const { organizationId } = req.user;
   try {
     const { perPage, page } = req.query;
+
+    const id = req.query?.branchId ?? organizationId;
 
     const options = {
       page: page || 1,
@@ -25,8 +26,7 @@ const getOrganizationUsers = async (req, res) => {
       const users = await User.aggregate([
         {
           $match: {
-            organizationId,
-            // privileges: privilege ? { $in: [privilege] } : { $exists: true },
+            organizationId: mongoose.Types.ObjectId(id)
           },
         },
         {
@@ -52,6 +52,17 @@ const getOrganizationUsers = async (req, res) => {
           },
         },
         {
+          $lookup: {
+            from: "accounts",
+            localField: "organizationId",
+            foreignField: "_id",
+            as: "organizationId",
+          }
+        },
+        {
+          $unwind : "$organizationId"
+        },
+        {
           $project: {
             firstName: 1,
             lastName: 1,
@@ -60,6 +71,7 @@ const getOrganizationUsers = async (req, res) => {
             gender: 1,
             role: 1,
             privileges: 1,
+            organizationId: 1
           },
         },
         {
@@ -94,7 +106,7 @@ const getOrganizationUsers = async (req, res) => {
     const users = await User.aggregate([
       {
         $match: {
-          organizationId,
+          organizationId: mongoose.Types.ObjectId(id),
           privileges: privilegeId ? { $in: [privilege] } : { $exists: true },
         },
       },
@@ -119,8 +131,7 @@ const getOrganizationUsers = async (req, res) => {
           as: "privileges",
           pipeline: [{ $project: { name: 1 } }],
         },
-      },
-      // populate the privilege to return the name
+      }
     ])
 
     if (!users) {
@@ -146,8 +157,6 @@ const getOrganizationUsers = async (req, res) => {
 
 const getUserProfile = async (req, res) => {
   try {
-    // find user by id and populate organization and privilege
-
     const user = await User.findById(req.user._id).populate('privileges organizationId')
     res.status(200).json({
       message: "Successfully fetched user",
@@ -284,7 +293,6 @@ const validateChangePassword = (user) => (payload) =>
     await user.save();
     return res.status(200).json({ message: "Password changed successfully" });
   } catch (error) {
-    console.log('passowrd ', error)
     return res.status(500).json({
       status: "Failed",
       Message: "Unable to change user password",
