@@ -267,8 +267,7 @@ const getAllAssignedRequests = async (req, res) => {
 const getAllRequestPerOrganization = async (req, res) => {
   const { page, perPage } = req.query;
   const mine = await User.findById(req.user._id)
-  const organizationId = mine.organizationId.toString();
-
+  const organizationId = req.query?.branchId ?? mine.organizationId.toString();
 
   const options = {
     page: page || 1,
@@ -281,7 +280,6 @@ const getAllRequestPerOrganization = async (req, res) => {
       {
         $match: {
           organizationId,
-          // initiator: mongoose.Types.ObjectId(req.user._id),
         },
       },
       {
