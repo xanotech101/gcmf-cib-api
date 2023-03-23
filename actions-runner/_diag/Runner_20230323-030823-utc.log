@@ -204,3 +204,38 @@
 [2023-03-23 23:08:53Z INFO MessageListener] No message retrieved from session 'a312f83e-554b-4f4b-8c21-9a5ee300a7aa' within last 30 minutes.
 [2023-03-23 23:18:53Z INFO RSAFileKeyManager] Loading RSA key parameters from file /home/ubuntu/gcmf-cib-api/actions-runner/.credentials_rsaparams
 [2023-03-23 23:18:53Z INFO GitHubActionsService] AAD Correlation ID for this token request: Unknown
+[2023-03-23 23:25:36Z INFO RSAFileKeyManager] Loading RSA key parameters from file /home/ubuntu/gcmf-cib-api/actions-runner/.credentials_rsaparams
+[2023-03-23 23:25:36Z INFO MessageListener] Message '1' received from session 'a312f83e-554b-4f4b-8c21-9a5ee300a7aa'.
+[2023-03-23 23:25:36Z INFO Runner] Received job message of length 22204 from service, with hash '796f2a3660cb9a405a7313cf15d9c8108d0b233ad5d3a35cb94791ff0a72007a'
+[2023-03-23 23:25:36Z INFO JobDispatcher] Job request 1 for plan 85695cc2-ce49-4d78-b51e-3299f9295409 job 55397e4c-49ca-5979-7b03-da86a8803b50 received.
+[2023-03-23 23:25:36Z INFO JobDispatcher] Pull OrchestrationId 85695cc2-ce49-4d78-b51e-3299f9295409.build._16_7 from JWT claims
+[2023-03-23 23:25:36Z INFO Terminal] WRITE LINE: 2023-03-23 23:25:36Z: Running job: build (16.7)
+[2023-03-23 23:25:36Z INFO JobDispatcher] Start renew job request 1 for job 55397e4c-49ca-5979-7b03-da86a8803b50.
+[2023-03-23 23:25:36Z INFO JobDispatcher] Successfully renew job request 1, job is valid till 03/23/2023 23:35:36
+[2023-03-23 23:25:36Z INFO HostContext] Well known directory 'Bin': '/home/ubuntu/gcmf-cib-api/actions-runner/bin'
+[2023-03-23 23:25:36Z INFO ProcessInvokerWrapper] Starting process:
+[2023-03-23 23:25:36Z INFO ProcessInvokerWrapper]   File name: '/home/ubuntu/gcmf-cib-api/actions-runner/bin/Runner.Worker'
+[2023-03-23 23:25:36Z INFO ProcessInvokerWrapper]   Arguments: 'spawnclient 111 114'
+[2023-03-23 23:25:36Z INFO ProcessInvokerWrapper]   Working directory: '/home/ubuntu/gcmf-cib-api/actions-runner/bin'
+[2023-03-23 23:25:36Z INFO ProcessInvokerWrapper]   Require exit code zero: 'False'
+[2023-03-23 23:25:36Z INFO ProcessInvokerWrapper]   Encoding web name:  ; code page: ''
+[2023-03-23 23:25:36Z INFO ProcessInvokerWrapper]   Force kill process on cancellation: 'True'
+[2023-03-23 23:25:36Z INFO ProcessInvokerWrapper]   Redirected STDIN: 'False'
+[2023-03-23 23:25:36Z INFO ProcessInvokerWrapper]   Persist current code page: 'False'
+[2023-03-23 23:25:36Z INFO ProcessInvokerWrapper]   Keep redirected STDIN open: 'False'
+[2023-03-23 23:25:36Z INFO ProcessInvokerWrapper]   High priority process: 'True'
+[2023-03-23 23:25:36Z INFO ProcessInvokerWrapper] Process started with process id 57030, waiting for process exit.
+[2023-03-23 23:25:36Z INFO JobDispatcher] Send job request message to worker for job 55397e4c-49ca-5979-7b03-da86a8803b50.
+[2023-03-23 23:25:36Z INFO ProcessChannel] Sending message of length 22204, with hash '796f2a3660cb9a405a7313cf15d9c8108d0b233ad5d3a35cb94791ff0a72007a'
+[2023-03-23 23:25:36Z INFO JobNotification] Entering JobStarted Notification
+[2023-03-23 23:25:36Z INFO JobNotification] Entering StartMonitor
+[2023-03-23 23:26:03Z INFO ProcessInvokerWrapper] STDOUT/STDERR stream read finished.
+[2023-03-23 23:26:03Z INFO ProcessInvokerWrapper] STDOUT/STDERR stream read finished.
+[2023-03-23 23:26:03Z INFO ProcessInvokerWrapper] Finished process 57030 with exit code 102, and elapsed time 00:00:26.8148711.
+[2023-03-23 23:26:03Z INFO JobDispatcher] Worker finished for job 55397e4c-49ca-5979-7b03-da86a8803b50. Code: 102
+[2023-03-23 23:26:03Z INFO JobDispatcher] finish job request for job 55397e4c-49ca-5979-7b03-da86a8803b50 with result: Failed
+[2023-03-23 23:26:03Z INFO Terminal] WRITE LINE: 2023-03-23 23:26:03Z: Job build (16.7) completed with result: Failed
+[2023-03-23 23:26:03Z INFO JobDispatcher] Stop renew job request for job 55397e4c-49ca-5979-7b03-da86a8803b50.
+[2023-03-23 23:26:03Z INFO JobDispatcher] job renew has been cancelled, stop renew job request 1.
+[2023-03-23 23:26:03Z INFO JobNotification] Entering JobCompleted Notification
+[2023-03-23 23:26:03Z INFO JobNotification] Entering EndMonitor
