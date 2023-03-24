@@ -15,9 +15,13 @@ const Privilege = require("../model/privilege.model");
 //@desc     register an account
 //@route    POST /account/register
 //@access   Public
+const TestRoute = (req,res) =>{
+  res.send('here')
+}
 const registerAccount = async (req, res) => {
   try {
     const input = _.pick(req.body, ["admin", "accountDetails"]);
+
     const privileges = await Privilege.find();
     let priviledgeList = privileges.map(privilege => privilege._id)
     let role = "admin";
@@ -59,7 +63,7 @@ const registerAccount = async (req, res) => {
 
     // send email to admin
     // var origin = req.headers.origin;
-    const accountEmail = input.accountDetails.email;
+    const accountEmail = input.admin.email;
     const subject = "Account Verification";
     const accountMessage = `Hello, \n An account has been created by you for ${admin.firstName} \n\n
     Please verify the account creation by clicking the link: \n${process.env.FRONTEND_URL}/auth/account/verify-account/${token}.\n`;
@@ -205,4 +209,4 @@ const getAllAccount = async (req, res) => {
   }
 };
 
-module.exports = { getAllAccount, registerAccount, verifyAccount };
+module.exports = { getAllAccount, registerAccount, verifyAccount, TestRoute };
