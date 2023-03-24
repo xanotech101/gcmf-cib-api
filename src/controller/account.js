@@ -63,7 +63,7 @@ const registerAccount = async (req, res) => {
 
     // send email to admin
     // var origin = req.headers.origin;
-    const accountEmail = input.accountDetails.email;
+    const accountEmail = input.admin.email;
     const subject = "Account Verification";
     const accountMessage = `Hello, \n An account has been created by you for ${admin.firstName} \n\n
     Please verify the account creation by clicking the link: \n${process.env.FRONTEND_URL}/auth/account/verify-account/${token}.\n`;
