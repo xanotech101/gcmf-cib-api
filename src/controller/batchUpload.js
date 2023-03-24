@@ -9,6 +9,8 @@ const { validateInitiateRequestSchema } = require("../utils/utils");
 const { sendEmail } = require("../utils/emailService");
 const notificationService = require("../services/notification.service");
 const AuditTrail = require("../model/auditTrail");
+const bankOneService = require("../services/bankOne.service");
+const authToken = process.env.AUTHTOKEN;
 
 const batchUpload = async (req, res) => {
   try {
@@ -64,6 +66,7 @@ const batchUpload = async (req, res) => {
 
     for (let i = 0; i < formattedFile.length; i++) {
       const datum = formattedFile[i];
+
       let request = new InitiateRequest({
         customerName: datum.customerName,
         amount: datum.amount,
