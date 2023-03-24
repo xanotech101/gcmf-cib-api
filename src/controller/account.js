@@ -15,9 +15,13 @@ const Privilege = require("../model/privilege.model");
 //@desc     register an account
 //@route    POST /account/register
 //@access   Public
+const TestRoute = (req,res) =>{
+  res.send('here')
+}
 const registerAccount = async (req, res) => {
   try {
     const input = _.pick(req.body, ["admin", "accountDetails"]);
+
     const privileges = await Privilege.find();
     let priviledgeList = privileges.map(privilege => privilege._id)
     let role = "admin";
@@ -205,4 +209,4 @@ const getAllAccount = async (req, res) => {
   }
 };
 
-module.exports = { getAllAccount, registerAccount, verifyAccount };
+module.exports = { getAllAccount, registerAccount, verifyAccount, TestRoute };
