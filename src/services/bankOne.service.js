@@ -72,6 +72,7 @@ class BankOneService {
       return null;
     }
   }
+  
   async getbankDetails(authToken, accountNumber) {
     try {
       const { data } = await axios.post(`${config.bankDetails}`, {
