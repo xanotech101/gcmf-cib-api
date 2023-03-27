@@ -98,8 +98,6 @@ const getAccountStatement = async (req, res) => {
   const isPdf = req.query.isPdf;
   const account = req.params.account;
 
-  console.log(account);
-
   const statement = await bankOneService.accountStatement(
     authToken,
     account,
@@ -114,6 +112,12 @@ const getAccountStatement = async (req, res) => {
       message: "Unable to get bank account details",
     });
   }
+
+    return res.status(200).json({
+      status: "Success",
+      message: statement,
+    });
+  
 };
 
 const getAccountDetails = async (req, res) => {
