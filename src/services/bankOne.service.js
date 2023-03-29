@@ -129,7 +129,7 @@ class BankOneService {
     }
   }
 
-  async getInterbankTransfer(
+  async doInterBankTransfer(
     payload
   ) {
     try {
@@ -140,7 +140,7 @@ class BankOneService {
     }
   }
 
-  async getIntrabankTransfer() {
+  async doIntraBankTransfer() {
     try {
       const { data } = await axios.post(`${config.intrabankTransfer}`);
       return data;

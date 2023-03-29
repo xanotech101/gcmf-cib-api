@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/app.js",
     "start:dev": "nodemon src/app.js",
-    "seed:db": "node src/seeders/seed.js"
+    "seed:db": "node src/seeders/seed.js",
+    "start:cron": "node src/jobs/transferRetryJob.js"
   },
   "repository": {
     "type": "git",
@@ -43,6 +44,7 @@
     "mongoose": "^6.8.3",
     "morgan": "^1.10.0",
     "multer": "^1.4.2",
+    "node-cron": "^3.0.2",
     "nodemailer": "^6.9.0",
     "xls-to-json": "^2.1.1"
   },
