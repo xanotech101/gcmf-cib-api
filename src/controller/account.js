@@ -15,9 +15,7 @@ const Privilege = require("../model/privilege.model");
 //@desc     register an account
 //@route    POST /account/register
 //@access   Public
-const TestRoute = (req,res) =>{
-  res.send('here')
-}
+
 const registerAccount = async (req, res) => {
   try {
     const input = _.pick(req.body, ["admin", "accountDetails"]);
@@ -209,4 +207,4 @@ const getAllAccount = async (req, res) => {
   }
 };
 
-module.exports = { getAllAccount, registerAccount, verifyAccount, TestRoute };
+module.exports = { getAllAccount, registerAccount, verifyAccount };

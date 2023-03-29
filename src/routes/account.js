@@ -7,7 +7,6 @@ const {
   getAllAccount,
   registerAccount,
   verifyAccount,
-  TestRoute,
 } = require("../controller/account");
 
 router.post(

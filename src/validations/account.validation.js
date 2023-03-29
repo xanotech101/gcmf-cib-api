@@ -4,7 +4,7 @@ const accountSchemas = {
   createAccount: Joi.object().keys({
     organizationId: Joi.string().max(40).trim().lowercase().required(),
     accountName: Joi.string().max(40).trim().lowercase().required(),
-    accountNumber: Joi.string().max(40).trim().lowercase().required(),
+    accountNumber: Joi.array().items(Joi.string().max(40).trim().lowercase().required()).required(),
     adminId: Joi.string().max(40).trim().lowercase().required(),
     address: Joi.string().max(40).trim().lowercase().required(),
   }),
