@@ -4,7 +4,8 @@ const jwt = require("jsonwebtoken");
 const secretQuestionService = require("../../services/secretQuestion.service");
 const { sendEmail } = require("../../utils/emailService");
 const { getDateAndTime } = require("../../utils/utils");
-const auditTrailService = require("../../services/auditTrail.service")
+const auditTrailService = require("../../services/auditTrail.service");
+const Account = require("../../model/account");
 
 const preLogin = async (req, res) => {
   const { email, password } = req.body;
@@ -35,7 +36,7 @@ const preLogin = async (req, res) => {
         status: "failed",
       });
     }
-    
+
     if (user.is2FAEnabled) {
       const randomSecretQuestion = user.secretQuestions[
         Math.floor(Math.random() * user.secretQuestions.length)
@@ -51,7 +52,7 @@ const preLogin = async (req, res) => {
       });
     }
 
-    if(!user.is2FAEnabled) {
+    if (!user.is2FAEnabled) {
       return res.status(400).send({
         data: null,
         message: "User has not set up secret questions",
@@ -90,7 +91,7 @@ const login = async (req, res) => {
         status: "failed",
       });
     }
-  
+
     const isAnswerCorrect = secretQuestion.answer === answer
 
     if (isAnswerCorrect === false) {
@@ -103,7 +104,7 @@ const login = async (req, res) => {
 
       // send the secret question to the user as response
       return res.status(400).send({
-        data: secretQuestion ,
+        data: secretQuestion,
         message: "Incorrect answer",
         status: "failed",
       });
@@ -208,9 +209,9 @@ const verifyUser = async (req, res) => {
         data: null,
       });
     }
-  
+
     const user = await User.findOne({ email: mail.user_email ?? mail.email });
-  
+
     if (!user) {
       return res.status(400).json({
         status: "failed",
@@ -366,6 +367,25 @@ const registerUser = async (req, res) => {
   }
 };
 
+const createPassword = async (req, res) => {
+  try {
+    const {password, confirmPassword} = req.body
+    const token = req.query.token
+
+    const check_user = await User.findOne({})
+
+
+
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      status: "failed",
+      data: null,
+      message: "Unable to create user password",
+    });
+  }
+}
+
 module.exports = {
   verifyUser,
   forgetPassword,
@@ -373,4 +393,5 @@ module.exports = {
   resetPassword,
   registerUser,
   preLogin,
+  createPassword
 };

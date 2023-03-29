@@ -76,8 +76,7 @@ const getTransactionHistory = async (req, res) => {
     institutionCode,
     numberOfItems
   );
-  console.log("transactionHistory", transHistory)
-  
+ 
   if (!transHistory) {
     return res.status(500).json({
       status: "Failed",

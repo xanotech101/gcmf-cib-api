@@ -10,6 +10,7 @@ const {
   verifyUser,
   registerUser,
   preLogin,
+  createPassword
 } = require("../controller/auth/auth.controller");
 
 const createAuthQuestions = require("../controller/authQuestion/authQuestion");
@@ -57,5 +58,8 @@ router.post(
 );
 
 router.post("/secret_question", createAuthQuestions);
+
+//create password after onboarding
+router.post("/create-password", validate(authSchemas.resetPassword, "body"), createPassword)
 
 module.exports = router;
