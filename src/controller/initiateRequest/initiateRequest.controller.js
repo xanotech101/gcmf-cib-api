@@ -2,12 +2,15 @@ const Mandate = require("../../model/mandate.model");
 const User = require("../../model/user.model");
 const InitiateRequest = require("../../model/initiateRequest.model");
 const AuditTrail = require("../../model/auditTrail");
-// const { validateInitiateRequestSchema } = require("../../utils/utils");
 const { sendEmail } = require("../../utils/emailService");
 const { PER_PAGE } = require("../../utils/constants");
 const mongoose = require("mongoose");
 const Otp = require("../../model/otp.model");
-const { userService , auditTrailService, notificationService} = require("../../services");
+const {
+  userService,
+  auditTrailService,
+  notificationService,
+} = require("../../services");
 const { getDateAndTime } = require("../../utils/utils");
 const bankOneService = require("../../services/bankOne.service");
 const Account = require("../../model/account");
@@ -15,14 +18,7 @@ const authToken = process.env.AUTHTOKEN;
 
 const initiateRequest = async (req, res) => {
   try {
-    // const { error } = validateInitiateRequestSchema(req.body);
-    // if (error)
-    //   return res.status(400).json({
-    //     message: error.details[0].message,
-    //     status: "failed",
-    //   });
     const mine = await User.findById(req.user._id);
-
     const request = new InitiateRequest({
       NIPSessionID: req.body.NIPSessionID,
       amount: req.body.amount,
@@ -34,11 +30,11 @@ const initiateRequest = async (req, res) => {
       beneficiaryBankName: req.body.beneficiaryBankName,
       beneficiaryKYC: req.body.beneficiaryKYC,
       beneficiaryPhoneNumber: req.body.beneficiaryPhoneNumber,
-      customerName: req.body.customerName,
       firstName: req.body.firstName,
       lastName: req.body.lastName,
       organizationId: mine.organizationId.toString(),
       transactionReference: mongoose.Types.ObjectId().toString().substr(0, 12),
+      type: req.body.type
     });
 
     const mandate = await Mandate.findOne({
@@ -90,17 +86,15 @@ const initiateRequest = async (req, res) => {
     // send out notifications
     await notificationService.createNotifications(notificationsToCreate);
 
-    
     // create audit trail
     const user = await userService.getUserById(req.user._id);
     const { date, time } = getDateAndTime();
-
     await auditTrailService.createAuditTrail({
       user: req.user._id,
       type: "transaction",
       transaction: result._id,
       message: `${user.firstName} ${user.lastName} initiated a transaction request on ${date} by ${time}`,
-      organization: mine.organization,
+      organization: mine.organizationId,
     });
 
     return res.status(201).json({
@@ -118,7 +112,7 @@ const initiateRequest = async (req, res) => {
 const getAllInitiatorRequests = async (req, res) => {
   const { perPage, page } = req.query;
   console.log(req.user._id);
-  const mine = await User.findById(req.user._id)
+  const mine = await User.findById(req.user._id);
   const organizationId = mine.organizationId.toString();
 
   const options = {
@@ -266,7 +260,7 @@ const getAllAssignedRequests = async (req, res) => {
 
 const getAllRequestPerOrganization = async (req, res) => {
   const { page, perPage } = req.query;
-  const mine = await User.findById(req.user._id)
+  const mine = await User.findById(req.user._id);
   const organizationId = req.query?.branchId ?? mine.organizationId.toString();
 
   const options = {
@@ -380,8 +374,7 @@ const getRequestById = async (req, res) => {
 };
 
 const declineRequest = async (req, res) => {
-  
-      const mine = await User.findById(req.user._id);
+  const mine = await User.findById(req.user._id);
   try {
     const _id = req.params.id;
     const userId = req.user._id;
@@ -409,8 +402,9 @@ const declineRequest = async (req, res) => {
     }
 
     if (request.status === "approved") {
-        return res.status(401).json({
-        message: "You can no longer edit this request after the verifier has approved",
+      return res.status(401).json({
+        message:
+          "You can no longer edit this request after the verifier has approved",
         status: "failed",
       });
     }
@@ -509,7 +503,7 @@ const declineRequest = async (req, res) => {
 };
 
 const approveRequest = async (req, res) => {
-      const mine = await User.findById(req.user._id);
+  const mine = await User.findById(req.user._id);
   try {
     const _id = req.params.id;
     const userId = req.user._id;
@@ -522,16 +516,15 @@ const approveRequest = async (req, res) => {
         status: "failed",
       });
     }
-    
-        if (request.status === "approved") {
-          return res.status(401).json({
-            message:
-              "You can no longer edit this request after the verifier has approved",
-            status: "failed",
-          });
-        }
 
-    
+    if (request.status === "approved") {
+      return res.status(401).json({
+        message:
+          "You can no longer edit this request after the verifier has approved",
+        status: "failed",
+      });
+    }
+
     const otpDetails = await Otp.findOne({
       otp: req.body.otp,
       user: userId,
@@ -630,8 +623,8 @@ const approveRequest = async (req, res) => {
 };
 
 const verifierApproveRequest = async (req, res) => {
-      const mine = await User.findById(req.user._id);
-      const organization = await Account.findById(mine.organizationId);
+  const mine = await User.findById(req.user._id);
+  const organization = await Account.findById(mine.organizationId);
   try {
     const _id = req.params.id;
     const userId = req.user._id;
@@ -658,23 +651,18 @@ const verifierApproveRequest = async (req, res) => {
       });
     }
 
-    // update request
-    request.status = "disburse pending";
-    const verifierAction = {
+    // update and save request
+    request.status = "approved";
+    request.transferStatus = "disburse pending"
+    request.verifierAction = {
       status: "approved",
       reason: req.body.reason,
     };
-    request.verifierAction = verifierAction;
-    const account = await request.save();
-
-    const authorizers = request.mandate.authorisers;
-
-
-
+    await request.save();
 
     
-
     // notify initiator and authorizers
+    const authorizers = request.mandate.authorisers;
     await notificationService.createNotifications([
       {
         transaction: request._id,
@@ -692,91 +680,67 @@ const verifierApproveRequest = async (req, res) => {
 
     // create audit trail
     const user = await User.findById(req.user._id);
-    let dt = new Date(new Date().toISOString());
-    let date = dt.toString().slice(0, 15);
-    let time = dt.toString().slice(16, 21);
-
-    let audit = await AuditTrail.create({
+    const { date, time } = getDateAndTime();
+    await auditTrailService.createAuditTrail({
       user: req.user._id,
       type: "transaction",
-      transaction: request._id,
+      transaction: result._id,
       message: `${user.firstName} approved a transaction request on ${date} by ${time}`,
       organization: mine.organizationId,
     });
 
-    await audit.save();
-
     // delete otp from database
     await Otp.findByIdAndDelete(otpDetails._id);
-    const trnxRef = Math.floor(100000000000 + Math.random() * 100000000000).toString().replace('.', '')
-
-   const payload = {
-    "Amount":  account.amount,
-    // "AppzoneAccount": "02230012010015676",
-    "Payer": `${mine.firstName} ${mine.lastName}`,
-    "PayerAccountNumber": organization.accountNumber,
-    "ReceiverAccountNumber": account.beneficiaryAccountNumber,
-    "ReceiverAccountType": account.beneficiaryAccountType,
-    "ReceiverBankCode": account.beneficiaryBankCode,
-    "ReceiverPhoneNumber": account.beneficiaryPhoneNumber,
-    "ReceiverName": `${account.firstName} ${account.lastName}`,
-    "ReceiverBVN": "",
-    "ReceiverKYC": "",
-    "Narration": `trnsf frm ${organization.accountName} to ${account.firstName}`,
-    "TransactionReference": trnxRef,
-    "NIPSessionID": account.NIPSessionID,
-    "Token": authToken,
-  
-   
-}
 
 
-    //Call Transfer Endpoint and make transfer
-    const transfer = await bankOneService.getInterbankTransfer(
-   payload
-  )
-
-  
-
-  if (!transfer) {
-    return res.status(500).json({
-      status: "Failed",
-      message: "Unable to get bank account details",
-    });
-  }
-
-  if (transfer.IsSuccessful === false) {
-    return res.status(500).json({
-      status: "Failed",
-      message: transfer.ResponseMessage,
-    });
-  } else if (transfer.IsSuccessful == true && transfer.ResponseCode == "00") {
-      // update request if disburse is successful
-    request.status = "approved";
+    // update request date
+    request.updatedAt = new Date();
     await request.save();
-    return res.status(200).json({
-      status: "Success",
-      message: `${account.amount} has been transfered to the client successfully`,
-      data: transfer,
-    });
-  
-  }
- 
-  // update request if disburse is successful
-  request.status = "approved";
- await request.save();
 
+    // send request to bank one
+    const Narration = `transfer from ${organization.accountName} to ${request.firstName}`
+    let transfer;
+    if(transferRequest.type === 'inter-bank') {
+      const payload = {
+        Amount: transferRequest.amount,
+        Payer: `${mine.firstName} ${mine.lastName}`,
+        PayerAccountNumber: organization.accountNumber,
+        ReceiverAccountNumber: request.beneficiaryAccountNumber,
+        ReceiverAccountType: request.beneficiaryAccountType,
+        ReceiverBankCode: request.beneficiaryBankCode,
+        ReceiverPhoneNumber: request.beneficiaryPhoneNumber,
+        ReceiverName: request.beneficiaryBankName,
+        ReceiverBVN: "",
+        ReceiverKYC: "",
+        TransactionReference: request.transactionReference,
+        NIPSessionID: request.NIPSessionID,
+        Token: authToken,
+        Narration
+      };
+      transfer = await bankOneService.doInterBankTransfer(payload);
+    } else {
+      const payload = {
+        Amount: request.amount,
+        RetrievalReference: request.transactionReference,
+        FromAccountNumber: organization.accountNumber,
+        ToAccountNumber: request.beneficiaryAccountNumber,
+        AuthenticationKey: authToken,
+        Narration
+      }
+      transfer = await bankOneService.doIntraBankTransfer(payload);
+    }
 
-  return res.status(200).json({
-    status: "Success",
-    message: `${account.amount} has been transfered to the client successfully`,
-    data: transfer,
-  });
-
-    // return res.status(200).json({
-    //   message: "Request verified successfully",
-    //   status: "success",
-    // });
+    if(transfer?.status === 'Successful' && transfer?.ResponseCode === "00") {
+      request.transferStatus = "successful";
+      await request.save();
+    } else if (response?.status === 'Failed') {
+      request.transferStatus = "failed";
+      request.updatedAt = new Date();
+      await request.save();
+    } else {
+      request.updatedAt = new Date();
+      await request.save();
+    }
   } catch (error) {
     console.log(error);
     res.status(500).json({
@@ -807,6 +771,7 @@ const verifierDeclineRequest = async (req, res) => {
       user: userId,
       transaction: request._id,
     });
+
     if (!otpDetails) {
       return res.status(404).json({
         message: "OTP is incorrect or used",
@@ -816,11 +781,10 @@ const verifierDeclineRequest = async (req, res) => {
 
     // update request
     request.status = "declined";
-    const verifierAction = {
+    request.verifierAction = {
       status: "declined",
       reason: req.body.reason,
     };
-    request.verifierAction = verifierAction;
     await request.save();
 
     // create notifications

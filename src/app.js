@@ -6,7 +6,6 @@ const createError = require("http-errors");
 const cookieParser = require("cookie-parser");
 const logger = require("morgan");
 
-
 const userRoute = require("./routes/user.route");
 const adminRequest = require("./routes/adminRequest");
 const tokenRoute = require("./routes/csrfToken");

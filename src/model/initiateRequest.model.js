@@ -9,6 +9,10 @@ const initiateRequestSchema = new mongoose.Schema(
     firstName: String,
     lastName: String,
     amount: Number,
+    retryCount: {
+      type: Number,
+      default: 0,
+    },
     beneficiaryBankCode: String,
     beneficiaryAccountNumber: String,
     beneficiaryBankName: String,
@@ -26,7 +30,7 @@ const initiateRequestSchema = new mongoose.Schema(
     numberOfAuthorisers: Number,
     transferStatus: {
       type: String,
-      enum: ["pending", "successful", "failed"],
+      enum: ["disburse pending", "pending", "successful", "failed"],
     },
     status: {
       type: String,
@@ -35,8 +39,7 @@ const initiateRequestSchema = new mongoose.Schema(
         "in progress",
         "awaiting verification",
         "approved",
-        "declined",
-        "disburse pending"
+        "declined"
       ],
       default: "pending",
     },
