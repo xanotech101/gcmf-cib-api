@@ -22,7 +22,7 @@ router.post("/register", adminAuth, registerUser);
 
 router.post(
   "/register_confirmation/:token",
-  validate(authSchemas.verifyUser, "params"),
+  validate(authSchemas.verifyUser, "body"),
   verifyUser
 );
 // router.get(

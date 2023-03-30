@@ -198,8 +198,9 @@ const forgetPassword = async (req, res) => {
 
 const verifyUser = async (req, res) => {
   try {
+    
     const decoded = jwt.verify(req.params.token, process.env.EMAIL_SECRET);
-    // const { password, securityQuestion } = req.body
+    const { password, secrets } = req.body
     const mail = decoded;
 
     if (!mail) {
@@ -220,6 +221,8 @@ const verifyUser = async (req, res) => {
       });
     }
 
+    const salt = await bcrypt.genSalt(10);
+
     if (user.isVerified) {
       return res
         .status(400)
@@ -231,7 +234,9 @@ const verifyUser = async (req, res) => {
     }
 
     user.isVerified = true;
+    user.password = await bcrypt.hash(password, salt);
     user.verificationToken = null;
+    user.secretQuestions = secrets
 
 
 
@@ -290,7 +295,7 @@ const registerUser = async (req, res) => {
   try {
     const { organizationId } = req.user;
     const userExits = await User.findOne({ email: req.body.email });
-    console.log("fffff")
+   
     if (userExits) {
       return res.status(400).send({
         status: "failed",
@@ -309,14 +314,12 @@ const registerUser = async (req, res) => {
     const user = new User({
       firstName: req.body.firstName,
       lastName: req.body.lastName,
-      // password: req.body.password,
       email: req.body.email,
       phone: req.body.phone,
       gender: req.body.gender,
       organizationId: organizationId,
       imageUrl: req.body.imageUrl,
       privileges: req.body.privileges,
-      secrets: req.body.secrets,
       role,
     });
 
