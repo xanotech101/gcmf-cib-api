@@ -18,7 +18,7 @@ const authRoute = require("./routes/auth.route");
 const notificationRoute = require("./routes/notification.route");
 const otpRoute = require("./routes/otp.route");
 const privilegeRoute = require("./routes/privilege.route");
-const secretQuestionRoute  = require("./routes/secretQuestion.route");
+const secretQuestionRoute = require("./routes/secretQuestion.route");
 const bankoneRoute = require("./routes/bankone.route");
 
 
@@ -50,6 +50,7 @@ app.use(
   })
 );
 
+
 app.use(logger("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -66,13 +67,13 @@ app.use("/api/mandate", mandateRoute);
 app.use("/api", paystackRoute);
 app.use("/api/audit_trails", trailRoute);
 app.use("/api/requests", requestRoute);
-app.use("/api/notifications", notificationRoute); 
+app.use("/api/notifications", notificationRoute);
 app.use("/api/otp", otpRoute);
 app.use("/api/privileges", privilegeRoute);
 app.use("/api/secret_questions", secretQuestionRoute);
 app.use("/api/ticket", adminRequest);
 app.use("/api/bank", bankoneRoute);
-app.use("/", (req, res)=> {
+app.use("/", (req, res) => {
   return res.send("Server is connected")
 })
 
@@ -89,6 +90,7 @@ app.use(function (err, req, res, next) {
   res.render("error");
 });
 
+
 app.use((req, res, next) => {
   if (res.headersSent) {
     return next();
@@ -101,6 +103,7 @@ app.use((req, res, next) => {
     });
 });
 
+
 // const port = process.env.PORT || 3000;
 
 // app.listen(port, () => {
@@ -108,3 +111,8 @@ app.use((req, res, next) => {
 // });
 
 module.exports = app;
+
+
+
+
+

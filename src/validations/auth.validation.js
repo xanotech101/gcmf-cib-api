@@ -17,7 +17,23 @@ const authSchemas = {
   }),
 
   verifyUser: Joi.object().keys({
-    token: Joi.string().required(),
+    token: Joi.string(),
+    password: Joi.string().min(8).required().label("Password"),
+    confirm_password: Joi.any()
+      .equal(Joi.ref("password"))
+      .required()
+      .label("Confirm password")
+      .messages({ "any.only": "{{#label}} does not match" }),
+      secrets: Joi.array().items(
+        Joi.object({
+          question: Joi.string().required(),
+          answer: Joi.string().required(),
+          question: Joi.string().required(),
+          answer: Joi.string().required(),
+          question: Joi.string().required(),
+          answer: Joi.string().required(),
+        })
+      ).required()
   }),
 
   resetPassword: Joi.object()

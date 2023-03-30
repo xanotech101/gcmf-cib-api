@@ -10,86 +10,27 @@ const { sendEmail } = require("../utils/emailService");
 const notificationService = require("../services/notification.service");
 const AuditTrail = require("../model/auditTrail");
 const bankOneService = require("../services/bankOne.service");
+const emitter = require("../utils/emitters");
 const authToken = process.env.AUTHTOKEN;
-
-
 
 
 // Verify batchupload from bankOne
 const VerifyBatchUpload = async (req, res) => {
   try {
-    const excelDocs = ["xlsx", "xls"];
-    const csvDocs = ["csv"];
-    const verifiedData = []
+    // Listen for the results from Kafka using the event emitter
+    emitter.once('results', (results) => {
+      // Send the results back to the client
+      console.log(results)
+      return res
+        .status(200)
+        .json( results );
+    });
 
-    if (!req.files || Object.keys(req.files).length === 0) {
-      return res.status(400).json({
-        message: "No files uploaded. Please upload at least one file",
-        status: "failed",
-      });
-    }
-
-    let formattedData = [];
-
-    for (let i = 0; i < req.files.length; i++) {
-      let file = req.files[i];
-      let fileExtension = file.originalname.split(".")[1];
-      let data;
-
-      if (excelDocs.includes(fileExtension)) {
-        data = excelToJson({
-          sourceFile: file.path,
-          header: {
-            rows: 1,
-          },
-          columnToKey: {
-            "*": "{{columnHeader}}",
-          },
-        });
-
-        let result;
-        for (let i in data) {
-          result = i;
-          break;
-        }
-        formattedData = formattedData.concat(data[result]);
-      } else if (csvDocs.includes(fileExtension)) {
-        data = csvToJson.getJsonFromCsv(file.path);
-        formattedData = formattedData.concat(data);
-      } else {
-        return res.status(400).json({
-          message: "Invalid file type. Please upload a csv or excel file",
-          status: "failed",
-        });
-      }
-
-      fs.unlinkSync(file.path);
-    }
-
-    //verify each batch upload against bankOne
-    const requestBankOne = await bankOneService.getbankDetails(authToken, "0034551560")
-    console.log('test',requestBankOne)
-    return
-    for (let i = 0; i < formattedData.length; i++) {
-      const requestBankOne = await bankOneService.getbankDetails(authToken, formattedData[i].accountNumber)
-      const data = formattedData[i];
-      if (data.amount > 50000) {
-        verifiedData.push({ ...data, status: true });
-      } else {
-        verifiedData.push({ ...data, status: false });
-      }
-    }
-    return res
-      .status(200)
-      .json({ message: "File uploaded successfully", verifiedData });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: error.message });
   }
 };
-
-
-
 
 
 const batchUpload = async () => {
