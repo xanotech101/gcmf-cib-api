@@ -65,7 +65,7 @@ const getTransactionHistory = async (req, res) => {
   const toDate = req.query.toDate;
   const institutionCode = req.query.institutionCode;
   const numberOfItems = req.query.numberOfItems;
-  const authtoken = "4c398863-d777-4afa-bd89-dd01859740d1";
+  const authtoken = "8424f843-fd36-4a30-8e7e-18f4f920aa91";
   const transHistory = await bankOneService.transactionHistory(
     authtoken,
     accountNumber,
