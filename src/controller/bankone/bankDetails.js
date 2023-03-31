@@ -163,8 +163,6 @@ const getNameEnquiry = async (req, res) => {
 };
 
 const getTransactionsPaginated = async (req, res) => {
-  console.log("🚀 ~ file: bankDetails.js:166 ~ getTransactionsPaginated ~ req:", req.user)
-  console.log("🚀 ~ file: bankDetails.js:166 ~ getTransactionsPaginated ~ res:", 'here for the second one')
   const accountNumber = req.params.account;
   const fromDate = req.query.fromDate;
   const toDate = req.query.toDate;
@@ -173,7 +171,7 @@ const getTransactionsPaginated = async (req, res) => {
   const PageSize = req.query.PageSize;
 
   const getTransactions = await bankOneService.getTransactionsPaginated(
-    '4c398863-d777-4afa-bd89-dd01859740d1',
+    authToken,
     accountNumber,
     fromDate,
     toDate,
