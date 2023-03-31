@@ -10,9 +10,7 @@ const getAccountByAccountNo = async (req, res) => {
 
     const mine = await User.findById(req.user._id);
 
-    const adminInfo = await Account.findById(mine.organizationId.toString())
-
-    let accountNo = adminInfo.accountNumber
+    let accountNo = req.params.accountNumber
     const accountDetails = await bankOneService.accountByAccountNo(
       accountNo,
       authToken
