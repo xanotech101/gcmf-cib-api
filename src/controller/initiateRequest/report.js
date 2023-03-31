@@ -85,7 +85,7 @@ const getReportAnalysisForCooperateAccount = async (req, res) => {
 
         //get count for all approve request
         //check for account number existence 
-        const check_acount = await InitiateRequest.findOne({organizationId:req.params.organizationId})
+        const check_acount = await InitiateRequest.findOne({organizationId:req.user.organizationId})
 
         if(!check_acount){
             return res.status(400).json({
@@ -97,7 +97,7 @@ const getReportAnalysisForCooperateAccount = async (req, res) => {
             {
                 $match: {
 
-                    organizationId: req.params.organizationId,
+                    organizationId: req.user.organizationId,
                     status: { $in: ["approved", "pending", "declined"] }
                 }
             },
@@ -113,8 +113,8 @@ const getReportAnalysisForCooperateAccount = async (req, res) => {
             {
                 $match: {
 
-                    organizationId: req.params.organizationId,
-                    status: "approved"
+                    organizationId: req.user.organizationId,
+                    transferStatus: "successful"
                 }
             },
             {
