@@ -8,34 +8,34 @@ const getAccountByAccountNo = async (req, res) => {
 
   try {
 
-  
+    const mine = await User.findById(req.user._id);
 
-  const mine = await User.findById(req.user._id);
+    const adminInfo = await Account.findById(mine.organizationId.toString())
 
-  const adminInfo = await Account.findById(mine.organizationId.toString())
-  
-  let accountNo = adminInfo.accountNumber
-  console.log('here ', adminInfo)
-  const accountDetails = await bankOneService.accountByAccountNo(
-    accountNo,
-    authToken
-  );
+    let accountNo = adminInfo.accountNumber
+    const accountDetails = await bankOneService.accountByAccountNo(
+      accountNo,
+      authToken
+    );
 
-  if (!accountDetails) {
+    if (!accountDetails) {
+      return res.status(500).json({
+        status: "Failed",
+        message: "Unable to get bank account details",
+      });
+    }
+
+    return res.status(200).json({
+      status: "Success",
+      message: "Account Details retrieved successfully",
+      data: accountDetails,
+    });
+  } catch (e) {
     return res.status(500).json({
       status: "Failed",
-      message: "Unable to get bank account details",
+      message: error,
     });
   }
-
-  return res.status(200).json({
-    status: "Success",
-    message: "Account Details retrieved successfully",
-    data: accountDetails,
-  });
-} catch(e) {
-  console.log(e)
-}
 }
 
 
@@ -67,7 +67,7 @@ const getTransactionHistory = async (req, res) => {
   const toDate = req.query.toDate;
   const institutionCode = req.query.institutionCode;
   const numberOfItems = req.query.numberOfItems;
-  const authtoken = "4c398863-d777-4afa-bd89-dd01859740d1";
+  const authtoken = "8424f843-fd36-4a30-8e7e-18f4f920aa91";
   const transHistory = await bankOneService.transactionHistory(
     authtoken,
     accountNumber,
@@ -76,7 +76,7 @@ const getTransactionHistory = async (req, res) => {
     institutionCode,
     numberOfItems
   );
- 
+
   if (!transHistory) {
     return res.status(500).json({
       status: "Failed",
@@ -112,11 +112,11 @@ const getAccountStatement = async (req, res) => {
     });
   }
 
-    return res.status(200).json({
-      status: "Success",
-      data: statement,
-    });
-  
+  return res.status(200).json({
+    status: "Success",
+    message: statement,
+  });
+
 };
 
 const getAccountDetails = async (req, res) => {
@@ -246,7 +246,7 @@ const interbankTransfer = async (req, res) => {
 
 const getAccountInfo = async (req, res) => {
   let accountNumber = req.query.accountNumber;
-console.log("working here")
+
   const accountInfo = await bankOneService.getbankSumaryDetails(
     authToken,
     accountNumber
@@ -268,10 +268,10 @@ console.log("working here")
 
 
 const getTransactionStatus = async (req, res) => {
-  let  RetrievalReference = req.body.RetrievalReference;
-   let TransactionDate = req.body.TransactionDate;
-    let institutionCode = req.body.institutionCode;
-    let Amount = req.body.Amount;
+  let RetrievalReference = req.body.RetrievalReference;
+  let TransactionDate = req.body.TransactionDate;
+  let institutionCode = req.body.institutionCode;
+  let Amount = req.body.Amount;
 
   const transactionStatusInfo = await bankOneService.transactionStatus(
     RetrievalReference,
@@ -297,7 +297,7 @@ const getTransactionStatus = async (req, res) => {
 
 const intrabankTransfer = async (req, res) => {
   const {
-     Amount,
+    Amount,
     FromAccountNumber,
     ToAccountNumber,
     RetrievalReference,
@@ -315,7 +315,7 @@ const intrabankTransfer = async (req, res) => {
     AuthenticationKey,
   );
 
-  if (!intraTransferDetails ) {
+  if (!intraTransferDetails) {
     return res.status(500).json({
       status: "Failed",
       message: "Unable to get bank account details",
