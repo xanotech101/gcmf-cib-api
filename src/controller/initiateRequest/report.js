@@ -6,7 +6,7 @@ const getReportAnalysis = async (req, res) => {
         const getTotalCount = await InitiateRequest.aggregate([
             {
                 $match: {
-                    status: { $in: ["approved", "pending", "declined"] }
+                    status: { $in: ["approved", "pending", "declined", "in progress"] }
                 }
             },
             {
@@ -20,7 +20,7 @@ const getReportAnalysis = async (req, res) => {
         const getAllAprove = await InitiateRequest.aggregate([
             {
                 $match: {
-                    transferStatus: "successful"
+                    status: "approved"
                 }
             },
             {
@@ -72,7 +72,6 @@ const getReportAnalysis = async (req, res) => {
             status: "success",
         });
     } catch (error) {
-        console.log(error)
         return res.status(500).json({
             message: error.message,
             status: "failed",
@@ -98,7 +97,7 @@ const getReportAnalysisForCooperateAccount = async (req, res) => {
                 $match: {
 
                     organizationId: req.user.organizationId,
-                    status: { $in: ["approved", "pending", "declined"] }
+                    status: { $in: ["approved", "pending", "declined", "in progress"] }
                 }
             },
             {
@@ -114,7 +113,7 @@ const getReportAnalysisForCooperateAccount = async (req, res) => {
                 $match: {
 
                     organizationId: req.user.organizationId,
-                    transferStatus: "successful"
+                    status: "approved"
                 }
             },
             {

@@ -13,7 +13,6 @@ const getAccountByAccountNo = async (req, res) => {
     const adminInfo = await Account.findById(mine.organizationId.toString())
 
     let accountNo = adminInfo.accountNumber
-    console.log('here ', adminInfo)
     const accountDetails = await bankOneService.accountByAccountNo(
       accountNo,
       authToken
@@ -32,7 +31,10 @@ const getAccountByAccountNo = async (req, res) => {
       data: accountDetails,
     });
   } catch (e) {
-    console.log(e)
+    return res.status(500).json({
+      status: "Failed",
+      message: error,
+    });
   }
 }
 
@@ -244,7 +246,7 @@ const interbankTransfer = async (req, res) => {
 
 const getAccountInfo = async (req, res) => {
   let accountNumber = req.query.accountNumber;
-  console.log("working here")
+
   const accountInfo = await bankOneService.getbankSumaryDetails(
     authToken,
     accountNumber
