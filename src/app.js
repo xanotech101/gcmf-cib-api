@@ -20,6 +20,7 @@ const otpRoute = require("./routes/otp.route");
 const privilegeRoute = require("./routes/privilege.route");
 const secretQuestionRoute = require("./routes/secretQuestion.route");
 const bankoneRoute = require("./routes/bankone.route");
+const settingsRoute = require("./routes/settings.route")
 
 
 const cors = require("cors");
@@ -73,6 +74,7 @@ app.use("/api/privileges", privilegeRoute);
 app.use("/api/secret_questions", secretQuestionRoute);
 app.use("/api/ticket", adminRequest);
 app.use("/api/bank", bankoneRoute);
+app.use("/api/settings", settingsRoute);
 app.use("/", (req, res) => {
   return res.send("Server is connected")
 })

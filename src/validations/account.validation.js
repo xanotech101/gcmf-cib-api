@@ -9,6 +9,20 @@ const accountSchemas = {
     address: Joi.string().max(40).trim().lowercase().required(),
   }),
 
+  sercreteUpdate: Joi.object().keys({
+    token: Joi.string(),
+      secrets: Joi.array().items(
+        Joi.object({
+          question: Joi.string().required(),
+          answer: Joi.string().required(),
+          question: Joi.string().required(),
+          answer: Joi.string().required(),
+          question: Joi.string().required(),
+          answer: Joi.string().required(),
+        })
+      ).required()
+  }),
+  
   verifyAccount: Joi.object()
     .keys({
       secrets: Joi.array().items(Joi.object().required()).required(),
