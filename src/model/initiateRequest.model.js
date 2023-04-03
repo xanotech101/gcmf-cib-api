@@ -26,7 +26,10 @@ const initiateRequestSchema = new mongoose.Schema(
     beneficiaryBVN: String,
     NIPSessionID: String,
     transactionReference: String,
-    organizationId: String,
+    organizationId: {
+      type: mongoose.Schema.Types.ObjectID,
+      ref: "Account",
+    },
     numberOfAuthorisers: Number,
     transferStatus: {
       type: String,

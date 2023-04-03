@@ -200,7 +200,7 @@ const verifyUser = async (req, res) => {
   try {
     
     const decoded = jwt.verify(req.params.token, process.env.EMAIL_SECRET);
-    const { password, secrets } = req.body
+    const { password, secretQuestions } = req.body
     const mail = decoded;
 
     if (!mail) {
@@ -236,9 +236,8 @@ const verifyUser = async (req, res) => {
     user.isVerified = true;
     user.password = await bcrypt.hash(password, salt);
     user.verificationToken = null;
-    user.secretQuestions = secrets
-
-
+    user.secretQuestions = secretQuestions
+    user.is2FAEnabled = true
 
     await user.save();
 

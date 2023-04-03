@@ -34,7 +34,7 @@ const initiateRequest = async (req, res) => {
       lastName: req.body.lastName,
       organizationId: mine.organizationId.toString(),
       transactionReference: mongoose.Types.ObjectId().toString().substr(0, 12),
-      type: req.body.type
+      type: req.body.type,
     });
 
     const mandate = await Mandate.findOne({
@@ -653,14 +653,13 @@ const verifierApproveRequest = async (req, res) => {
 
     // update and save request
     request.status = "approved";
-    request.transferStatus = "disburse pending"
+    request.transferStatus = "disburse pending";
     request.verifierAction = {
       status: "approved",
       reason: req.body.reason,
     };
     await request.save();
 
-    
     // notify initiator and authorizers
     const authorizers = request.mandate.authorisers;
     await notificationService.createNotifications([
@@ -692,15 +691,14 @@ const verifierApproveRequest = async (req, res) => {
     // delete otp from database
     await Otp.findByIdAndDelete(otpDetails._id);
 
-
     // update request date
     request.updatedAt = new Date();
     await request.save();
 
     // send request to bank one
-    const Narration = `transfer from ${organization.accountName} to ${request.firstName}`
+    const Narration = `transfer from ${organization.accountName} to ${request.firstName}`;
     let transfer;
-    if(transferRequest.type === 'inter-bank') {
+    if (transferRequest.type === "inter-bank") {
       const payload = {
         Amount: transferRequest.amount,
         Payer: `${mine.firstName} ${mine.lastName}`,
@@ -715,7 +713,7 @@ const verifierApproveRequest = async (req, res) => {
         TransactionReference: request.transactionReference,
         NIPSessionID: request.NIPSessionID,
         Token: authToken,
-        Narration
+        Narration,
       };
       transfer = await bankOneService.doInterBankTransfer(payload);
     } else {
@@ -725,15 +723,15 @@ const verifierApproveRequest = async (req, res) => {
         FromAccountNumber: organization.accountNumber,
         ToAccountNumber: request.beneficiaryAccountNumber,
         AuthenticationKey: authToken,
-        Narration
-      }
+        Narration,
+      };
       transfer = await bankOneService.doIntraBankTransfer(payload);
     }
 
-    if(transfer?.status === 'Successful' && transfer?.ResponseCode === "00") {
+    if (transfer?.status === "Successful" && transfer?.ResponseCode === "00") {
       request.transferStatus = "successful";
       await request.save();
-    } else if (response?.status === 'Failed') {
+    } else if (response?.status === "Failed") {
       request.transferStatus = "failed";
       request.updatedAt = new Date();
       await request.save();
@@ -820,6 +818,167 @@ const verifierDeclineRequest = async (req, res) => {
   }
 };
 
+const getAwaitingVerificationRequest = async (req, res) => {
+  const { page, perPage } = req.query;
+  const options = {
+    page: page || 1,
+    limit: perPage || PER_PAGE,
+    sort: { createdAt: -1 },
+  };
+  try {
+    const request = await InitiateRequest.aggregate([
+      {
+        $match: {
+          status: {
+            $in: ["pending", "in progress", "awaiting verification"],
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: "mandates",
+          localField: "mandate",
+          foreignField: "_id",
+          as: "mandate",
+        },
+      },
+      {
+        $unwind: "$mandate",
+      },
+      {
+        $facet: {
+          data: [
+            {
+              $sort: { ...options.sort },
+            },
+            {
+              $skip: options.limit * (options.page - 1),
+            },
+            {
+              $limit: options.limit * 1,
+            },
+          ],
+          meta: [
+            {
+              $count: "total",
+            },
+            {
+              $addFields: {
+                page: options.page,
+                perPage: options.limit,
+              },
+            },
+          ],
+        },
+      },
+      {
+        $unwind: "$meta",
+      },
+    ]);
+    return res.status(200).json({
+      message: "Request fetched successfully",
+      status: "success",
+      data: {
+        requests: request[0]?.data || [],
+        meta: request[0]?.meta || {},
+      },
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: error.message,
+      status: "failed",
+    });
+  }
+};
+
+const getRequestSentToBankOne = async (req, res) => {
+  const { page, perPage } = req.query;
+  const options = {
+    page: page || 1,
+    limit: perPage || PER_PAGE,
+    sort: { createdAt: -1 },
+  };
+
+  try {
+    const request = await InitiateRequest.aggregate([
+      {
+        $match: {
+          transferStatus: {
+            $in: ["disburse pending", "pending", "successful", "failed"],
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: "mandates",
+          localField: "mandate",
+          foreignField: "_id",
+          as: "mandate",
+        },
+      },
+      {
+        $unwind: "$mandate",
+      },
+      {
+        $lookup: {
+          from: "accounts",
+          localField: "organizationId",
+          foreignField: "_id",
+          as: "originatingAccount",
+        },
+      },
+      {
+        $unwind: "$originatingAccount",
+      },
+      {
+        $facet: {
+          data: [
+            {
+              $sort: { ...options.sort },
+            },
+            {
+              $skip: options.limit * (options.page - 1),
+            },
+            {
+              $limit: options.limit * 1,
+            },
+          ],
+          meta: [
+            {
+              $count: "total",
+            },
+            {
+              $addFields: {
+                page: options.page,
+                perPage: options.limit,
+              },
+            },
+          ],
+        },
+      },
+      {
+        $unwind: "$meta",
+      },
+    ]);
+    return res.status(200).json({
+      message: "Request fetched successfully",
+      status: "success",
+      data: {
+        requests: request[0]?.data || [],
+
+        meta: request[0]?.meta || {},
+      },
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: error.message,
+      status: "failed",
+    });
+  }
+};
+
 module.exports = {
   initiateRequest,
   declineRequest,
@@ -830,4 +989,6 @@ module.exports = {
   getAllAssignedRequests,
   verifierDeclineRequest,
   verifierApproveRequest,
+  getAwaitingVerificationRequest,
+  getRequestSentToBankOne
 };

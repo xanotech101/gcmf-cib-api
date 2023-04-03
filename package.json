@@ -29,6 +29,7 @@
     "convert-excel-to-json": "^1.7.0",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
+    "cron": "^2.3.0",
     "csurf": "^1.11.0",
     "csvtojson": "^2.0.10",
     "debug": "^4.3.4",
@@ -44,7 +45,6 @@
     "mongoose": "^6.8.3",
     "morgan": "^1.10.0",
     "multer": "^1.4.2",
-    "node-cron": "^3.0.2",
     "nodemailer": "^6.9.0",
     "xls-to-json": "^2.1.1"
   },
