@@ -199,7 +199,7 @@ const forgetPassword = async (req, res) => {
 
 const verifyUser = async (req, res) => {
   try {
-    
+
     const decoded = jwt.verify(req.params.token, process.env.EMAIL_SECRET);
     const { password, secretQuestions } = req.body
     const mail = decoded;
@@ -284,7 +284,6 @@ const resetPassword = async (req, res) => {
       data: null,
     });
   } catch (error) {
-    console.log(error.message);
     return res.status(500).json({
       status: "failed",
       data: null,
@@ -297,7 +296,7 @@ const registerUser = async (req, res) => {
   try {
     const { organizationId } = req.user;
     const userExits = await User.findOne({ email: req.body.email });
-   
+
     if (userExits) {
       return res.status(400).send({
         status: "failed",
@@ -371,20 +370,42 @@ const registerUser = async (req, res) => {
   }
 };
 
-const refreshAuth = async (req,res) =>{
-try {
-  
-} catch (error) {
-  return res.status(500).json({
-    status: "failed",
-    data: null,
-    message: "Unable to create a user",
-  });
+const refreshAuth = async (req, res) => {
+  const { email } = req.body
+
+  const requestUser = await User.findOne({ email })
+
+  if (!requestUser) {
+    return res.status(400).send({ message: 'No user with this information available', status: 'fail' })
+  }
+
+  //sign user and generate token
+  //Email Details
+  const verificationToken = jwt.sign(
+    { user_email: email },
+    process.env.EMAIL_SECRET,
+    {
+      expiresIn: "30m",
+    }
+  );
+
+  requestUser.verificationToken = verificationToken;
+
+  const link = `${process.env.FRONTEND_URL}/verify-account/${verificationToken}`;
+
+  const subject = "Reset Verification Token";
+  const message = `
+<h3>You have successfully created your account</h3>
+<p>Dear ${requestUser.firstName}, welcome on board.</p> 
+<p>Kinldy click below to confirm your account.</p> 
+<a href= ${link}><h4>CLICK HERE TO CONFIRM YOUR EMAIL</h4></a> 
+<p>If the above link is not working, You can click the link below.</p>
+<p>${link}</p>
+`;
+  sendEmail(email, subject, message)
+  const user = requestUser.save()
+  return res.status(200).send({ message: 'token generated', data: registerUser })
 }
-}
-
-
-
 module.exports = {
   verifyUser,
   forgetPassword,
