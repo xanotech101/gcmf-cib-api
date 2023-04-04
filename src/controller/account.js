@@ -209,4 +209,20 @@ const getAllAccount = async (req, res) => {
   }
 };
 
-module.exports = { getAllAccount, registerAccount, verifyAccount };
+const getAccount = async (req, res) => {
+  try {
+    const account = await Account.findById(req.params.id).populate("adminID");
+    res.status(200).json({
+      status: "Success",
+      data: account,
+    });
+  } catch (error) {
+    res.status(500).send({
+      status: "Failed",
+      message: "Unable to get account",
+      error: error.message,
+    });
+  }
+}
+
+module.exports = { getAllAccount, registerAccount, verifyAccount, getAccount };
