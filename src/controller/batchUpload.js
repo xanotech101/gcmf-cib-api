@@ -20,7 +20,7 @@ const VerifyBatchUpload = async (req, res) => {
     // Listen for the results from Kafka using the event emitter
     emitter.once('results', (results) => {
       // Send the results back to the client
-      console.log(results)
+     
       return res
         .status(200)
         .json( results );
