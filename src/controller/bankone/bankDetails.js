@@ -7,14 +7,8 @@ const User = require("../../model/user.model");
 const getAccountByAccountNo = async (req, res) => {
 
   try {
-
-    const mine = await User.findById(req.user._id);
-
-    const adminInfo = await Account.findById(mine.organizationId.toString())
-
-    let accountNo = adminInfo.accountNumber
     const accountDetails = await bankOneService.accountByAccountNo(
-      accountNo,
+      req.params.accountNo,
       authToken
     );
 
@@ -62,7 +56,7 @@ const getAccountByCustomerID = async (req, res) => {
 };
 
 const getTransactionHistory = async (req, res) => {
-  const accountNumber = '00680011010004222';
+  const accountNumber = req.params.accountNo;
   const fromDate = req.query.fromDate;
   const toDate = req.query.toDate;
   const institutionCode = req.query.institutionCode;
