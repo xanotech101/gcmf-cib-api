@@ -7,20 +7,8 @@ const User = require("../../model/user.model");
 const getAccountByAccountNo = async (req, res) => {
 
   try {
-<<<<<<< HEAD
     const accountDetails = await bankOneService.accountByAccountNo(
       req.params.accountNo,
-=======
-
-    const account = req.query.accountNumber; 
-    const mine = await User.findById(req.user._id);
-
-    // const adminInfo = await Account.findById(mine.organizationId.toString())
-
- 
-    const accountDetails = await bankOneService.accountByAccountNo(
-      account,
->>>>>>> initiate_request
       authToken
     );
 

@@ -363,7 +363,6 @@ const registerUser = async (req, res) => {
       data: { result },
     });
   } catch (error) {
-    console.log(error);
     return res.status(500).json({
       status: "failed",
       data: null,
@@ -371,6 +370,18 @@ const registerUser = async (req, res) => {
     });
   }
 };
+
+const refreshAuth = async (req,res) =>{
+try {
+  
+} catch (error) {
+  return res.status(500).json({
+    status: "failed",
+    data: null,
+    message: "Unable to create a user",
+  });
+}
+}
 
 
 
@@ -381,4 +392,5 @@ module.exports = {
   resetPassword,
   registerUser,
   preLogin,
+  refreshAuth
 };
