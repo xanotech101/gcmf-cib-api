@@ -59,7 +59,5 @@ router.post(
 
 router.post("/secret_question", createAuthQuestions);
 
-//create password after onboarding
-router.post("/create-password", validate(authSchemas.resetPassword, "body"), createPassword)
 
 module.exports = router;

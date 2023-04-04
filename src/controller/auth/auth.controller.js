@@ -262,8 +262,7 @@ const resetPassword = async (req, res) => {
     const { password, token } = req.body;
   
     const decoded = jwt.verify(token, process.env.EMAIL_SECRET);
-    console.log(decoded)
-
+  
     let userEmail = decoded.user_email;
     let userPassword = decoded.user_password;
 
@@ -373,24 +372,7 @@ const registerUser = async (req, res) => {
   }
 };
 
-const createPassword = async (req, res) => {
-  try {
-    const {password, confirmPassword} = req.body
-    const token = req.query.token
 
-    const check_user = await User.findOne({})
-
-
-
-  } catch (error) {
-    console.log(error);
-    return res.status(500).json({
-      status: "failed",
-      data: null,
-      message: "Unable to create user password",
-    });
-  }
-}
 
 module.exports = {
   verifyUser,
@@ -399,5 +381,4 @@ module.exports = {
   resetPassword,
   registerUser,
   preLogin,
-  createPassword
 };
