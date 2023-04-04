@@ -24,7 +24,7 @@ const authSchemas = {
       .required()
       .label("Confirm password")
       .messages({ "any.only": "{{#label}} does not match" }),
-      secrets: Joi.array().items(
+      secretQuestions: Joi.array().items(
         Joi.object({
           question: Joi.string().required(),
           answer: Joi.string().required(),
