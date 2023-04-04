@@ -30,7 +30,7 @@ const getAccountByAccountNo = async (req, res) => {
       message: "Account Details retrieved successfully",
       data: accountDetails,
     });
-  } catch (e) {
+  } catch (error) {
     return res.status(500).json({
       status: "Failed",
       message: error,
