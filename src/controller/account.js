@@ -194,7 +194,9 @@ const verifyAccount = async (req, res) => {
 // get all account
 const getAllAccount = async (req, res) => {
   try {
-    const allAccount = await Account.find().populate("adminID");
+    const name = req.query.name;
+    const allAccount = await Account.find({ accountName: { $regex: name, $options: "i" } }).populate("adminID");
+  
     res.status(200).json({
       status: "Success",
       data: allAccount,

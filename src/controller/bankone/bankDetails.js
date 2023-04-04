@@ -7,8 +7,20 @@ const User = require("../../model/user.model");
 const getAccountByAccountNo = async (req, res) => {
 
   try {
+<<<<<<< HEAD
     const accountDetails = await bankOneService.accountByAccountNo(
       req.params.accountNo,
+=======
+
+    const account = req.query.accountNumber; 
+    const mine = await User.findById(req.user._id);
+
+    // const adminInfo = await Account.findById(mine.organizationId.toString())
+
+ 
+    const accountDetails = await bankOneService.accountByAccountNo(
+      account,
+>>>>>>> initiate_request
       authToken
     );
 
@@ -24,7 +36,7 @@ const getAccountByAccountNo = async (req, res) => {
       message: "Account Details retrieved successfully",
       data: accountDetails,
     });
-  } catch (e) {
+  } catch (error) {
     return res.status(500).json({
       status: "Failed",
       message: error,

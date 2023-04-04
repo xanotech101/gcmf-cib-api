@@ -304,49 +304,65 @@ const validateChangePassword = (user) => (payload) =>
 
 const getAllUsers = async (req, res) => {
   try {
-    const { page, perPage } = req.query;
-    console.log(req.query);
+    const { page, perPage, name } = req.query;
 
-    const options = {
-      limit: perPage || PER_PAGE,
-      page: page || 1,
-      sort: { createdAt: -1 },
-    };
+const options = {
+  limit: perPage || PER_PAGE,
+  page: page || 1,
+  sort: { createdAt: -1 },
+};
 
-    const user = await User.aggregate([
-      {
-        $facet: {
-          data: [
-            {
-              $sort: { ...options.sort },
-            },
-            {
-              $skip: options.limit * (options.page - 1),
-            },
-            {
-              $limit: options.limit * 1,
-            },
-          ],
-          meta: [
-            {
-              $count: "total",
-            },
-            {
-              $addFields: {
-                page: options.page,
-                perPage: options.limit,
-              },
-            },
-          ],
+const matchStage = {};
+if (name) {
+  const [firstName, lastName] = name ? name.split(" ") : ["", ""];
+  matchStage.$or = [
+    { firstName: { $regex: new RegExp(firstName, "i") } },
+    { lastName: { $regex: new RegExp(lastName, "i") } },
+  ];
+}
+
+const user = await User.aggregate([
+  { $match: matchStage },
+  {
+    $facet: {
+      data: [
+        {
+          $sort: { ...options.sort },
         },
-      },
-    ]);
+        {
+          $skip: options.limit * (options.page - 1),
+        },
+        {
+          $limit: options.limit * 1,
+        },
+      ],
+      meta: [
+        {
+          $count: "total",
+        },
+        {
+          $addFields: {
+            page: options.page,
+            perPage: options.limit,
+          },
+        },
+      ],
+    },
+  },
+]);
 
-    res.status(200).json({
-      message: "Successfully fetched all users",
-      data: { user },
-      status: "success",
-    });
+if (user[0].meta.total === 0) {
+  return res.status(404).json({
+    message: "No user found with the provided name",
+    status: "failed",
+  });
+}
+
+return res.status(200).json({
+  message: "Successfully fetched users",
+  data: { user },
+  status: "success",
+});
   } catch (error) {
     console.log(error);
     res.status(500).json({

@@ -71,6 +71,10 @@ const authSchemas = {
       privileges: Joi.array().items(Joi.string().required()),
     })
     .with("password", "confirm_password"),
+
+    refreshAuth: Joi.object().keys({
+      email:Joi.string().trim().lowercase().required().email()
+    })
 };
 
 module.exports = authSchemas;

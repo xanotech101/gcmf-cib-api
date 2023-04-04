@@ -10,7 +10,8 @@ const {
   verifyUser,
   registerUser,
   preLogin,
-  createPassword
+  createPassword,
+  refreshAuth
 } = require("../controller/auth/auth.controller");
 
 const createAuthQuestions = require("../controller/authQuestion/authQuestion");
@@ -19,6 +20,7 @@ const createAuthQuestions = require("../controller/authQuestion/authQuestion");
 router.post("/pre_login", validate(authSchemas.preLogin, "body"), preLogin);
 router.post("/login", validate(authSchemas.login, "body"), login);
 router.post("/register", adminAuth, registerUser);
+router.post("/refreshAuth",validate(authSchemas.refreshAuth, "body"), refreshAuth)
 
 router.post(
   "/register_confirmation/:token",
