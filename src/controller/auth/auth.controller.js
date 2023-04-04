@@ -145,6 +145,7 @@ const login = async (req, res) => {
 //@access   Public
 const forgetPassword = async (req, res) => {
   try {
+   
     const user = await User.findOne({ email: req.body.email });
 
     if (!user) {
@@ -161,7 +162,7 @@ const forgetPassword = async (req, res) => {
       { user_email: user.email, user_password: user.password },
       process.env.EMAIL_SECRET,
       {
-        expiresIn: "10m",
+        expiresIn: "30m",
       }
     );
 
@@ -259,16 +260,19 @@ const verifyUser = async (req, res) => {
 const resetPassword = async (req, res) => {
   try {
     const { password, token } = req.body;
+  
     const decoded = jwt.verify(token, process.env.EMAIL_SECRET);
+    console.log(decoded)
+
     let userEmail = decoded.user_email;
     let userPassword = decoded.user_password;
 
     const user = await User.findOne({ email: userEmail });
     const validPassword = await bcrypt.compare(password, userPassword);
-    if (!validPassword)
+    if (validPassword)
       return res
         .status(400)
-        .json({ message: "Invalid token. Kindly use the reset link again" });
+        .json({ message: "new password cannot be same as old password" });
 
     //Hash password
     const salt = await bcrypt.genSalt(10);
@@ -281,7 +285,7 @@ const resetPassword = async (req, res) => {
       data: null,
     });
   } catch (error) {
-    console.log(error);
+    console.log(error.message);
     return res.status(500).json({
       status: "failed",
       data: null,
