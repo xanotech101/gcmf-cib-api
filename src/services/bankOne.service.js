@@ -137,13 +137,14 @@ class BankOneService {
       const { data } = await axios.post(`${config.interbankTransfer}`, payload);
       return data;
     } catch (error) {
+      console.log("🚀 ~ file: bankOne.service.js:140 ~ BankOneService ~ error:", error)
       return null;
     }
   }
 
-  async doIntraBankTransfer() {
+  async doIntraBankTransfer(payload) {
     try {
-      const { data } = await axios.post(`${config.intrabankTransfer}`);
+      const { data } = await axios.post(`${config.intrabankTransfer}`, payload);
       return data;
     } catch (error) {
       return null;

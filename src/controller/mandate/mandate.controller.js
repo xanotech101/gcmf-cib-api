@@ -18,12 +18,14 @@ const registerMandate = async (req, res) => {
       });
     }
     
-    let amount = await Mandate.find({}).select("name minAmount maxAmount");
+    let amount = await Mandate.find({
+      organizationId: organizationId,
+    }).select("name minAmount maxAmount");
 
     let mandateCheckFailed;
     let overlap = {};
 
-    if (amount.length > 0) {
+    if (amount?.length > 0) {
       amount.map((item) => {
         if (
           (item.minAmount <= req.body.minAmount &&

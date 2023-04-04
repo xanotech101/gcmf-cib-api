@@ -113,7 +113,7 @@ const getAllInitiatorRequests = async (req, res) => {
   const { perPage, page } = req.query;
   console.log(req.user._id);
   const mine = await User.findById(req.user._id);
-  const organizationId = mine.organizationId.toString();
+  const organizationId = mine.organizationId;
 
   const options = {
     page: page || 1,
@@ -261,7 +261,7 @@ const getAllAssignedRequests = async (req, res) => {
 const getAllRequestPerOrganization = async (req, res) => {
   const { page, perPage } = req.query;
   const mine = await User.findById(req.user._id);
-  const organizationId = req.query?.branchId ?? mine.organizationId.toString();
+  const organizationId = req.query?.branchId ?? mine.organizationId;
 
   const options = {
     page: page || 1,
@@ -696,7 +696,7 @@ const verifierApproveRequest = async (req, res) => {
     await auditTrailService.createAuditTrail({
       user: req.user._id,
       type: "transaction",
-      transaction: result._id,
+      transaction: request._id,
       message: `${user.firstName} approved a transaction request on ${date} by ${time}`,
       organization: mine.organizationId,
     });
@@ -711,9 +711,10 @@ const verifierApproveRequest = async (req, res) => {
     // send request to bank one
     const Narration = `transfer from ${organization.accountName} to ${request.firstName}`;
     let transfer;
-    if (transferRequest.type === "inter-bank") {
+    console.log("🚀 ~ file: initiateRequest.controller.js:702 ~ verifierApproveRequest ~ request.type:", request.type)
+    if (request.type === "inter-bank") {
       const payload = {
-        Amount: transferRequest.amount,
+        Amount: request.amount,
         Payer: `${mine.firstName} ${mine.lastName}`,
         PayerAccountNumber: organization.accountNumber,
         ReceiverAccountNumber: request.beneficiaryAccountNumber,
@@ -744,7 +745,7 @@ const verifierApproveRequest = async (req, res) => {
     if (transfer?.status === "Successful" && transfer?.ResponseCode === "00") {
       request.transferStatus = "successful";
       await request.save();
-    } else if (response?.status === "Failed") {
+    } else if (transfer?.status === "Failed") {
       request.transferStatus = "failed";
       request.updatedAt = new Date();
       await request.save();
@@ -752,6 +753,10 @@ const verifierApproveRequest = async (req, res) => {
       request.updatedAt = new Date();
       await request.save();
     }
+    res.status(200).json({
+      message: "Request approved successfully",
+      status: "success",
+    });
   } catch (error) {
     console.log(error);
     res.status(500).json({

@@ -18,8 +18,8 @@ const { adminAuth, allUsersAuth } = require("../middleware/auth");
 
 
 router.get("/detail/:customerId", allUsersAuth, getAccountByCustomerID);
-router.get("/balance", allUsersAuth, getAccountByAccountNo);
-router.get("/history", allUsersAuth, getTransactionHistory);
+router.get("/balance/:accountNo", allUsersAuth, getAccountByAccountNo);
+router.get("/history/:accountNo", allUsersAuth, getTransactionHistory);
 router.get("/statement/:account", allUsersAuth, getAccountStatement);
 router.post("/name-enquiry", allUsersAuth, getNameEnquiry);
 router.get("/transactions/:account", allUsersAuth, getTransactionsPaginated);
