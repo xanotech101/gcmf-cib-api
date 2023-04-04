@@ -11,6 +11,7 @@ const accountSchemas = {
 
   sercreteUpdate: Joi.object().keys({
     token: Joi.string(),
+    password: Joi.string().required(),
       secrets: Joi.array().items(
         Joi.object({
           question: Joi.string().required(),
@@ -22,7 +23,7 @@ const accountSchemas = {
         })
       ).required()
   }),
-  
+
   verifyAccount: Joi.object()
     .keys({
       secrets: Joi.array().items(Joi.object().required()).required(),

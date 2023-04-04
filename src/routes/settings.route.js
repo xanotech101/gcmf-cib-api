@@ -4,6 +4,6 @@ const { allUsersAuth } = require("../middleware/auth");
 const { validate, accountSchemas } = require("../validations");
 const router = express.Router();
 
-router.patch("/update_secrete_questions",validate(accountSchemas.sercreteUpdate) ,allUsersAuth, UpdateSecrete);
+router.patch("/update_secrete_questions",allUsersAuth, validate(accountSchemas.sercreteUpdate, "body"),UpdateSecrete);
 
 module.exports = router;

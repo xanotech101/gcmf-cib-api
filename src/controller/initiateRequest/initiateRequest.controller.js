@@ -589,6 +589,19 @@ const approveRequest = async (req, res) => {
         },
       ]);
       request.status = "awaiting verification";
+
+      //send mail to verifier
+      const verifierInfo = await User.findById(request.verifier).select("email firstname _id")
+
+      const subject = "Verification Required";
+      const message = `
+          <h3>Transaction Request Initiated</h3>
+          <p> Dear ${verifierInfo.firstName}. The below request was initiated for your verification.</p>
+          <p>TransactionID: ${request._id}</p>
+          <p>Kindly login to your account to review</p>
+        `;
+
+      await sendEmail(verifierInfo.email, subject, message)
     }
 
     // create audit trail
