@@ -13,6 +13,7 @@ const initiateRequestSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    payerAccountNumber:String,
     beneficiaryBankCode: String,
     beneficiaryAccountNumber: String,
     beneficiaryBankName: String,
