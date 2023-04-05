@@ -138,8 +138,6 @@ const login = async (req, res) => {
   }
 };
 
-
-
 //@desc     confirm email inorder to change user password. Send email to user
 //@route    POST /users/send_password_reset_link"
 //@access   Public
@@ -194,8 +192,6 @@ const forgetPassword = async (req, res) => {
     });
   }
 };
-
-
 
 const verifyUser = async (req, res) => {
   try {
@@ -267,11 +263,11 @@ const resetPassword = async (req, res) => {
     let userPassword = decoded.user_password;
 
     const user = await User.findOne({ email: userEmail });
-    const validPassword = await bcrypt.compare(password, userPassword);
-    if (validPassword)
+    const check_incoming_password = await bcrypt.compare(password, userPassword);
+    if (check_incoming_password)
       return res
         .status(400)
-        .json({ message: "new password cannot be same as old password" });
+        .json({ message: "New password cannot be same as old password" });
 
     //Hash password
     const salt = await bcrypt.genSalt(10);
