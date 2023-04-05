@@ -837,20 +837,22 @@ const verifierDeclineRequest = async (req, res) => {
 };
 
 const getAwaitingVerificationRequest = async (req, res) => {
-  const { page, perPage } = req.query;
+  const { page, perPage, status } = req.query;
   const options = {
     page: page || 1,
     limit: perPage || PER_PAGE,
     sort: { createdAt: -1 },
   };
+  const matchStage = {};
+  if (status) {
+    matchStage.status = status;
+  } else {
+    matchStage.status = { $in: ["pending", "in progress", "awaiting verification"] };
+  }
   try {
     const request = await InitiateRequest.aggregate([
       {
-        $match: {
-          status: {
-            $in: ["pending", "in progress", "awaiting verification"],
-          },
-        },
+        $match: matchStage,
       },
       {
         $lookup: {
