@@ -108,6 +108,7 @@ const getOrganizationUsers = async (req, res) => {
         $match: {
           organizationId: mongoose.Types.ObjectId(id),
           privileges: privilegeId ? { $in: [privilege] } : { $exists: true },
+          isVerified: true,
         },
       },
       {
