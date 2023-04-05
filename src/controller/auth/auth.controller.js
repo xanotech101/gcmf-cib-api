@@ -138,13 +138,12 @@ const login = async (req, res) => {
   }
 };
 
-
-
 //@desc     confirm email inorder to change user password. Send email to user
 //@route    POST /users/send_password_reset_link"
 //@access   Public
 const forgetPassword = async (req, res) => {
   try {
+   
     const user = await User.findOne({ email: req.body.email });
 
     if (!user) {
@@ -161,7 +160,7 @@ const forgetPassword = async (req, res) => {
       { user_email: user.email, user_password: user.password },
       process.env.EMAIL_SECRET,
       {
-        expiresIn: "10m",
+        expiresIn: "30m",
       }
     );
 
@@ -193,8 +192,6 @@ const forgetPassword = async (req, res) => {
     });
   }
 };
-
-
 
 const verifyUser = async (req, res) => {
   try {
@@ -259,16 +256,18 @@ const verifyUser = async (req, res) => {
 const resetPassword = async (req, res) => {
   try {
     const { password, token } = req.body;
+  
     const decoded = jwt.verify(token, process.env.EMAIL_SECRET);
+  
     let userEmail = decoded.user_email;
     let userPassword = decoded.user_password;
 
     const user = await User.findOne({ email: userEmail });
-    const validPassword = await bcrypt.compare(password, userPassword);
-    if (!validPassword)
+    const check_incoming_password = await bcrypt.compare(password, userPassword);
+    if (check_incoming_password)
       return res
         .status(400)
-        .json({ message: "Invalid token. Kindly use the reset link again" });
+        .json({ message: "New password cannot be same as old password" });
 
     //Hash password
     const salt = await bcrypt.genSalt(10);
@@ -359,7 +358,6 @@ const registerUser = async (req, res) => {
       data: { result },
     });
   } catch (error) {
-    console.log(error);
     return res.status(500).json({
       status: "failed",
       data: null,
@@ -367,25 +365,6 @@ const registerUser = async (req, res) => {
     });
   }
 };
-
-const createPassword = async (req, res) => {
-  try {
-    const { password, confirmPassword } = req.body
-    const token = req.query.token
-
-    const check_user = await User.findOne({})
-
-
-
-  } catch (error) {
-    console.log(error);
-    return res.status(500).json({
-      status: "failed",
-      data: null,
-      message: "Unable to create user password",
-    });
-  }
-}
 
 const refreshAuth = async (req, res) => {
   const { email } = req.body
@@ -430,6 +409,5 @@ module.exports = {
   resetPassword,
   registerUser,
   preLogin,
-  createPassword,
   refreshAuth
 };

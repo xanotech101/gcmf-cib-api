@@ -22,6 +22,7 @@ const initiateRequest = async (req, res) => {
     const request = new InitiateRequest({
       NIPSessionID: req.body.NIPSessionID,
       amount: req.body.amount,
+      payerAccountNumber:req.body.payerAccountNumber,
       beneficiaryAccountName: req.body.beneficiaryAccountName,
       beneficiaryAccountNumber: req.body.beneficiaryAccountNumber,
       beneficiaryAccountType: req.body.beneficiaryAccountType,
