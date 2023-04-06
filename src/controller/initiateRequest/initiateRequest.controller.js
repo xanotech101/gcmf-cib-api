@@ -564,6 +564,7 @@ const approveRequest = async (req, res) => {
       request.authorisersAction.push({
         status: "authorised",
         authoriserID: userId,
+        reason: req.body.reason,
       });
     }
 
