@@ -71,7 +71,8 @@ const getOrganizationUsers = async (req, res) => {
             gender: 1,
             role: 1,
             privileges: 1,
-            organizationId: 1
+            organizationId: 1,
+            isVerified: 1,
           },
         },
         {
