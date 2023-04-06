@@ -9,7 +9,6 @@ const {
   getNameEnquiry,
   getTransactionsPaginated,
   interbankTransfer,
-  intrabankTransfer,
    getAccountDetails,
   getAccountInfo,
   getTransactionStatus
@@ -24,7 +23,6 @@ router.get("/statement/:account", allUsersAuth, getAccountStatement);
 router.post("/name-enquiry", allUsersAuth, getNameEnquiry);
 router.get("/transactions/:account", allUsersAuth, getTransactionsPaginated);
 router.post("/transfer/interbank", adminAuth, interbankTransfer);
-router.post("/transfer/intrabank", adminAuth, intrabankTransfer);
 router.post("/details", allUsersAuth, getAccountDetails);
 router.get("/info", allUsersAuth, getAccountInfo);
 router.post("/status", allUsersAuth, getTransactionStatus);
