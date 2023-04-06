@@ -31,7 +31,6 @@ class BankOneService {
     accountNumber,
     fromDate,
     toDate,
-    institutionCode,
     numberOfItems
   ) {
     try {
@@ -137,7 +136,6 @@ class BankOneService {
       const { data } = await axios.post(`${config.interbankTransfer}`, payload);
       return data;
     } catch (error) {
-      console.log("🚀 ~ file: bankOne.service.js:140 ~ BankOneService ~ error:", error)
       return null;
     }
   }
@@ -201,29 +199,6 @@ class BankOneService {
       return data;
     } catch (error) {
       console.log(error);
-      return null;
-    }
-  }
-
-  async getIntrabankTransfer(
-    Amount,
-    FromAccountNumber,
-    ToAccountNumber,
-    RetrievalReference,
-    Narration,
-    AuthenticationKey
-  ) {
-    try {
-      const { data } = await axios.post(`${config.intrabankTransfer}`, {
-        Amount,
-        FromAccountNumber,
-        ToAccountNumber,
-        RetrievalReference,
-        Narration,
-        AuthenticationKey,
-      });
-      return data;
-    } catch (error) {
       return null;
     }
   }

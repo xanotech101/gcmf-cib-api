@@ -59,15 +59,14 @@ const getTransactionHistory = async (req, res) => {
   const accountNumber = req.params.accountNo;
   const fromDate = req.query.fromDate;
   const toDate = req.query.toDate;
-  const institutionCode = req.query.institutionCode;
   const numberOfItems = req.query.numberOfItems;
-  const authtoken = "8424f843-fd36-4a30-8e7e-18f4f920aa91";
+  const authtoken = process.env.AUTHTOKEN;
+  
   const transHistory = await bankOneService.transactionHistory(
     authtoken,
     accountNumber,
     fromDate,
     toDate,
-    institutionCode,
     numberOfItems
   );
 
@@ -237,7 +236,6 @@ const interbankTransfer = async (req, res) => {
   });
 };
 
-
 const getAccountInfo = async (req, res) => {
   let accountNumber = req.query.accountNumber;
 
@@ -258,8 +256,6 @@ const getAccountInfo = async (req, res) => {
     data: accountInfo,
   });
 };
-
-
 
 const getTransactionStatus = async (req, res) => {
   let RetrievalReference = req.body.RetrievalReference;
@@ -289,43 +285,6 @@ const getTransactionStatus = async (req, res) => {
 };
 
 
-const intrabankTransfer = async (req, res) => {
-  const {
-    Amount,
-    FromAccountNumber,
-    ToAccountNumber,
-    RetrievalReference,
-    Narration,
-  } = req.body;
-
-  let AuthenticationKey = authToken;
-
-  const intraTransferDetails = await bankOneService.getIntrabankTransfer(
-    Amount,
-    FromAccountNumber,
-    ToAccountNumber,
-    RetrievalReference,
-    Narration,
-    AuthenticationKey,
-  );
-
-  if (!intraTransferDetails) {
-    return res.status(500).json({
-      status: "Failed",
-      message: "Unable to get bank account details",
-    });
-  }
-
-  return res.status(200).json({
-    status: "Success",
-    message: "Account Details retrieved successfully",
-    data: intraTransferDetails,
-  });
-};
-
-
-
-
 module.exports = {
   getAccountByAccountNo,
   getAccountByCustomerID,
@@ -336,8 +295,7 @@ module.exports = {
   interbankTransfer,
   getAccountDetails,
   getAccountInfo,
-  getTransactionStatus,
-  intrabankTransfer
+  getTransactionStatus
 };
 
 
