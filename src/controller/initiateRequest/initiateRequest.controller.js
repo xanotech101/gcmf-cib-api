@@ -592,7 +592,7 @@ const approveRequest = async (req, res) => {
       request.status = "awaiting verification";
 
       //send mail to verifier
-      const verifierInfo = await User.findById(request.verifier).select("email firstname _id")
+      const verifierInfo = await User.findById(request.mandate.verifier).select("email firstName _id")
 
       const subject = "Verification Required";
       const message = `
