@@ -712,12 +712,11 @@ const verifierApproveRequest = async (req, res) => {
     // send request to bank one
     const Narration = `transfer from ${organization.accountName} to ${request.firstName}`;
     let transfer;
-    console.log("🚀 ~ file: initiateRequest.controller.js:702 ~ verifierApproveRequest ~ request.type:", request.type)
     if (request.type === "inter-bank") {
       const payload = {
         Amount: request.amount,
         Payer: `${mine.firstName} ${mine.lastName}`,
-        PayerAccountNumber: organization.accountNumber,
+        PayerAccountNumber: request.payerAccountNumber,
         ReceiverAccountNumber: request.beneficiaryAccountNumber,
         ReceiverAccountType: request.beneficiaryAccountType,
         ReceiverBankCode: request.beneficiaryBankCode,
@@ -735,7 +734,7 @@ const verifierApproveRequest = async (req, res) => {
       const payload = {
         Amount: request.amount,
         RetrievalReference: request.transactionReference,
-        FromAccountNumber: organization.accountNumber,
+        FromAccountNumber: request.payerAccountNumber,
         ToAccountNumber: request.beneficiaryAccountNumber,
         AuthenticationKey: authToken,
         Narration,
