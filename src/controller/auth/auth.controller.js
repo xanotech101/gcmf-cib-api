@@ -4,7 +4,8 @@ const jwt = require("jsonwebtoken");
 const secretQuestionService = require("../../services/secretQuestion.service");
 const { sendEmail } = require("../../utils/emailService");
 const { getDateAndTime } = require("../../utils/utils");
-const auditTrailService = require("../../services/auditTrail.service")
+const auditTrailService = require("../../services/auditTrail.service");
+const Account = require("../../model/account");
 
 const preLogin = async (req, res) => {
   const { email, password } = req.body;
@@ -35,7 +36,7 @@ const preLogin = async (req, res) => {
         status: "failed",
       });
     }
-    
+
     if (user.is2FAEnabled) {
       const randomSecretQuestion = user.secretQuestions[
         Math.floor(Math.random() * user.secretQuestions.length)
@@ -51,7 +52,7 @@ const preLogin = async (req, res) => {
       });
     }
 
-    if(!user.is2FAEnabled) {
+    if (!user.is2FAEnabled) {
       return res.status(400).send({
         data: null,
         message: "User has not set up secret questions",
@@ -90,7 +91,7 @@ const login = async (req, res) => {
         status: "failed",
       });
     }
-  
+
     const isAnswerCorrect = secretQuestion.answer === answer
 
     if (isAnswerCorrect === false) {
@@ -103,7 +104,7 @@ const login = async (req, res) => {
 
       // send the secret question to the user as response
       return res.status(400).send({
-        data: secretQuestion ,
+        data: secretQuestion,
         message: "Incorrect answer",
         status: "failed",
       });
@@ -137,17 +138,16 @@ const login = async (req, res) => {
   }
 };
 
-
-
 //@desc     confirm email inorder to change user password. Send email to user
 //@route    POST /users/send_password_reset_link"
 //@access   Public
 const forgetPassword = async (req, res) => {
   try {
+   
     const user = await User.findOne({ email: req.body.email });
 
     if (!user) {
-      res.status(400).json({
+      return res.status(400).json({
         message:
           "If the mail you entered is registered on the platform, you will get a mail to change you password",
         data: null,
@@ -160,7 +160,7 @@ const forgetPassword = async (req, res) => {
       { user_email: user.email, user_password: user.password },
       process.env.EMAIL_SECRET,
       {
-        expiresIn: "10m",
+        expiresIn: "30m",
       }
     );
 
@@ -193,12 +193,11 @@ const forgetPassword = async (req, res) => {
   }
 };
 
-
-
 const verifyUser = async (req, res) => {
   try {
+
     const decoded = jwt.verify(req.params.token, process.env.EMAIL_SECRET);
-    // const { password, securityQuestion } = req.body
+    const { password, secretQuestions } = req.body
     const mail = decoded;
 
     if (!mail) {
@@ -208,9 +207,9 @@ const verifyUser = async (req, res) => {
         data: null,
       });
     }
-  
+
     const user = await User.findOne({ email: mail.user_email ?? mail.email });
-  
+
     if (!user) {
       return res.status(400).json({
         status: "failed",
@@ -218,6 +217,8 @@ const verifyUser = async (req, res) => {
         data: null,
       });
     }
+
+    const salt = await bcrypt.genSalt(10);
 
     if (user.isVerified) {
       return res
@@ -230,9 +231,10 @@ const verifyUser = async (req, res) => {
     }
 
     user.isVerified = true;
+    user.password = await bcrypt.hash(password, salt);
     user.verificationToken = null;
-
-
+    user.secretQuestions = secretQuestions
+    user.is2FAEnabled = true
 
     await user.save();
 
@@ -254,16 +256,18 @@ const verifyUser = async (req, res) => {
 const resetPassword = async (req, res) => {
   try {
     const { password, token } = req.body;
+  
     const decoded = jwt.verify(token, process.env.EMAIL_SECRET);
+  
     let userEmail = decoded.user_email;
     let userPassword = decoded.user_password;
 
     const user = await User.findOne({ email: userEmail });
-    const validPassword = await bcrypt.compare(password, userPassword);
-    if (!validPassword)
+    const check_incoming_password = await bcrypt.compare(password, userPassword);
+    if (check_incoming_password)
       return res
         .status(400)
-        .json({ message: "Invalid token. Kindly use the reset link again" });
+        .json({ message: "New password cannot be same as old password" });
 
     //Hash password
     const salt = await bcrypt.genSalt(10);
@@ -276,7 +280,6 @@ const resetPassword = async (req, res) => {
       data: null,
     });
   } catch (error) {
-    console.log(error);
     return res.status(500).json({
       status: "failed",
       data: null,
@@ -289,7 +292,7 @@ const registerUser = async (req, res) => {
   try {
     const { organizationId } = req.user;
     const userExits = await User.findOne({ email: req.body.email });
-    console.log("fffff")
+
     if (userExits) {
       return res.status(400).send({
         status: "failed",
@@ -308,14 +311,12 @@ const registerUser = async (req, res) => {
     const user = new User({
       firstName: req.body.firstName,
       lastName: req.body.lastName,
-      // password: req.body.password,
       email: req.body.email,
       phone: req.body.phone,
       gender: req.body.gender,
       organizationId: organizationId,
       imageUrl: req.body.imageUrl,
       privileges: req.body.privileges,
-      secrets: req.body.secrets,
       role,
     });
 
@@ -357,7 +358,6 @@ const registerUser = async (req, res) => {
       data: { result },
     });
   } catch (error) {
-    console.log(error);
     return res.status(500).json({
       status: "failed",
       data: null,
@@ -366,6 +366,43 @@ const registerUser = async (req, res) => {
   }
 };
 
+const refreshAuth = async (req, res) => {
+ 
+  const { email } = req.body
+
+  const requestUser = await User.findOne({ email })
+
+  if (!requestUser) {
+    return res.status(400).send({ message: 'No user with this information available', status: 'fail' })
+  }
+
+  //sign user and generate token
+  //Email Details
+  const verificationToken = jwt.sign(
+    { user_email: email },
+    process.env.EMAIL_SECRET,
+    {
+      expiresIn: "30m",
+    }
+  );
+
+  requestUser.verificationToken = verificationToken;
+
+  const link = `${process.env.FRONTEND_URL}/verify-account/${verificationToken}`;
+
+  const subject = "Reset Verification Token";
+  const message = `
+<h3>You have successfully created your account</h3>
+<p>Dear ${requestUser.firstName}, welcome on board.</p> 
+<p>Kinldy click below to confirm your account.</p> 
+<a href= ${link}><h4>CLICK HERE TO CONFIRM YOUR EMAIL</h4></a> 
+<p>If the above link is not working, You can click the link below.</p>
+<p>${link}</p>
+`;
+  sendEmail(email, subject, message)
+  const user = requestUser.save()
+  return res.status(200).send({ message: 'token generated', data: registerUser })
+}
 module.exports = {
   verifyUser,
   forgetPassword,
@@ -373,4 +410,5 @@ module.exports = {
   resetPassword,
   registerUser,
   preLogin,
+  refreshAuth
 };

@@ -31,12 +31,12 @@ class BankOneService {
     accountNumber,
     fromDate,
     toDate,
-    institutionCode,
     numberOfItems
   ) {
     try {
+      
       const { data } = await axios.get(
-        `${config.transactionHistory}?authtoken=${authToken}&accountNumber=${accountNumber}&fromDate=${fromDate}&toDate=${toDate}&institutionCode=${institutionCode}&numberOfItems=${numberOfItems}`
+        `${config.transactionHistory}?authtoken=${authToken}&accountNumber=${accountNumber}&fromDate=${fromDate}&toDate=${toDate}&numberOfItems=${numberOfItems}`
       );
       return data;
     } catch (error) {
@@ -72,9 +72,10 @@ class BankOneService {
       return null;
     }
   }
+  
   async getbankDetails(authToken, accountNumber) {
     try {
-      const { data } = await axios.post(`${config.bankDetails}`, {
+      const { data } = await axios.post(`${config.getAccountByAccountNo}`, {
         AccountNumber: accountNumber,
         Token: authToken,
       });
@@ -128,7 +129,7 @@ class BankOneService {
     }
   }
 
-  async getInterbankTransfer(
+  async doInterBankTransfer(
     payload
   ) {
     try {
@@ -139,9 +140,9 @@ class BankOneService {
     }
   }
 
-  async getIntrabankTransfer() {
+  async doIntraBankTransfer(payload) {
     try {
-      const { data } = await axios.post(`${config.intrabankTransfer}`);
+      const { data } = await axios.post(`${config.intrabankTransfer}`, payload);
       return data;
     } catch (error) {
       return null;
@@ -198,29 +199,6 @@ class BankOneService {
       return data;
     } catch (error) {
       console.log(error);
-      return null;
-    }
-  }
-
-  async getIntrabankTransfer(
-    Amount,
-    FromAccountNumber,
-    ToAccountNumber,
-    RetrievalReference,
-    Narration,
-    AuthenticationKey
-  ) {
-    try {
-      const { data } = await axios.post(`${config.intrabankTransfer}`, {
-        Amount,
-        FromAccountNumber,
-        ToAccountNumber,
-        RetrievalReference,
-        Narration,
-        AuthenticationKey,
-      });
-      return data;
-    } catch (error) {
       return null;
     }
   }

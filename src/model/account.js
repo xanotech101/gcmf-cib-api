@@ -5,7 +5,7 @@ const accountSchema = new mongoose.Schema(
   {
     accountName: String,
     accountNumber: {
-      type: String,
+      type: Array,
       required: [true, "Please enter an account number"],
       unique: true,
     },
@@ -13,6 +13,9 @@ const accountSchema = new mongoose.Schema(
     adminID: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
+    },
+    password:{
+      type:String
     },
     customerID: String,
     verified: {

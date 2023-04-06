@@ -15,9 +15,11 @@ const Privilege = require("../model/privilege.model");
 //@desc     register an account
 //@route    POST /account/register
 //@access   Public
+
 const registerAccount = async (req, res) => {
   try {
     const input = _.pick(req.body, ["admin", "accountDetails"]);
+
     const privileges = await Privilege.find();
     let priviledgeList = privileges.map(privilege => privilege._id)
     let role = "admin";
@@ -74,7 +76,7 @@ const registerAccount = async (req, res) => {
     console.log(error);
     return res.status(500).json({
       status: "Failed",
-      Message: "Unable to create an account",
+      Message: error.message ??  "Unable to create an account",
     });
   }
 };
@@ -192,8 +194,19 @@ const verifyAccount = async (req, res) => {
 // get all account
 const getAllAccount = async (req, res) => {
   try {
+    const name = req.query.name;
+    if (name) {
+      const allAccount = await Account.find({ accountName: { $regex: name, $options: "i" } }).populate("adminID");
+
+      return res.status(200).json({
+        status: "Success",
+        data: allAccount,
+      });
+
+    }
     const allAccount = await Account.find().populate("adminID");
-    res.status(200).json({
+
+    return res.status(200).json({
       status: "Success",
       data: allAccount,
     });
@@ -205,4 +218,20 @@ const getAllAccount = async (req, res) => {
   }
 };
 
-module.exports = { getAllAccount, registerAccount, verifyAccount };
+const getAccount = async (req, res) => {
+  try {
+    const account = await Account.findById(req.params.id).populate("adminID");
+    res.status(200).json({
+      status: "Success",
+      data: account,
+    });
+  } catch (error) {
+    res.status(500).send({
+      status: "Failed",
+      message: "Unable to get account",
+      error: error.message,
+    });
+  }
+}
+
+module.exports = { getAllAccount, registerAccount, verifyAccount, getAccount };

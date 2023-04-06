@@ -5,6 +5,7 @@ const {
   authoriserAuth,
   verifierAuth,
   allUsersAuth,
+  superUserAuth
 } = require("../middleware/auth");
 
 const upload = require("../middleware/multer");
@@ -19,8 +20,12 @@ const {
   getRequestById,
   verifierApproveRequest,  
   verifierDeclineRequest,
+  getAwaitingVerificationRequest,
+  getRequestSentToBankOne
 } = require("../controller/initiateRequest/initiateRequest.controller");
-const batchUpload = require("../controller/batchUpload");
+const {batchUpload, VerifyBatchUpload} = require("../controller/batchUpload");
+const { Verify_Account } = require("../services/golan.service");
+const {getReportAnalysis, getReportAnalysisForCooperateAccount} = require("../controller/initiateRequest/report");
 
 // initiate request
 router.post("/initiate", initiatorAuth, initiateRequest);
@@ -44,7 +49,15 @@ router.put("/verifier/decline/:id", verifierAuth,  verifierDeclineRequest);
 router.put("/verifier/approve/:id", verifierAuth, verifierApproveRequest);
 
 // bulk upload request
-router.post("/upload", upload.single("file"), initiatorAuth, batchUpload);
+// router.post("/upload", upload.single("file"), initiatorAuth, batchUpload);
+router.post("/verify_batchUpload", initiatorAuth, upload.array("files"), Verify_Account, VerifyBatchUpload);
+router.post("/uploads", upload.array("files"), initiatorAuth, batchUpload);
+
+
+router.get("/analysis/backoffice", allUsersAuth, getReportAnalysis)
+router.get("/analysis/account/:accountNumber", allUsersAuth, getReportAnalysisForCooperateAccount)
+router.get("/backoffice/awaiting-approval", allUsersAuth, getAwaitingVerificationRequest)
+router.get("/backoffice/transfers", allUsersAuth, getRequestSentToBankOne)
 
 module.exports = router;
 

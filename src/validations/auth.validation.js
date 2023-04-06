@@ -17,7 +17,23 @@ const authSchemas = {
   }),
 
   verifyUser: Joi.object().keys({
-    token: Joi.string().required(),
+    token: Joi.string(),
+    password: Joi.string().min(8).required().label("Password"),
+    confirm_password: Joi.any()
+      .equal(Joi.ref("password"))
+      .required()
+      .label("Confirm password")
+      .messages({ "any.only": "{{#label}} does not match" }),
+      secretQuestions: Joi.array().items(
+        Joi.object({
+          question: Joi.string().required(),
+          answer: Joi.string().required(),
+          question: Joi.string().required(),
+          answer: Joi.string().required(),
+          question: Joi.string().required(),
+          answer: Joi.string().required(),
+        })
+      ).required()
   }),
 
   resetPassword: Joi.object()
@@ -55,6 +71,10 @@ const authSchemas = {
       privileges: Joi.array().items(Joi.string().required()),
     })
     .with("password", "confirm_password"),
+
+    refreshAuth: Joi.object().keys({
+      email:Joi.string().trim().lowercase().required().email()
+    })
 };
 
 module.exports = authSchemas;
