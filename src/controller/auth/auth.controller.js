@@ -147,7 +147,7 @@ const forgetPassword = async (req, res) => {
     const user = await User.findOne({ email: req.body.email });
 
     if (!user) {
-      res.status(400).json({
+      return res.status(400).json({
         message:
           "If the mail you entered is registered on the platform, you will get a mail to change you password",
         data: null,
@@ -367,6 +367,7 @@ const registerUser = async (req, res) => {
 };
 
 const refreshAuth = async (req, res) => {
+ 
   const { email } = req.body
 
   const requestUser = await User.findOne({ email })

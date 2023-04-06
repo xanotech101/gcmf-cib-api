@@ -10,7 +10,6 @@ const {
   verifyUser,
   registerUser,
   preLogin,
-  createPassword,
   refreshAuth
 } = require("../controller/auth/auth.controller");
 
