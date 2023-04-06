@@ -710,7 +710,7 @@ const verifierApproveRequest = async (req, res) => {
     await request.save();
 
     // send request to bank one
-    const Narration = `transfer from ${organization.accountName} to ${request.firstName}`;
+    const Narration = `Transfer from ${organization.accountName} to ${request.firstName}`;
     let transfer;
     if (request.type === "inter-bank") {
       const payload = {
