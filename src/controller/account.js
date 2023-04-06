@@ -76,7 +76,7 @@ const registerAccount = async (req, res) => {
     console.log(error);
     return res.status(500).json({
       status: "Failed",
-      Message: "Unable to create an account",
+      Message: error.message ??  "Unable to create an account",
     });
   }
 };
