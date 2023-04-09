@@ -2,7 +2,7 @@ var nodemailer = require('nodemailer');
 const user = require('../model/user.model');
 const jwt = require("jsonwebtoken");
 
-function email(email, title, message) {
+function email(email, title, html) {
 
   const transporter = nodemailer.createTransport({
     service: "gmail",
@@ -14,13 +14,11 @@ function email(email, title, message) {
     },
   });
 
-
-
   var mailOptions = {
     from: '"GMFB" <gmfbcib@gmail.com>',
     to: email,
     subject: title,
-    html: message,
+    html: html,
   };
 
   transporter.sendMail(mailOptions, (error, info) => {

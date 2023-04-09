@@ -51,7 +51,6 @@ router.put("/verifier/approve/:id", verifierAuth, verifierApproveRequest);
 // bulk upload request
 // router.post("/upload", upload.single("file"), initiatorAuth, batchUpload);
 router.post("/verify_batchUpload", initiatorAuth, upload.array("files"), Verify_Account, VerifyBatchUpload);
-router.post("/uploads", upload.array("files"), initiatorAuth, batchUpload);
 
 
 router.get("/analysis/backoffice", allUsersAuth, getReportAnalysis)
