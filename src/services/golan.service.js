@@ -77,8 +77,6 @@ async function Verify_Account(req, res, next) {
     }
 }
 
-
-
 function sendToGolang(data) {
  
     try {
