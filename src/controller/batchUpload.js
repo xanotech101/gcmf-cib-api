@@ -21,17 +21,18 @@ const authToken = process.env.AUTHTOKEN;
 // Verify batchupload from bankOne
 const VerifyBatchUpload = async (req, res) => {
   try {
+    const unresolvedMandates = [];
+    const unresolvedAccount = [];
     const mine = await User.findById(req.user._id);
     const batchId = uuid.v4().substring(0, 8);
     // Listen for the results from Kafka using the event emitter
     emitter.once('results', async (results) => {
       //initiateRequest and Send the results back to the client
-      results.data.map(async (item) => {
+      for (const item of results.data) {
         if (item.status === 'success') {
           const request = new InitiateRequest({
             NIPSessionID: item.data.SessionID,
             amount: item.amount,
-            // payerAccountNumber: req.body.payerAccountNumber,
             beneficiaryAccountName: item.data.Name,
             beneficiaryAccountNumber: item.accountNumber,
             beneficiaryAccountType: item.accountType,
@@ -39,9 +40,6 @@ const VerifyBatchUpload = async (req, res) => {
             beneficiaryBankCode: item.bankCode,
             beneficiaryBankName: item.bankName,
             beneficiaryKYC: item.data.KYC,
-            // beneficiaryPhoneNumber: req.body.beneficiaryPhoneNumber,
-            // firstName: req.body.firstName,
-            // lastName: req.body.lastName,
             organizationId: mine.organizationId.toString(),
             transactionReference: mongoose.Types.ObjectId().toString().substr(0, 12),
             type: item.bankType,
@@ -58,10 +56,13 @@ const VerifyBatchUpload = async (req, res) => {
           });
 
           if (!mandate) {
-            return res.status(404).json({
-              message: "No mandate found for this amount",
-              status: "failed",
+            unresolvedMandates.push({
+              amount: item.amount,
+              accountNumber: item.accountNumber,
+              bankName: item.bankName,
+              error: "No mandate found for this amount"
             });
+            continue;
           }
 
           request.mandate = mandate._id;
@@ -84,12 +85,12 @@ const VerifyBatchUpload = async (req, res) => {
             //Mail notification
             const subject = "Transaction Request Initiated";
             const message = `
-                <h3>Transaction Request Initiated</h3>
-                <p> Dear ${authoriser.firstName}. The below request was initiated for your authorization.</p>
-                <p>TransactionID: ${result._id}</p>
-                <p>Amount: ${result.amount}</p>
-                <p>Kindly login to your account to review</p>
-              `;
+          <h3>Transaction Request Initiated</h3>
+          <p> Dear ${authoriser.firstName}. The below request was initiated for your authorization.</p>
+          <p>TransactionID: ${result._id}</p>
+          <p>Amount: ${result.amount}</p>
+          <p>Kindly login to your account to review</p>
+        `;
 
             await sendEmail(authoriser.email, subject, message);
           }
@@ -107,16 +108,17 @@ const VerifyBatchUpload = async (req, res) => {
             message: `${user.firstName} ${user.lastName} initiated a transaction request on ${date} by ${time}`,
             organization: mine.organizationId,
           });
+        } else {
+          unresolvedAccount.push(item);
         }
+      }
 
+      return res.status(200).json({
+        message: "Transactions initiated successfully",
+        status: "success",
+        data: { unresolvedMandates, unresolvedAccount }
       })
-
-
-      return res
-        .status(200)
-        .json(results);
-    });
-
+    })
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: error.message });
