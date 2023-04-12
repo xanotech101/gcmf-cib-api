@@ -5,25 +5,116 @@ const excelToJson = require("convert-excel-to-json");
 const Mandate = require("../model/mandate.model");
 const User = require("../model/user.model");
 const InitiateRequest = require("../model/initiateRequest.model");
-const { validateInitiateRequestSchema } = require("../utils/utils");
+const { validateInitiateRequestSchema, getDateAndTime } = require("../utils/utils");
 const { sendEmail } = require("../utils/emailService");
 const notificationService = require("../services/notification.service");
 const AuditTrail = require("../model/auditTrail");
 const bankOneService = require("../services/bankOne.service");
 const emitter = require("../utils/emitters");
+const { result } = require("lodash");
+const { default: mongoose } = require("mongoose");
+const { userService, auditTrailService } = require("../services");
+const uuid = require('uuid');
 const authToken = process.env.AUTHTOKEN;
 
 
 // Verify batchupload from bankOne
 const VerifyBatchUpload = async (req, res) => {
   try {
+    const mine = await User.findById(req.user._id);
+    const batchId = uuid.v4().substring(0, 8);
     // Listen for the results from Kafka using the event emitter
-    emitter.once('results', (results) => {
-      // Send the results back to the client
-     
+    emitter.once('results', async (results) => {
+      //initiateRequest and Send the results back to the client
+      results.data.map(async (item) => {
+        if (item.status === 'success') {
+          const request = new InitiateRequest({
+            NIPSessionID: item.data.SessionID,
+            amount: item.amount,
+            // payerAccountNumber: req.body.payerAccountNumber,
+            beneficiaryAccountName: item.data.Name,
+            beneficiaryAccountNumber: item.accountNumber,
+            beneficiaryAccountType: item.accountType,
+            beneficiaryBVN: item.data.BVN,
+            beneficiaryBankCode: item.bankCode,
+            beneficiaryBankName: item.bankName,
+            beneficiaryKYC: item.data.KYC,
+            // beneficiaryPhoneNumber: req.body.beneficiaryPhoneNumber,
+            // firstName: req.body.firstName,
+            // lastName: req.body.lastName,
+            organizationId: mine.organizationId.toString(),
+            transactionReference: mongoose.Types.ObjectId().toString().substr(0, 12),
+            type: item.bankType,
+            batchId: batchId
+          });
+
+          const mandate = await Mandate.findOne({
+            organizationId: mine.organizationId.toString(),
+            minAmount: { $lte: request.amount },
+            maxAmount: { $gte: request.amount },
+          }).populate({
+            path: "authorisers",
+            select: "firstName lastName email phone",
+          });
+
+          if (!mandate) {
+            return res.status(404).json({
+              message: "No mandate found for this amount",
+              status: "failed",
+            });
+          }
+
+          request.mandate = mandate._id;
+          request.initiator = req.user._id;
+
+          const result = await request.save();
+          const notificationsToCreate = [];
+
+          for (const authoriser of mandate.authorisers) {
+            const notification = {
+              title: "Transaction request Initiated",
+              transaction: result._id,
+              user: authoriser._id,
+              message:
+                "A transaction request was initiated and is awaiting your approval",
+            };
+
+            notificationsToCreate.push(notification);
+
+            //Mail notification
+            const subject = "Transaction Request Initiated";
+            const message = `
+                <h3>Transaction Request Initiated</h3>
+                <p> Dear ${authoriser.firstName}. The below request was initiated for your authorization.</p>
+                <p>TransactionID: ${result._id}</p>
+                <p>Amount: ${result.amount}</p>
+                <p>Kindly login to your account to review</p>
+              `;
+
+            await sendEmail(authoriser.email, subject, message);
+          }
+
+          // send out notifications
+          await notificationService.createNotifications(notificationsToCreate);
+
+          // create audit trail
+          const user = await userService.getUserById(req.user._id);
+          const { date, time } = getDateAndTime();
+          await auditTrailService.createAuditTrail({
+            user: req.user._id,
+            type: "transaction",
+            transaction: result._id,
+            message: `${user.firstName} ${user.lastName} initiated a transaction request on ${date} by ${time}`,
+            organization: mine.organizationId,
+          });
+        }
+
+      })
+
+
       return res
         .status(200)
-        .json( results );
+        .json(results);
     });
 
   } catch (error) {
