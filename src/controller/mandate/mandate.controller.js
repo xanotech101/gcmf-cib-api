@@ -23,8 +23,16 @@ const registerMandate = async (req, res) => {
     }).select("name minAmount maxAmount");
 
     let mandateCheckFailed;
-    let overlap = {};
-
+    let overlap
+    
+    if (req.body.minAmount != 0){
+      return res.status(400).json({
+        message:
+              `Mininum amount must begin from 0`,
+        status: "failed",
+      });
+    }
+    
     if (amount?.length > 0) {
       amount.map((item) => {
         if (
