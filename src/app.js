@@ -7,7 +7,7 @@ const cookieParser = require("cookie-parser");
 const logger = require("morgan");
 
 const userRoute = require("./routes/user.route");
-const adminRequest = require("./routes/adminRequest");
+const ticket = require("./routes/ticket.routes");
 const tokenRoute = require("./routes/csrfToken");
 const accountRoute = require("./routes/account");
 const mandateRoute = require("./routes/mandate.route");
@@ -72,7 +72,7 @@ app.use("/api/notifications", notificationRoute);
 app.use("/api/otp", otpRoute);
 app.use("/api/privileges", privilegeRoute);
 app.use("/api/secret_questions", secretQuestionRoute);
-app.use("/api/ticket", adminRequest);
+app.use("/api/ticket", ticket);
 app.use("/api/bank", bankoneRoute);
 app.use("/api/settings", settingsRoute);
 app.use("/", (req, res) => {

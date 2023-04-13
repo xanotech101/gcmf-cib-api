@@ -6,6 +6,15 @@ const { sendEmail } = require("../../utils/emailService");
 const { getDateAndTime } = require("../../utils/utils");
 const auditTrailService = require("../../services/auditTrail.service");
 const Account = require("../../model/account");
+const handlebars = require('handlebars');
+const fs = require('fs');
+const path = require("path");
+const templatePath = path.join(__dirname, '../../../mail.hbs');
+
+const source = fs.readFileSync(templatePath, 'utf8');
+const template = handlebars.compile(source);
+
+
 
 const preLogin = async (req, res) => {
   const { email, password } = req.body;
@@ -143,7 +152,7 @@ const login = async (req, res) => {
 //@access   Public
 const forgetPassword = async (req, res) => {
   try {
-   
+
     const user = await User.findOne({ email: req.body.email });
 
     if (!user) {
@@ -167,16 +176,16 @@ const forgetPassword = async (req, res) => {
     const link = `${process.env.FRONTEND_URL}/reset-password/${token}`;
 
     const subject = "Password Reset Link";
-    const message = `
-    <h3>Password Reset</h3>
-    <p>Dear ${user.firstName}, There was a request to change your password</p> 
-    <p>We want to be sure you made this request. If you did, kindly click the link below to reset your password. Please note that this link will expire in 15 minutes.</p> 
-    <a href= ${link}><h4>CLICK HERE TO RESET YOUR PASSWORD</h4></a> 
-    <p>If the above link is not working, You can click the link below.</p>
-    <p>${link}</p>
-  `;
 
-    await sendEmail(user.email, subject, message);
+    const data = {
+      firstName: user.firstName,
+      url: link
+    };
+  
+  
+    const html = template(data);
+
+    await sendEmail(user.email, subject, html);
 
     res.status(200).json({
       status: "success",
@@ -256,9 +265,9 @@ const verifyUser = async (req, res) => {
 const resetPassword = async (req, res) => {
   try {
     const { password, token } = req.body;
-  
+
     const decoded = jwt.verify(token, process.env.EMAIL_SECRET);
-  
+
     let userEmail = decoded.user_email;
     let userPassword = decoded.user_password;
 
@@ -338,16 +347,16 @@ const registerUser = async (req, res) => {
     const link = `${process.env.FRONTEND_URL}/verify-account/${verificationToken}`;
 
     const subject = "Welcome on Board";
-    const message = `
-    <h3>You have successfully created your account</h3>
-    <p>Dear ${user.firstName}, welcome on board.</p> 
-    <p>Kinldy click below to confirm your account.</p> 
-    <a href= ${link}><h4>CLICK HERE TO CONFIRM YOUR EMAIL</h4></a> 
-    <p>If the above link is not working, You can click the link below.</p>
-    <p>${link}</p>
-  `;
+  
 
-    await sendEmail(user.email, subject, message);
+  const data = {
+    firstName: user.firstName,
+    url: link
+  };
+
+  const html = template(data);
+
+    await sendEmail(user.email, subject, html);
 
     const result = await user.save();
 
@@ -367,7 +376,7 @@ const registerUser = async (req, res) => {
 };
 
 const refreshAuth = async (req, res) => {
- 
+
   const { email } = req.body
 
   const requestUser = await User.findOne({ email })
@@ -391,15 +400,16 @@ const refreshAuth = async (req, res) => {
   const link = `${process.env.FRONTEND_URL}/verify-account/${verificationToken}`;
 
   const subject = "Reset Verification Token";
-  const message = `
-<h3>You have successfully created your account</h3>
-<p>Dear ${requestUser.firstName}, welcome on board.</p> 
-<p>Kinldy click below to confirm your account.</p> 
-<a href= ${link}><h4>CLICK HERE TO CONFIRM YOUR EMAIL</h4></a> 
-<p>If the above link is not working, You can click the link below.</p>
-<p>${link}</p>
-`;
-  sendEmail(email, subject, message)
+
+  const data = {
+    firstName: requestUser.firstName,
+    url: link
+  };
+
+
+  const html = template(data);
+
+  sendEmail(email, subject, html)
   const user = requestUser.save()
   return res.status(200).send({ message: 'token generated', data: registerUser })
 }

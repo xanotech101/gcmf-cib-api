@@ -2,25 +2,23 @@ var nodemailer = require('nodemailer');
 const user = require('../model/user.model');
 const jwt = require("jsonwebtoken");
 
-function email(email, title, message) {
+function email(email, title, html) {
 
-  	const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-  
- console.log(process.env.PORT)
-
-
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    port: 465,
+    secure: false,
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
 
   var mailOptions = {
-    from: '"GMFB" <otunaiyademilade@gmail.com.com>',
+    from: '"GMFB" <gmfbcib@gmail.com>',
     to: email,
     subject: title,
-    html: message,
+    html: html,
   };
 
   transporter.sendMail(mailOptions, (error, info) => {

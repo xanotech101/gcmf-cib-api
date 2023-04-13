@@ -77,17 +77,15 @@ async function Verify_Account(req, res, next) {
     }
 }
 
-
-
 function sendToGolang(data) {
  
     try {
-        axios.post(`https://go-service-1a1h.onrender.com/api/verify_account`, data)
+        axios.post(`http://54.147.219.106:3003/api/verify_account`, data)
             .then((response) => {
                 emitter.emit('results',response.data)
             }).catch((error) => {
                 console.log(error)
-            })
+            }) 
 
     } catch (error) {
         console.log(error)
