@@ -13,7 +13,7 @@ const initiateRequestSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
-    payerAccountNumber:String,
+    payerAccountNumber: String,
     beneficiaryBankCode: String,
     beneficiaryAccountNumber: String,
     beneficiaryBankName: String,
@@ -77,9 +77,14 @@ const initiateRequestSchema = new mongoose.Schema(
       type: String,
     },
     time: Date,
-  },
-  {
-    timestamps: { type: Date, required: true, unique: true },
+    createdAt: {
+      type: Date,
+      default: Date.now()
+    },
+    updatedAt: {
+      type: Date,
+      default: Date.now()
+    },
   }
 );
 

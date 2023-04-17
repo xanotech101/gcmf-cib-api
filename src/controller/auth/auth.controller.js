@@ -226,7 +226,7 @@ const verifyUser = async (req, res) => {
         data: null,
       });
     }
-
+    
     const salt = await bcrypt.genSalt(10);
 
     if (user.isVerified) {

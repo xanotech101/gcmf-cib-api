@@ -14,17 +14,22 @@ const accountSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
-    password:{
-      type:String
+    password: {
+      type: String
     },
     customerID: String,
     verified: {
       type: Boolean,
       default: false,
     },
-  },
-  {
-    timestamps: true,
+    createdAt: {
+      type:Date,
+      default: Date.now()
+    },
+    updatedAt: {
+      type:Date,
+      default: Date.now()
+    },
   }
 );
 

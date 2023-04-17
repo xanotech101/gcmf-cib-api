@@ -12,15 +12,20 @@ const adminRequestSchema = new mongoose.Schema(
     message: String,
     response: [{
       type: String,
-    }]
+    }],
 
     // status: {
     //   type: String,
     //   enum: ["pending", "closed"]
     // },
-  },
-  {
-    timestamps: true,
+    createdAt: {
+      type:Date,
+      default: Date.now()
+    },
+    updatedAt: {
+      type:Date,
+      default: Date.now()
+    },
   }
 );
 

@@ -4,6 +4,7 @@ const excelToJson = require("convert-excel-to-json");
 const { default: axios } = require("axios");
 const { emit } = require("process");
 const emitter = require("../utils/emitters");
+const csv = require('csv-parser')
 
 async function Verify_Account(req, res, next) {
     try {
@@ -43,8 +44,17 @@ async function Verify_Account(req, res, next) {
                 }
                 formattedData = formattedData.concat(data[result]);
             } else if (csvDocs.includes(fileExtension)) {
-                data = csvToJson.getJsonFromCsv(file.path);
-                formattedData = formattedData.concat(data);
+                data = csvToJson.fieldDelimiter(',').getJsonFromCsv(file.path);
+                formattedData = formattedData.concat(data.map((obj) => ({
+                    customerName: obj.customerName ? obj.customerName.trim() : '',
+                    amount: obj.amount ? parseInt(obj.amount.trim()) : '',
+                    bankName: obj.bankName ? obj.bankName.trim() : '',
+                    accountNumber: obj.accountNumber ? obj.accountNumber.trim() : '',
+                    accountName: obj.accountName ? obj.accountName.trim() : '',
+                    banktype: 'inter-bank',
+                    accountType: obj.accountType ? obj.accountType.trim() : '',
+                    bankCode: obj.bankCode ? obj.bankCode.trim() : '',
+                })));
             } else {
                 return res.status(400).json({
                     message: "Invalid file type. Please upload a csv or excel file",
@@ -55,8 +65,11 @@ async function Verify_Account(req, res, next) {
             fs.unlinkSync(file.path);
         }
 
-         // Convert values to strings
-         formattedData = formattedData.map(obj => {
+        // Filter the formattedData array to include only objects that have non-empty values for accountType, bankCode, and banktype
+        formattedData = formattedData.filter((obj) => obj.accountType && obj.accountType.trim() !== '' && obj.bankCode && obj.bankCode.trim() !== '' && obj.banktype && obj.banktype.trim() !== '');
+       
+        // Convert values to strings
+        formattedData = formattedData.map(obj => {
             for (const prop in obj) {
                 if (Number.isInteger(obj[prop])) {
                     obj[prop] = obj[prop].toString();
@@ -70,7 +83,6 @@ async function Verify_Account(req, res, next) {
         // Call the next middleware function
         next();
     } catch (error) {
-        console.log(error)
         return res
             .status(500)
             .json({ message: error.message });
@@ -78,14 +90,15 @@ async function Verify_Account(req, res, next) {
 }
 
 function sendToGolang(data) {
- 
+
+    //http://54.147.219.106:3003/api/verify_account
     try {
-        axios.post(`http://54.147.219.106:3003/api/verify_account`, data)
+        axios.post(`http://35.169.118.252:3003/api/verify_account`, data, {timeout:30000})
             .then((response) => {
-                emitter.emit('results',response.data)
+                emitter.emit('results', response.data)
             }).catch((error) => {
                 console.log(error)
-            }) 
+            })
 
     } catch (error) {
         console.log(error)
