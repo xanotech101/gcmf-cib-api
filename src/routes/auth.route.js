@@ -13,7 +13,6 @@ const {
   refreshAuth
 } = require("../controller/auth/auth.controller");
 
-const createAuthQuestions = require("../controller/authQuestion/authQuestion");
 
 //general route
 router.post("/pre_login", validate(authSchemas.preLogin, "body"), preLogin);
@@ -58,7 +57,6 @@ router.post(
   registerUser
 );
 
-router.post("/secret_question", createAuthQuestions);
 
 
 module.exports = router;

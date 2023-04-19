@@ -46,6 +46,7 @@ const secretQuestions = [
 
 const seedSecretQuestions = async () => {
   try {
+    await SecretQuestion.deleteMany();
     await SecretQuestion.insertMany(secretQuestions);
     console.log("Secret Questions seeded");
   } catch (error) {
