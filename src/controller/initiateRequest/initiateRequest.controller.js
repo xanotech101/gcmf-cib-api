@@ -263,7 +263,6 @@ const getAllRequestPerOrganization = async (req, res) => {
   const { page, perPage } = req.query;
   const mine = await User.findById(req.user._id);
   const organizationId = req.query?.branchId ?? mine.organizationId;
-
   const options = {
     page: page || 1,
     limit: perPage || PER_PAGE,
@@ -274,7 +273,7 @@ const getAllRequestPerOrganization = async (req, res) => {
     const request = await InitiateRequest.aggregate([
       {
         $match: {
-          organizationId,
+          organizationId: new mongoose.Types.ObjectId(organizationId),
         },
       },
       {

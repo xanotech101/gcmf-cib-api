@@ -1,9 +1,13 @@
 const { default: mongoose } = require("mongoose");
 const InitiateRequest = require("../../model/initiateRequest.model");
+const User = require("../../model/user.model");
+const Account = require("../../model/account");
+
 const getReportAnalysis = async (req, res) => {
   try {
-    //get count for all approve request
-    const getTotalCount = await InitiateRequest.aggregate([
+		const year = req.params.year;
+
+    const getTotalCount = () => InitiateRequest.aggregate([
       {
         $match: {
           status: { $in: ["approved", "pending", "declined", "in progress"] },
@@ -17,19 +21,22 @@ const getReportAnalysis = async (req, res) => {
       },
     ]);
 
-    const getAllAprove = await InitiateRequest.aggregate([
+    const getDisbursementsPerYear = () => InitiateRequest.aggregate([
       {
         $match: {
-          status: "approved",
+          transferStatus: "successful",
+					createdAt: {
+            $gte: new Date(year, 0, 1), // January 1st of the requested year
+            $lte: new Date(year, 11, 31), // December 31st of the requested year
+          },
         },
       },
       {
         $group: {
           _id: {
-            year: { $year: "$createdAt" },
             month: { $month: "$createdAt" },
           },
-          amounts: { $push: "$amount" },
+          amount: { $sum: "$amount" },
         },
       },
       {
@@ -54,20 +61,82 @@ const getReportAnalysis = async (req, res) => {
               default: "Invalid Month",
             },
           },
-          year: "$_id.year",
-          amounts: 1,
+          amount: 1,
         },
       },
     ]);
 
-    if (!(getTotalCount && getAllAprove)) {
-      return res.status(500).json({
-        message: "error getting total document counts",
-        status: "failed",
-      });
-    }
+		const getDisbursementsTotal = () => InitiateRequest.aggregate([
+			{
+				$match: {
+					transferStatus: "successful",
+				},
+			},
+			{
+				$group: {
+					_id: null,
+					amount: { $sum: "$amount" },
+				},
+			},
+			{
+				$project: {
+					_id: 0,
+				}
+			}
+		]);
+
+		const getPendingRequestTotal = () =>  InitiateRequest.aggregate([
+			{
+				$match: {
+					transfer: "disburse pending",
+				},
+			},
+			{
+				$group: {
+					_id: null,
+					count: { $sum: 1 },
+				},
+			},
+		]);
+
+		const totalApproved = () => InitiateRequest.countDocuments({
+			status: "approved",
+		});
+
+		const totalDeclined = () => InitiateRequest.countDocuments({
+			status: "declined",
+		});
+
+		const totalTransactions = () => InitiateRequest.countDocuments({
+			transferStatus: {
+				$in: ["successful"],
+			}
+		});
+
+		const analytics = await Promise.all([
+			getTotalCount(),
+			getDisbursementsPerYear(),
+			getDisbursementsTotal(),
+			getPendingRequestTotal(),
+			totalApproved(),
+			totalDeclined(),
+			totalTransactions(),
+		]);
+
     return res.status(200).json({
-      message: { getTotalCount, getAllAprove },
+      data: { 
+				getTotalCount: analytics[0],
+				disbursements: {
+					year,
+					data: analytics[1],
+					total: analytics[1].reduce((acc, cur) => acc + cur.amount, 0),
+				},
+				totalDisbursements: analytics[2][0] ?? 0,
+				pendingRequest: analytics[3][0] ?? 0,
+				totalApproved: analytics[4],
+				totalDeclined: analytics[5],
+				totalSuccessfulTransactions: analytics[6],
+			},
       status: "success",
     });
   } catch (error) {
@@ -157,4 +226,23 @@ const getReportAnalysisForCooperateAccount = async (req, res) => {
   }
 };
 
-module.exports = { getReportAnalysis, getReportAnalysisForCooperateAccount };
+const dashBoardAnalytics = async (req, res) => {
+	const totalUsers = await User.countDocuments();
+	const totalAccounts = await Account.countDocuments();
+	const totalTransfers = await InitiateRequest.countDocuments({
+		transferStatus: {
+			$in: ["successful", "failed", "pending", "disburse pending"],
+		}
+	});
+
+	return res.status(200).json({
+		data: {
+			totalAccounts,
+			totalUsers,
+			totalTransfers,
+		},
+		status: "success",
+	});
+};
+
+module.exports = { getReportAnalysis, getReportAnalysisForCooperateAccount, dashBoardAnalytics };
