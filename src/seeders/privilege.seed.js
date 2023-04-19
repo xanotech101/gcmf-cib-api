@@ -28,6 +28,7 @@ const privileges = [
 
 const seedPrivileges = async () => {
   try {
+    await Privilege.deleteMany();
     await Privilege.insertMany(privileges);
     console.log("Privileges seeded");
   } catch (error) {
