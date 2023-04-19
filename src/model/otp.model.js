@@ -12,9 +12,14 @@ const otpSchema = new mongoose.Schema(
     },
     context: String,
     otp: String,
-  },
-  {
-    timestamps: true,
+    createdAt: {
+      type: Date,
+      default: Date.now()
+    },
+    updatedAt: {
+      type: Date,
+      default: Date.now()
+    },
   }
 );
 

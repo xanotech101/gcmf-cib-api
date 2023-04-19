@@ -5,9 +5,14 @@ const authorisationKeySchema = new mongoose.Schema(
   {
     bankNumber: String,
     token: String,
-  },
-  {
-    timestamps: true,
+    createdAt: {
+      type: Date,
+      default: Date.now()
+    },
+    updatedAt: {
+      type: Date,
+      default: Date.now()
+    },
   }
 );
 

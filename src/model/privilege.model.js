@@ -4,9 +4,15 @@ const privilegeSchema = new mongoose.Schema(
   {
     name: String,
     _id: mongoose.Schema.Types.ObjectId,
-  },
-  {
-    timestamps: true,
+    createdAt: {
+      type: Date,
+      default: Date.now()
+    },
+    updatedAt: {
+      type: Date,
+      default: Date.now()
+    },
+    
   }
 );
 

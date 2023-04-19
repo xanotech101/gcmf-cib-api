@@ -4,10 +4,16 @@ const jwt = require("jsonwebtoken");
 const csrfSchema = new mongoose.Schema(
   {
     token: String,
+    createdAt: {
+      type:Date,
+      default: Date.now()
+    },
+    updatedAt: {
+      type:Date,
+      default: Date.now()
+    },
   },
-  {
-    timestamps: true,
-  }
+  
 );
 
 module.exports = mongoose.model("Csrf", csrfSchema);

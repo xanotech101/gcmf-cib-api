@@ -16,11 +16,16 @@ const auditTrailSchema = new mongoose.Schema(
     },
     message: String,
     organizationId: String,
+    createdAt: {
+      type: Date,
+      default: Date.now()
+    },
+    updatedAt: {
+      type: Date,
+      default: Date.now()
+    },
   },
-  {
-    timestamps: true,
-  }
+
 );
 
 module.exports = mongoose.model("auditTrail", auditTrailSchema);
- 
