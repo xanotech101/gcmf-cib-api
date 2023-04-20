@@ -35,7 +35,6 @@ const VerifyBatchUpload = async (req, res) => {
             NIPSessionID: item.data.SessionID,
             amount: item.amount,
             narration: item.narration,
-            fullName: item.customerName,
             beneficiaryAccountName: item.data.Name,
             beneficiaryAccountNumber: item.accountNumber,
             beneficiaryAccountType: item.accountType,

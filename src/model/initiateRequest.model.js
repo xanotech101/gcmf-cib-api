@@ -6,7 +6,6 @@ const initiateRequestSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectID,
       ref: "Mandate",
     },
-    fullName: String,
     amount: Number,
     retryCount: {
       type: Number,
