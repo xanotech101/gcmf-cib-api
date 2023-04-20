@@ -52,17 +52,18 @@ async function Verify_Account(req, res, next) {
                         ])
                     )
                 );
-                
-                
+
+
                 formattedData = transformedData.map((obj) => ({
                     customerName: obj.CUSTOMERSNAME ? obj.CUSTOMERSNAME.trim() : '',
                     amount: obj.AMOUNT,
                     bankName: obj.BANKNAME ? obj.BANKNAME.trim() : '',
                     accountNumber: obj.ACCOUNTNUMBER ? obj.ACCOUNTNUMBER.trim() : '',
                     accountName: obj.ACCOUNTNAME ? obj.ACCOUNTNAME.trim() : '',
-                    // banktype: 'inter-bank',
-                    // accountType: obj.accountType ? obj.accountType.trim() : '',
+                    banktype: obj.TYPE ? obj.TYPE.trim() : '',
+                    accountType: obj.ACCOUNTTYPE ? obj.ACCOUNTTYPE.trim() : '',
                     bankCode: obj.BANKCODE ? obj.BANKCODE.trim() : '',
+                    narration: obj.NARRATION ? obj.NARRATION.trim() : '',
                 }));
 
             } else if (csvDocs.includes(fileExtension)) {
@@ -73,9 +74,10 @@ async function Verify_Account(req, res, next) {
                     bankName: obj.BANKNAME ? obj.BANKNAME.trim() : '',
                     accountNumber: obj.ACCOUNTNUMBER ? obj.ACCOUNTNUMBER.trim() : '',
                     accountName: obj.ACCOUNTNAME ? obj.ACCOUNTNAME.trim() : '',
-                    // banktype: 'inter-bank',
-                    // accountType: obj.accountType ? obj.accountType.trim() : '',
+                    banktype: obj.TYPE ? obj.TYPE.trim() : '',
+                    accountType: obj.ACCOUNTTYPE ? obj.ACCOUNTTYPE.trim() : '',
                     bankCode: obj.BANKCODE ? obj.BANKCODE.trim() : '',
+                    narration: obj.NARRATION ? obj.NARRATION.trim() : '',
                 })));
             } else {
                 return res.status(400).json({
@@ -112,10 +114,10 @@ async function Verify_Account(req, res, next) {
 }
 
 function sendToGolang(data) {
-
-    //http://54.147.219.106:3003/api/verify_account
+    //http://35.169.118.252
     try {
-        axios.post(`http://35.169.118.252:3003/api/verify_account`, data, { timeout: 30000 })
+        axios.post(`http://localhost:3003/api/verify_account`, data, { timeout: 30000 })
+        
             .then((response) => {
                 emitter.emit('results', response.data)
             }).catch((error) => {
