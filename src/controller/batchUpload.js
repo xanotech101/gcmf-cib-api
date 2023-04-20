@@ -28,12 +28,13 @@ const VerifyBatchUpload = async (req, res) => {
     // Listen for the results from Kafka using the event emitter
     emitter.once('results', async (results) => {
       //initiateRequest and Send the results back to the client
+      
       for (const item of results.data) {
         if (item.status === 'success') {
           const request = new InitiateRequest({
             NIPSessionID: item.data.SessionID,
             amount: item.amount,
-            fullName: item.accountName,
+            narration: item.narration,
             beneficiaryAccountName: item.data.Name,
             beneficiaryAccountNumber: item.accountNumber,
             beneficiaryAccountType: item.accountType,
@@ -127,141 +128,141 @@ const VerifyBatchUpload = async (req, res) => {
 };
 
 
-const batchUpload = async () => {
-  try {
-    const excelDocs = ["xlsx", "xls"];
-    const csvDocs = ["csv"];
+// const batchUpload = async () => {
+//   try {
+//     const excelDocs = ["xlsx", "xls"];
+//     const csvDocs = ["csv"];
 
-    if (!req.files || Object.keys(req.files).length === 0) {
-      return res.status(400).json({
-        message: "No files uploaded. Please upload at least one file",
-        status: "failed",
-      });
-    }
+//     if (!req.files || Object.keys(req.files).length === 0) {
+//       return res.status(400).json({
+//         message: "No files uploaded. Please upload at least one file",
+//         status: "failed",
+//       });
+//     }
 
-    let formattedData = [];
+//     let formattedData = [];
 
-    for (let i = 0; i < req.files.length; i++) {
-      let file = req.files[i];
-      let fileExtension = file.originalname.split(".")[1];
-      let data;
+//     for (let i = 0; i < req.files.length; i++) {
+//       let file = req.files[i];
+//       let fileExtension = file.originalname.split(".")[1];
+//       let data;
 
-      if (excelDocs.includes(fileExtension)) {
-        data = excelToJson({
-          sourceFile: file.path,
-          header: {
-            rows: 1,
-          },
-          columnToKey: {
-            "*": "{{columnHeader}}",
-          },
-        });
+//       if (excelDocs.includes(fileExtension)) {
+//         data = excelToJson({
+//           sourceFile: file.path,
+//           header: {
+//             rows: 1,
+//           },
+//           columnToKey: {
+//             "*": "{{columnHeader}}",
+//           },
+//         });
 
-        let result;
-        for (let i in data) {
-          result = i;
-          break;
-        }
-        formattedData = formattedData.concat(data[result]);
-      } else if (csvDocs.includes(fileExtension)) {
-        data = csvToJson.getJsonFromCsv(file.path);
-        formattedData = formattedData.concat(data);
-      } else {
-        return res.status(400).json({
-          message: "Invalid file type. Please upload a csv or excel file",
-          status: "failed",
-        });
-      }
+//         let result;
+//         for (let i in data) {
+//           result = i;
+//           break;
+//         }
+//         formattedData = formattedData.concat(data[result]);
+//       } else if (csvDocs.includes(fileExtension)) {
+//         data = csvToJson.getJsonFromCsv(file.path);
+//         formattedData = formattedData.concat(data);
+//       } else {
+//         return res.status(400).json({
+//           message: "Invalid file type. Please upload a csv or excel file",
+//           status: "failed",
+//         });
+//       }
 
-      fs.unlinkSync(file.path);
-    }
+//       fs.unlinkSync(file.path);
+//     }
 
-    for (let i = 0; i < formattedData.length; i++) {
-      const datum = formattedData[i];
+//     for (let i = 0; i < formattedData.length; i++) {
+//       const datum = formattedData[i];
 
-      let mandate = await Mandate.find({})
-        .populate({
-          path: "authorisers",
-          select: "firstName email",
-        })
-        .populate("verifier");
+//       let mandate = await Mandate.find({})
+//         .populate({
+//           path: "authorisers",
+//           select: "firstName email",
+//         })
+//         .populate("verifier");
 
-      for (let j = 0; j < mandate.length; j++) {
-        let item = mandate[j];
+//       for (let j = 0; j < mandate.length; j++) {
+//         let item = mandate[j];
 
-        if (
-          datum.amount >= item.minAmount &&
-          datum.amount <= item.maxAmount
-        ) {
-          let authoriserDetails = item.authorisers ? item.authorisers : null;
-          let verifier = item.verifier !== null ? item.verifier._id : null;
-          let mandateID = item._id;
+//         if (
+//           datum.amount >= item.minAmount &&
+//           datum.amount <= item.maxAmount
+//         ) {
+//           let authoriserDetails = item.authorisers ? item.authorisers : null;
+//           let verifier = item.verifier !== null ? item.verifier._id : null;
+//           let mandateID = item._id;
 
-          for (let k = 0; k < authoriserDetails.length; k++) {
+//           for (let k = 0; k < authoriserDetails.length; k++) {
 
-            let authoriser = authoriserDetails[k];
+//             let authoriser = authoriserDetails[k];
 
-            let request = new InitiateRequest({
-              customerName: datum.customerName,
-              amount: datum.amount,
-              bankName: datum.bankName,
-              accountNumber: datum.accountNumber,
-              accountName: datum.accountName,
-              initiator: req.user._id,
-              status: "pending",
-              mandate: mandateID,
-              verifier: verifier,
-            });
+//             let request = new InitiateRequest({
+//               customerName: datum.customerName,
+//               amount: datum.amount,
+//               bankName: datum.bankName,
+//               accountNumber: datum.accountNumber,
+//               accountName: datum.accountName,
+//               initiator: req.user._id,
+//               status: "pending",
+//               mandate: mandateID,
+//               verifier: verifier,
+//             });
 
-            let result = await request.save();
+//             let result = await request.save();
 
-            const subject = "Transaction Request Initiated";
-            const message = `
-                <h3>Transaction Request Initiated</h3>
-                <p> Dear ${authoriser.firstName}. The below request was initiated for your authorization.</p>
-                <p>TransactionID: ${result._id}</p>
-                <p>Amount: ${result.amount}</p>
-                <p>Kindly login to your account to review</p>
-              `;
+//             const subject = "Transaction Request Initiated";
+//             const message = `
+//                 <h3>Transaction Request Initiated</h3>
+//                 <p> Dear ${authoriser.firstName}. The below request was initiated for your authorization.</p>
+//                 <p>TransactionID: ${result._id}</p>
+//                 <p>Amount: ${result.amount}</p>
+//                 <p>Kindly login to your account to review</p>
+//               `;
 
-            await sendEmail(authoriser.email, subject, message);
+//             await sendEmail(authoriser.email, subject, message);
 
-            await notificationService.createNotifications([
-              {
-                title: "Transaction request Initiated",
-                transaction: result._id,
-                user: authoriser._id,
-                message:
-                  "A transaction request was initiated and is awaiting your approval",
-              },
-            ]);
+//             await notificationService.createNotifications([
+//               {
+//                 title: "Transaction request Initiated",
+//                 transaction: result._id,
+//                 user: authoriser._id,
+//                 message:
+//                   "A transaction request was initiated and is awaiting your approval",
+//               },
+//             ]);
 
-            // create audit trail
-            const user = await User.findById(req.user._id);
-            let dt = new Date(new Date().toISOString());
-            let date = dt.toString().slice(0, 15);
-            let time = dt.toString().slice(16, 21);
+//             // create audit trail
+//             const user = await User.findById(req.user._id);
+//             let dt = new Date(new Date().toISOString());
+//             let date = dt.toString().slice(0, 15);
+//             let time = dt.toString().slice(16, 21);
 
-            let audit = await AuditTrail.create({
-              user: req.user._id,
-              type: "transaction",
-              transaction: result._id,
-              message: `${user.firstName} ${user.lastName} initiated a transaction request on ${date} by ${time}`,
-              organization: user.organization,
-            });
+//             let audit = await AuditTrail.create({
+//               user: req.user._id,
+//               type: "transaction",
+//               transaction: result._id,
+//               message: `${user.firstName} ${user.lastName} initiated a transaction request on ${date} by ${time}`,
+//               organization: user.organization,
+//             });
 
-            await audit.save();
-          }
-        }
-      }
-    }
+//             await audit.save();
+//           }
+//         }
+//       }
+//     }
 
-    return res
-      .status(200)
-      .json({ message: "File uploaded successfully", formattedData });
-  } catch (error) {
-    console.log(error);
-    return res.status(500).json({ message: error.message });
-  }
-}
-module.exports = { batchUpload, VerifyBatchUpload };
+//     return res
+//       .status(200)
+//       .json({ message: "File uploaded successfully", formattedData });
+//   } catch (error) {
+//     console.log(error);
+//     return res.status(500).json({ message: error.message });
+//   }
+// }
+module.exports = {VerifyBatchUpload };

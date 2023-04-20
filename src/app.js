@@ -26,6 +26,7 @@ const settingsRoute = require("./routes/settings.route")
 
 const cors = require("cors");
 const connectDB = require("./config/db");
+const { sendSMS } = require("./services/sms.service");
 
 
 let URI = process.env.MONGO_URI;
