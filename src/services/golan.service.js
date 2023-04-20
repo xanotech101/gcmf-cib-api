@@ -112,7 +112,7 @@ async function Verify_Account(req, res, next) {
 function sendToGolang(data) {
     //http://35.169.118.252
     try {
-        axios.post(`http://localhost:3003/api/verify_account`, data, { timeout: 30000 })
+        axios.post(`http://35.169.118.252:3003/api/verify_account`, data, { timeout: 30000 })
         
             .then((response) => {
                 emitter.emit('results', response.data)
