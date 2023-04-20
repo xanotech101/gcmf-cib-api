@@ -22,6 +22,7 @@ const initiateRequest = async (req, res) => {
     const request = new InitiateRequest({
       NIPSessionID: req.body.NIPSessionID,
       amount: req.body.amount,
+      narration: req.body.narration,
       payerAccountNumber:req.body.payerAccountNumber,
       beneficiaryAccountName: req.body.beneficiaryAccountName,
       beneficiaryAccountNumber: req.body.beneficiaryAccountNumber,
@@ -31,8 +32,7 @@ const initiateRequest = async (req, res) => {
       beneficiaryBankName: req.body.beneficiaryBankName,
       beneficiaryKYC: req.body.beneficiaryKYC,
       beneficiaryPhoneNumber: req.body.beneficiaryPhoneNumber,
-      firstName: req.body.firstName,
-      lastName: req.body.lastName,
+      fullName: req.body.fullName,
       organizationId: mine.organizationId.toString(),
       transactionReference: mongoose.Types.ObjectId().toString().substr(0, 12),
       type: req.body.type,
@@ -263,7 +263,6 @@ const getAllRequestPerOrganization = async (req, res) => {
   const { page, perPage } = req.query;
   const mine = await User.findById(req.user._id);
   const organizationId = req.query?.branchId ?? mine.organizationId;
-
   const options = {
     page: page || 1,
     limit: perPage || PER_PAGE,
@@ -274,7 +273,7 @@ const getAllRequestPerOrganization = async (req, res) => {
     const request = await InitiateRequest.aggregate([
       {
         $match: {
-          organizationId,
+          organizationId: new mongoose.Types.ObjectId(organizationId),
         },
       },
       {

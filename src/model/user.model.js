@@ -55,10 +55,16 @@ const userSchema = new mongoose.Schema(
           answer: String,
         }
     ],
-  },
-  {
-    timestamps: true,
+    createdAt: {
+      type:Date,
+      default: Date.now()
+    },
+    updatedAt: {
+      type:Date,
+      default: Date.now()
+    },
   }
+  
 );
 
 userSchema.methods.generateAuthToken = async function () {

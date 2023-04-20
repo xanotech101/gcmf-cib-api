@@ -5,6 +5,7 @@ const app = express();
 const createError = require("http-errors");
 const cookieParser = require("cookie-parser");
 const logger = require("morgan");
+const path = require("path");
 
 const userRoute = require("./routes/user.route");
 const ticket = require("./routes/ticket.routes");
@@ -25,6 +26,7 @@ const settingsRoute = require("./routes/settings.route")
 
 const cors = require("cors");
 const connectDB = require("./config/db");
+const { sendSMS } = require("./services/sms.service");
 
 
 let URI = process.env.MONGO_URI;
@@ -50,6 +52,8 @@ app.use(
     preflightContinue: false,
   })
 );
+
+app.use('/static', express.static(path.join(__dirname, 'public')))
 
 
 app.use(logger("dev"));
@@ -78,8 +82,6 @@ app.use("/api/settings", settingsRoute);
 app.use("/", (req, res) => {
   return res.send("Server is connected")
 })
-
-
 
 app.use(function (req, res, next) {
   next(createError(404));

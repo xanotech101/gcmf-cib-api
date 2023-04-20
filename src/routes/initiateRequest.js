@@ -25,7 +25,7 @@ const {
 } = require("../controller/initiateRequest/initiateRequest.controller");
 const {batchUpload, VerifyBatchUpload} = require("../controller/batchUpload");
 const { Verify_Account } = require("../services/golan.service");
-const {getReportAnalysis, getReportAnalysisForCooperateAccount} = require("../controller/initiateRequest/report");
+const {getReportAnalysis, getReportAnalysisForCooperateAccount, dashBoardAnalytics} = require("../controller/initiateRequest/report");
 
 // initiate request
 router.post("/initiate", initiatorAuth, initiateRequest);
@@ -53,7 +53,8 @@ router.put("/verifier/approve/:id", verifierAuth, verifierApproveRequest);
 router.post("/verify_batchUpload", initiatorAuth, upload.array("files"), Verify_Account, VerifyBatchUpload);
 
 
-router.get("/analysis/backoffice", allUsersAuth, getReportAnalysis)
+router.get("/analysis/backoffice/dashboard", allUsersAuth, dashBoardAnalytics)
+router.get("/analysis/backoffice/:year", allUsersAuth, getReportAnalysis)
 router.get("/analysis/account/:accountNumber/:year", allUsersAuth, getReportAnalysisForCooperateAccount)
 router.get("/backoffice/awaiting-approval", allUsersAuth, getAwaitingVerificationRequest)
 router.get("/backoffice/transfers", allUsersAuth, getRequestSentToBankOne)

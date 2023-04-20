@@ -6,19 +6,18 @@ const initiateRequestSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectID,
       ref: "Mandate",
     },
-    firstName: String,
-    lastName: String,
     amount: Number,
     retryCount: {
       type: Number,
       default: 0,
     },
-    payerAccountNumber:String,
+    payerAccountNumber: String,
     beneficiaryBankCode: String,
     beneficiaryAccountNumber: String,
     beneficiaryBankName: String,
     beneficiaryAccountName: String,
     beneficiaryPhoneNumber: String,
+    narration: String,
     beneficiaryAccountType: {
       type: String,
       enum: ["savings", "current"],
@@ -73,13 +72,18 @@ const initiateRequestSchema = new mongoose.Schema(
       reason: String,
     },
     type: {
-      enum: ["inter-bank", "intra-bank"],
+      enum: ["GMFB", "OTHERS"],
       type: String,
     },
     time: Date,
-  },
-  {
-    timestamps: { type: Date, required: true, unique: true },
+    createdAt: {
+      type: Date,
+      default: Date.now()
+    },
+    updatedAt: {
+      type: Date,
+      default: Date.now()
+    },
   }
 );
 

@@ -15,14 +15,19 @@ const mandateSchema = new mongoose.Schema(
       },
     ],
     numberOfAuthorisers: Number,
-    verifier: 
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-      },
-  },
-  {
-    timestamps: true,
+    verifier:
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now()
+    },
+    updatedAt: {
+      type: Date,
+      default: Date.now()
+    },
   }
 );
 
