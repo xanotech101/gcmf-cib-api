@@ -46,7 +46,7 @@ const registerAccount = async (req, res) => {
     const subject = "Account Verification";
     const data = {
       firstName: admin.firstName,
-      url: `${process.env.FRONTEND_URL}auth/account/verify-account/${token}`,
+      url: `${process.env.FRONTEND_URL}/auth/account/verify-account/${token}`,
     }
 
     await sendEmail(accountEmail, subject, 'verify-account', data);
