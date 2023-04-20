@@ -18,10 +18,10 @@ const initiateRequestSchema = new mongoose.Schema(
     beneficiaryBankName: String,
     beneficiaryAccountName: String,
     beneficiaryPhoneNumber: String,
-    beneficiaryAccountType: {
-      type: String,
-      enum: ["savings", "current"],
-    },
+    // beneficiaryAccountType: {
+    //   type: String,
+    //   enum: ["savings", "current"],
+    // },
     beneficiaryKYC: String,
     beneficiaryBVN: String,
     NIPSessionID: String,
@@ -71,10 +71,10 @@ const initiateRequestSchema = new mongoose.Schema(
       },
       reason: String,
     },
-    type: {
-      enum: ["inter-bank", "intra-bank"],
-      type: String,
-    },
+    // type: {
+    //   enum: ["inter-bank", "intra-bank"],
+    //   type: String,
+    // },
     time: Date,
     createdAt: {
       type: Date,

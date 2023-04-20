@@ -20,6 +20,7 @@ async function Verify_Account(req, res, next) {
         }
 
         let formattedData = [];
+        let transformedData = []
 
         for (let i = 0; i < req.files.length; i++) {
             let file = req.files[i];
@@ -43,17 +44,38 @@ async function Verify_Account(req, res, next) {
                     break;
                 }
                 formattedData = formattedData.concat(data[result]);
+                transformedData = formattedData.map(obj =>
+                    Object.fromEntries(
+                        Object.entries(obj).map(([key, value]) => [
+                            key.replace(/ /g, ''),
+                            value
+                        ])
+                    )
+                );
+                
+                
+                formattedData = transformedData.map((obj) => ({
+                    customerName: obj.CUSTOMERSNAME ? obj.CUSTOMERSNAME.trim() : '',
+                    amount: obj.AMOUNT,
+                    bankName: obj.BANKNAME ? obj.BANKNAME.trim() : '',
+                    accountNumber: obj.ACCOUNTNUMBER ? obj.ACCOUNTNUMBER.trim() : '',
+                    accountName: obj.ACCOUNTNAME ? obj.ACCOUNTNAME.trim() : '',
+                    // banktype: 'inter-bank',
+                    // accountType: obj.accountType ? obj.accountType.trim() : '',
+                    bankCode: obj.BANKCODE ? obj.BANKCODE.trim() : '',
+                }));
+
             } else if (csvDocs.includes(fileExtension)) {
                 data = csvToJson.fieldDelimiter(',').getJsonFromCsv(file.path);
                 formattedData = formattedData.concat(data.map((obj) => ({
-                    customerName: obj.customerName ? obj.customerName.trim() : '',
-                    amount: obj.amount ? parseInt(obj.amount.trim()) : '',
-                    bankName: obj.bankName ? obj.bankName.trim() : '',
-                    accountNumber: obj.accountNumber ? obj.accountNumber.trim() : '',
-                    accountName: obj.accountName ? obj.accountName.trim() : '',
-                    banktype: 'inter-bank',
-                    accountType: obj.accountType ? obj.accountType.trim() : '',
-                    bankCode: obj.bankCode ? obj.bankCode.trim() : '',
+                    customerName: obj.CUSTOMERSNAME ? obj.CUSTOMERSNAME.trim() : '',
+                    amount: obj.AMOUNT ? parseInt(obj.AMOUNT.trim()) : '',
+                    bankName: obj.BANKNAME ? obj.BANKNAME.trim() : '',
+                    accountNumber: obj.ACCOUNTNUMBER ? obj.ACCOUNTNUMBER.trim() : '',
+                    accountName: obj.ACCOUNTNAME ? obj.ACCOUNTNAME.trim() : '',
+                    // banktype: 'inter-bank',
+                    // accountType: obj.accountType ? obj.accountType.trim() : '',
+                    bankCode: obj.BANKCODE ? obj.BANKCODE.trim() : '',
                 })));
             } else {
                 return res.status(400).json({
@@ -66,8 +88,8 @@ async function Verify_Account(req, res, next) {
         }
 
         // Filter the formattedData array to include only objects that have non-empty values for accountType, bankCode, and banktype
-        formattedData = formattedData.filter((obj) => obj.accountType && obj.accountType.trim() !== '' && obj.bankCode && obj.bankCode.trim() !== '' && obj.banktype && obj.banktype.trim() !== '');
-       
+        formattedData = formattedData.filter((obj) => obj.accountNumber && obj.accountNumber.trim() !== '' && obj.bankCode && obj.bankCode.trim() !== '');
+
         // Convert values to strings
         formattedData = formattedData.map(obj => {
             for (const prop in obj) {
@@ -93,7 +115,7 @@ function sendToGolang(data) {
 
     //http://54.147.219.106:3003/api/verify_account
     try {
-        axios.post(`http://35.169.118.252:3003/api/verify_account`, data, {timeout:30000})
+        axios.post(`http://35.169.118.252:3003/api/verify_account`, data, { timeout: 30000 })
             .then((response) => {
                 emitter.emit('results', response.data)
             }).catch((error) => {
