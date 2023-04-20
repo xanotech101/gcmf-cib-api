@@ -9,16 +9,17 @@ const registerAccount = async (req, res) => {
   try {
     const input = _.pick(req.body, ["admin", "accountDetails"]);
 
-    const privileges = await Privilege.find();
-    let privilegeList = privileges.map(privilege => privilege._id)
     let role = "admin";
 
+    const privilege = await Privilege.findOne({ name: "admin" });
     const admin = await User.create({
       ...input.admin,
       token: "",
       role,
-      privileges: privilegeList
+      privileges: [privilege._id]
     });
+
+
 
     const token = jwt.sign(
       { accountDetails: input.accountDetails.accountNumber },
