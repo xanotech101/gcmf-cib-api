@@ -55,6 +55,7 @@ async function Verify_Account(req, res, next) {
 
 
                 formattedData = transformedData.map((obj) => ({
+                    payerAccountNumber:obj.PAYERACCOUNTNUMBER ? obj.PAYERACCOUNTNUMBER.trim() : '',
                     amount: obj.AMOUNT,
                     bankName: obj.BANKNAME ? obj.BANKNAME.trim() : '',
                     accountNumber: obj.ACCOUNTNUMBER ? obj.ACCOUNTNUMBER.trim() : '',
@@ -67,6 +68,7 @@ async function Verify_Account(req, res, next) {
             } else if (csvDocs.includes(fileExtension)) {
                 data = csvToJson.fieldDelimiter(',').getJsonFromCsv(file.path);
                 formattedData = formattedData.concat(data.map((obj) => ({
+                    payerAccountNumber:obj.PAYERACCOUNTNUMBER ? obj.PAYERACCOUNTNUMBER.trim() : '',
                     amount: obj.AMOUNT ? parseInt(obj.AMOUNT.trim()) : '',
                     bankName: obj.BANKNAME ? obj.BANKNAME.trim() : '',
                     accountNumber: obj.ACCOUNTNUMBER ? obj.ACCOUNTNUMBER.trim() : '',
