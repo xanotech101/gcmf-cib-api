@@ -1,8 +1,8 @@
 var nodemailer = require('nodemailer');
-const user = require('../model/user.model');
-const jwt = require("jsonwebtoken");
+const path = require('path')
+const hbs = require('nodemailer-express-handlebars')
 
-function email(email, title, html) {
+function email(email, title, html, context) {
 
   const transporter = nodemailer.createTransport({
     service: "gmail",
@@ -14,11 +14,25 @@ function email(email, title, html) {
     },
   });
 
-  var mailOptions = {
+  const hbsConfig = {
+    viewEngine: {
+      extName: '.hbs',
+      partialsDir: path.join(__dirname, '../views/'),
+      layoutsDir: path.join(__dirname, '../views/'),
+      defaultLayout: '',
+    },
+    viewPath: path.join(__dirname, '../views/'),
+    extName: '.hbs',
+  }
+
+  transporter.use('compile', hbs(hbsConfig));
+
+  const mailOptions = {
     from: '"GMFB CIB" <gmfbcib@gmail.com>',
     to: email,
     subject: title,
-    html: html,
+    template: html,
+    context
   };
 
   transporter.sendMail(mailOptions, (error, info) => {

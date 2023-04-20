@@ -1,44 +1,25 @@
 const Account = require("../model/account");
-const AuthorisationKey = require("../model/authorisationKey");
-const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const _ = require("lodash");
-const Joi = require("joi");
 const User = require("../model/user.model");
-const { log } = require("console");
 const { sendEmail } = require("../utils/emailService");
-const { randomUUID } = require("crypto");
-const bankOneService = require("../services/bankOne.service");
-const authToken = process.env.AUTHTOKEN;
 const Privilege = require("../model/privilege.model");
-
-//@desc     register an account
-//@route    POST /account/register
-//@access   Public
 
 const registerAccount = async (req, res) => {
   try {
     const input = _.pick(req.body, ["admin", "accountDetails"]);
 
     const privileges = await Privilege.find();
-    let priviledgeList = privileges.map(privilege => privilege._id)
+    let privilegeList = privileges.map(privilege => privilege._id)
     let role = "admin";
-    let adminToken = jwt.sign(
-      { user_email: input.admin.email },
-      process.env.EMAIL_SECRET,
-      {
-        expiresIn: "10m",
-      }
-    );
 
     const admin = await User.create({
       ...input.admin,
       token: "",
       role,
-      privileges: priviledgeList
+      privileges: privilegeList
     });
 
-    // console.log(Email, CustomerId);
     const token = jwt.sign(
       { accountDetails: input.accountDetails.accountNumber },
       process.env.EMAIL_SECRET,
@@ -46,6 +27,7 @@ const registerAccount = async (req, res) => {
         expiresIn: "10h",
       }
     );
+
     // create account
     const result = await Account.create({
       ...input.accountDetails,
@@ -59,14 +41,15 @@ const registerAccount = async (req, res) => {
     admin.organizationId = result._id;
     await admin.save();
 
-    // send email to admin
-    // var origin = req.headers.origin;
+
     const accountEmail = input.accountDetails.email;
     const subject = "Account Verification";
-    const accountMessage = `Hello, \n An account has been created by you for ${admin.firstName} \n\n
-    Please verify the account creation by clicking the link: \n${process.env.FRONTEND_URL}auth/account/verify-account/${token}.\n`;
+    const data = {
+      firstName: admin.firstName,
+      url: `${process.env.FRONTEND_URL}auth/account/verify-account/${token}`,
+    }
 
-    await sendEmail(accountEmail, subject, accountMessage);
+    await sendEmail(accountEmail, subject, 'verify-account', data);
 
     return res.status(201).json({
       status: "Success",
@@ -80,8 +63,8 @@ const registerAccount = async (req, res) => {
     });
   }
 };
-//  verify account
-//  verify account
+
+ 
 const verifyAccount = async (req, res) => {
   try {
     const token = req.params.token;
@@ -146,50 +129,6 @@ const verifyAccount = async (req, res) => {
     });
   }
 };
-
-// const sendAccountVericationPin = async (req, res) => {
-//   let accountNo = req.query.account;
-//   let institutionCode = req.query.institutionCode;
-
-//   const accountInfo = await bankOneService.getAccountInfo(
-//     authToken,
-//     account,
-//     institutionCode
-//   );
-//   if (!accountInfo) {
-//     return res.status(500).json({
-//       status: "Failed",
-//       message: "Unable to get bank account details",
-//     });
-//   }
-
-//   let authorisationKey = randomUUID();
-//   const authorisationKeyModel = new AuthorisationKey({
-//     bankNumber: accountNo,
-//     token: authorisationKey,
-//   });
-//   await authorisationKeyModel.save();
-
-//   const accountEmail = accountInfo.Message.Email;
-//   const name = accountInfo.Message.Name;
-
-//   //Mail notification
-//   const subject = "Request to connect your account";
-//   const message = `
-//           <h3>Transaction Request Initiated</h3>
-//           <p> Dear ${name}. There is a request to connect your account to the GMFB platform for transactional purpose.</p>
-//           <p>Kindly find below the authorisation key to verify you are authorizing this action</p>
-//           <p>Verification Key: ${authorisationKey}</p>
-//         `;
-
-//   await sendEmail(accountEmail, subject, message);
-
-//   return res.status(200).json({
-//     status: "Success",
-//     message: "Account Details retrieved successfully",
-//     data: accountInfo,
-//   });
-// };
 
 // get all account
 const getAllAccount = async (req, res) => {

@@ -1,8 +1,5 @@
 const bankOneService = require("../../services/bankOne.service");
 const authToken = process.env.AUTHTOKEN;
-const { sendEmail } = require("../../utils/emailService");
-const Account = require("../../model/account");
-const User = require("../../model/user.model");
 
 const getAccountByAccountNo = async (req, res) => {
 

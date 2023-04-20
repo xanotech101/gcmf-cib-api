@@ -5,6 +5,7 @@ const app = express();
 const createError = require("http-errors");
 const cookieParser = require("cookie-parser");
 const logger = require("morgan");
+const path = require("path");
 
 const userRoute = require("./routes/user.route");
 const ticket = require("./routes/ticket.routes");
@@ -52,6 +53,8 @@ app.use(
   })
 );
 
+app.use('/static', express.static(path.join(__dirname, 'public')))
+
 
 app.use(logger("dev"));
 app.use(express.json());
@@ -79,8 +82,6 @@ app.use("/api/settings", settingsRoute);
 app.use("/", (req, res) => {
   return res.send("Server is connected")
 })
-
-
 
 app.use(function (req, res, next) {
   next(createError(404));
