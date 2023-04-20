@@ -106,10 +106,15 @@ const verifyAccount = async (req, res) => {
 
     const userEmail = user.email;
     const subject = "Account Verification";
-    const accountMessage = `Hello,${user.firstName} ${user.lastName} \n An account has been created for you  \n\n
-    Please verify the account creation by clicking the link: \n${process.env.FRONTEND_URL}/verify-account/${userToken}.\n`;
+    const data = {
+      firstName: admin.firstName,
+      url: `${process.env.FRONTEND_URL}auth/account/verify-account/${token}`,
+    }
 
-    await sendEmail(userEmail, subject, accountMessage);
+    await sendEmail(userEmail, subject, 'verify-email', {
+      firstName: user.firstName,
+      url: `${process.env.FRONTEND_URL}/verify-account/${userToken}`,
+    });
 
     account.verified = true;
     account.accountToken = null;
