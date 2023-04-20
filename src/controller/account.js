@@ -106,10 +106,6 @@ const verifyAccount = async (req, res) => {
 
     const userEmail = user.email;
     const subject = "Account Verification";
-    const data = {
-      firstName: admin.firstName,
-      url: `${process.env.FRONTEND_URL}auth/account/verify-account/${token}`,
-    }
 
     await sendEmail(userEmail, subject, 'verify-email', {
       firstName: user.firstName,
