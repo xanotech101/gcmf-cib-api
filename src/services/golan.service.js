@@ -101,7 +101,6 @@ async function Verify_Account(req, res, next) {
         });
         // Send the data to Kafka
         sendToGolang(formattedData);
-
         // Call the next middleware function
         next();
     } catch (error) {
