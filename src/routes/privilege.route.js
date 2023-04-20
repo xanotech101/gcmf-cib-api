@@ -3,13 +3,9 @@ const router = express.Router();
 
 const {
   getAllPrivileges,
-  roleSwitchMailNotification,
-  updateUserRole,
 } = require("../controller/privilege/privilege.controller");
-const { adminAuth, allUsersAuth } = require("../middleware/auth");
+const {allUsersAuth} = require("../middleware/auth");
 
 router.get("/", allUsersAuth, getAllPrivileges);
-router.post("/", adminAuth, roleSwitchMailNotification);
-router.patch("/:token", adminAuth, updateUserRole);
 
 module.exports = router;
