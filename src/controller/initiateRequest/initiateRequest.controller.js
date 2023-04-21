@@ -32,7 +32,6 @@ const initiateRequest = async (req, res) => {
       beneficiaryBankName: req.body.beneficiaryBankName,
       beneficiaryKYC: req.body.beneficiaryKYC,
       beneficiaryPhoneNumber: req.body.beneficiaryPhoneNumber,
-      fullName: req.body.fullName,
       organizationId: mine.organizationId.toString(),
       transactionReference: mongoose.Types.ObjectId().toString().substr(0, 12),
       type: req.body.type,

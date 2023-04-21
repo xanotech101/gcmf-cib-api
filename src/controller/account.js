@@ -9,16 +9,17 @@ const registerAccount = async (req, res) => {
   try {
     const input = _.pick(req.body, ["admin", "accountDetails"]);
 
-    const privileges = await Privilege.find();
-    let privilegeList = privileges.map(privilege => privilege._id)
     let role = "admin";
 
+    const privilege = await Privilege.findOne({ name: "admin" });
     const admin = await User.create({
       ...input.admin,
       token: "",
       role,
-      privileges: privilegeList
+      privileges: [privilege._id]
     });
+
+
 
     const token = jwt.sign(
       { accountDetails: input.accountDetails.accountNumber },
@@ -46,7 +47,7 @@ const registerAccount = async (req, res) => {
     const subject = "Account Verification";
     const data = {
       firstName: admin.firstName,
-      url: `${process.env.FRONTEND_URL}auth/account/verify-account/${token}`,
+      url: `${process.env.FRONTEND_URL}/auth/account/verify-account/${token}`,
     }
 
     await sendEmail(accountEmail, subject, 'verify-account', data);
@@ -106,10 +107,11 @@ const verifyAccount = async (req, res) => {
 
     const userEmail = user.email;
     const subject = "Account Verification";
-    const accountMessage = `Hello,${user.firstName} ${user.lastName} \n An account has been created for you  \n\n
-    Please verify the account creation by clicking the link: \n${process.env.FRONTEND_URL}/verify-account/${userToken}.\n`;
 
-    await sendEmail(userEmail, subject, accountMessage);
+    await sendEmail(userEmail, subject, 'verify-email', {
+      firstName: user.firstName,
+      url: `${process.env.FRONTEND_URL}/verify-account/${userToken}`,
+    });
 
     account.verified = true;
     account.accountToken = null;
