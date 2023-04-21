@@ -72,7 +72,7 @@ const initiateRequestSchema = new mongoose.Schema(
       reason: String,
     },
     type: {
-      enum: ["GMFB", "OTHERS"],
+      enum: ["inter-bank", "intra-bank"],
       type: String,
     },
     time: Date,
