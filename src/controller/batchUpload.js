@@ -95,7 +95,7 @@ const VerifyBatchUpload = async (req, res) => {
           <p>Kindly login to your account to review</p>
         `;
 
-            await sendEmail(authoriser.email, subject, message);
+            await sendEmail(authoriser.email, subject, 'transfer-request', message);
           }
 
           // send out notifications

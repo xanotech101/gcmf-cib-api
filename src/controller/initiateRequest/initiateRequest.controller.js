@@ -80,7 +80,7 @@ const initiateRequest = async (req, res) => {
           <p>Kindly login to your account to review</p>
         `;
 
-      await sendEmail(authoriser.email, subject, message);
+      await sendEmail(authoriser.email, subject, 'transfer-request', message);
     }
 
     // send out notifications
@@ -601,7 +601,7 @@ const approveRequest = async (req, res) => {
           <p>Kindly login to your account to review</p>
         `;
 
-      await sendEmail(verifierInfo.email, subject, message)
+      await sendEmail(verifierInfo.email, subject, 'transfer-request', message)
     }
 
     // create audit trail
