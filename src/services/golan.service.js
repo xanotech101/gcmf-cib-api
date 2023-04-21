@@ -12,6 +12,12 @@ async function Verify_Account(req, res, next) {
         const excelDocs = ["xlsx", "xls"];
         const csvDocs = ["csv"];
 
+        if (!req.body.originatorAccountNumber){
+            return res.status(400).json({
+                message: "originator account is required!",
+                status: "failed",
+            });
+        }
         if (!req.files || Object.keys(req.files).length === 0) {
             return res.status(400).json({
                 message: "No files uploaded. Please upload at least one file",
