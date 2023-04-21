@@ -15,7 +15,7 @@ const { superUserAuth, allUsersAuth } = require("../middleware/auth");
 router.get("/all", superUserAuth, getAllTickets);
 router.get("/mine", allUsersAuth, getMyTickets);
 router.post("/create", allUsersAuth, createTicket);
-router.post("/reply/:id", superUserAuth, replyTicket);
+router.post("/reply/:id", allUsersAuth, replyTicket);
 router.get("/organization", allUsersAuth, getMyOrganizationTickets);
 router.get("/:id", allUsersAuth, getSingleTicket);
 
