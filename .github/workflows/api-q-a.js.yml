@@ -1,15 +1,15 @@
-name: Q-A-Api
+name: Api
 
 on:
   push:
-    branches: [ "develop" ]
+    branches: [ "master" ]
   pull_request:
-    branches: [ "develop" ]
+    branches: [ "master" ]
 
 jobs:
   build:
 
-    runs-on: self-hosted
+    runs-on: prod
 
     strategy:
       matrix:
@@ -23,7 +23,7 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
-    - run: cd /home/ubuntu/gcmf-cib-api/ && sudo git stash && sudo git pull origin develop
+    - run: cd /home/ubuntu/gcmf-cib-api/ && sudo git stash && sudo git pull origin master
     - run: sudo chmod -R 777 /home/ubuntu/gcmf-cib-api/
     - run: cd /home/ubuntu/gcmf-cib-api/ && npm ci
     - run: pm2 restart 1
