@@ -27,11 +27,11 @@ const authSchemas = {
       secretQuestions: Joi.array().items(
         Joi.object({
           question: Joi.string().required(),
-          answer: Joi.string().required(),
+          answer: Joi.string().min(6).required(),
           question: Joi.string().required(),
-          answer: Joi.string().required(),
+          answer: Joi.string().min(6).required(),
           question: Joi.string().required(),
-          answer: Joi.string().required(),
+          answer: Joi.string().min(6).required(),
         })
       ).required()
   }),

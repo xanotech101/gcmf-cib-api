@@ -1,6 +1,9 @@
 const Ticket = require("../../model/ticket.model");
 const { PER_PAGE } = require("../../utils/constants");
 const mongoose = require("mongoose");
+const userModel = require("../../model/user.model");
+const { sendEmail } = require("../../utils/emailService");
+const { insertMany } = require("../../model/account");
 
 const getAllTickets = async (req, res) => {
   const { perPage, page } = req.query;
@@ -168,6 +171,14 @@ const getMyTickets = async (req, res) => {
 
 const createTicket = async (req, res) => {
   try {
+    const checkForUserRole = await userModel.findOne({ _id: req.user._id })
+    if (!checkForUserRole) {
+      return res.status(404).json({
+        message: "user not found",
+        status: "failed",
+      });
+    }
+
     await Ticket.create({
       createdBy: mongoose.Types.ObjectId(req.user._id),
       topic: req.body.topic,
@@ -176,7 +187,26 @@ const createTicket = async (req, res) => {
       organization: mongoose.Types.ObjectId(req.user.organizationId),
     });
 
-    res.status(200).json({
+
+    if (checkForUserRole.role !== 'super-admin') {
+      const requestSystemAdmin = await userModel.find({ role: 'system-admin' })
+
+      if (requestSystemAdmin.length < 1) {
+        return res.status(200).json({
+          message: "request created sucessfully no system admin available for backoffice",
+          status: "success",
+        });
+      }
+
+
+      requestSystemAdmin.map((admin) => {
+        const message = `A ticket has been created by ${checkForUserRole.firstName} and currently waiting your response.`
+        const subject = 'new ticket'
+        sendEmail(admin.email, subject, 'ticket', message)
+      })
+    }
+
+    return res.status(200).json({
       message: "Your request has been logged Successfully",
       status: "success",
     });
@@ -193,12 +223,17 @@ const replyTicket = async (req, res) => {
   try {
     const { id } = req.params;
     const ticket = await Ticket.findById(id);
-    if(!ticket) {
+    if (!ticket) {
       return res.status(404).json({
         message: "Ticket not found",
         status: "failed",
       });
     }
+
+    //if the user creating a ticket is a system-admin then receive the organization id from payload 
+    // send an email to all users belonging that organization 
+
+    //else get the organization from the req.user. //send mail the mail to all the system-admin.
 
     ticket.response.push({
       responseBy: mongoose.Types.ObjectId(req.user._id),
