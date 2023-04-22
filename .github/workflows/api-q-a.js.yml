@@ -9,7 +9,7 @@ on:
 jobs:
   build:
 
-    runs-on: q-a
+    runs-on: staging
 
     strategy:
       matrix:
