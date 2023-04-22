@@ -19,6 +19,10 @@ const ticketSchema = new mongoose.Schema(
           ref: "User",
         },
         response: String,
+        date: {
+          type: Date,
+          default: Date.now()
+        }
       }
     ],
     meta: {}
