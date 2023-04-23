@@ -728,6 +728,7 @@ const verifierApproveRequest = async (req, res) => {
         Token: authToken,
         Narration,
       };
+      
       transfer = await bankOneService.doInterBankTransfer(payload);
     } else {
       const payload = {
@@ -741,10 +742,10 @@ const verifierApproveRequest = async (req, res) => {
       transfer = await bankOneService.doIntraBankTransfer(payload);
     }
 
-    if (transfer?.status === "Successful" && transfer?.ResponseCode === "00") {
+    if (transfer?.Status === "Successful" && transfer?.ResponseCode === "00") {
       request.transferStatus = "successful";
       await request.save();
-    } else if (transfer?.status === "Failed") {
+    } else if (transfer?.Status === "Failed") {
       request.transferStatus = "failed";
       request.updatedAt = new Date();
       await request.save();
@@ -752,7 +753,7 @@ const verifierApproveRequest = async (req, res) => {
       request.updatedAt = new Date();
       await request.save();
     }
-    res.status(200).json({
+    return res.status(200).json({
       message: "Request approved successfully",
       status: "success",
     });

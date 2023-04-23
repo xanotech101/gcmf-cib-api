@@ -136,6 +136,7 @@ class BankOneService {
       const { data } = await axios.post(`${config.interbankTransfer}`, payload);
       return data;
     } catch (error) {
+      console.log(error)
       return null;
     }
   }
@@ -145,6 +146,7 @@ class BankOneService {
       const { data } = await axios.post(`${config.intrabankTransfer}`, payload);
       return data;
     } catch (error) {
+      console.log(error)
       return null;
     }
   }
