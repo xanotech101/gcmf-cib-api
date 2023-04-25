@@ -736,7 +736,7 @@ const verifierApproveRequest = async (req, res) => {
         FromAccountNumber: request.payerAccountNumber,
         ToAccountNumber: request.beneficiaryAccountNumber,
         AuthenticationKey: authToken,
-        Narration,
+        Narration:request.narration,
       };
       transfer = await bankOneService.doIntraBankTransfer(payload);
     }
