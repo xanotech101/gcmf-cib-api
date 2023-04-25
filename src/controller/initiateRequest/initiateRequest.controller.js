@@ -741,7 +741,7 @@ const verifierApproveRequest = async (req, res) => {
       transfer = await bankOneService.doIntraBankTransfer(payload);
     }
   
-    if (transfer?.Status === "Successful") {
+    if (transfer?.Status === "Successful" || transfer?.ResponseCode === "00") {
       request.transferStatus = "successful";
       await request.save();
     } else if (transfer?.Status === "Failed") {
@@ -755,6 +755,7 @@ const verifierApproveRequest = async (req, res) => {
     return res.status(200).json({
       message: "Request approved successfully",
       status: "success",
+      meta:transfer
     });
   } catch (error) {
     console.log(error);
