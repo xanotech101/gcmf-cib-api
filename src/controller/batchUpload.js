@@ -21,6 +21,7 @@ const authToken = process.env.AUTHTOKEN;
 // Verify batchupload from bankOne
 const VerifyBatchUpload = async (req, res) => {
   try {
+
     const unresolvedMandates = [];
     const unresolvedAccount = [];
     const mine = await User.findById(req.user._id);
@@ -31,6 +32,9 @@ const VerifyBatchUpload = async (req, res) => {
 
       for (const item of results.data) {
         if (item.status === 'success') {
+          const mongooseId = mongoose.Types.ObjectId().toString().substr(0, 11);
+          const randomNumber = Math.floor(Math.random() * 9) + 1;
+
           const request = new InitiateRequest({
             NIPSessionID: item.data.SessionID,
             amount: item.amount,
@@ -44,7 +48,7 @@ const VerifyBatchUpload = async (req, res) => {
             beneficiaryBankName: item.bankName,
             beneficiaryKYC: item.data.KYC,
             organizationId: mine.organizationId.toString(),
-            transactionReference: mongoose.Types.ObjectId().toString().substr(0, 12),
+            transactionReference: mongooseId + randomNumber,
             type: item.bankType,
             batchId: batchId
           });
