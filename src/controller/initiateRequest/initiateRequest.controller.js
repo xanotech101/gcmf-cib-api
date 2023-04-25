@@ -709,7 +709,6 @@ const verifierApproveRequest = async (req, res) => {
     await request.save();
 
     // send request to bank one
-    const Narration = `Transfer from ${organization.accountName} to ${request.firstName}`;
     let transfer;
     if (request.type === "inter-bank") {
       const payload = {
@@ -726,7 +725,7 @@ const verifierApproveRequest = async (req, res) => {
         TransactionReference: request.transactionReference,
         NIPSessionID: request.NIPSessionID,
         Token: authToken,
-        Narration,
+        Narration:request.narration,
       };
       
       transfer = await bankOneService.doInterBankTransfer(payload);
@@ -741,8 +740,8 @@ const verifierApproveRequest = async (req, res) => {
       };
       transfer = await bankOneService.doIntraBankTransfer(payload);
     }
-
-    if (transfer?.Status === "Successful" && transfer?.ResponseCode === "00") {
+  
+    if (transfer?.Status === "Successful") {
       request.transferStatus = "successful";
       await request.save();
     } else if (transfer?.Status === "Failed") {
