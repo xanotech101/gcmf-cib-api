@@ -20,11 +20,6 @@ function email(email, title, html, context) {
       partialsDir: path.join(__dirname, '../views/'),
       layoutsDir: path.join(__dirname, '../views/'),
       defaultLayout: '',
-      helpers: {
-        context: function () {
-          return context;
-        }
-      }
     },
     viewPath: path.join(__dirname, '../views/'),
     extName: '.hbs',
@@ -37,6 +32,7 @@ function email(email, title, html, context) {
     to: email,
     subject: title,
     template: html,
+    context
   };
 
   transporter.sendMail(mailOptions, (error, info) => {

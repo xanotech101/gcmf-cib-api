@@ -45,11 +45,12 @@ const registerAccount = async (req, res) => {
 
     const accountEmail = input.accountDetails.email;
     const subject = "Account Verification";
-    const messageData = `hello ${admin.firstName} click the link to verify your account ${process.env.FRONTEND_URL}/auth/account/verify-account/${token}`
-    // const data = {
-    //   firstName: admin.firstName,
-    //   url: `${process.env.FRONTEND_URL}/auth/account/verify-account/${token}`,
-    // }
+    const messageData = {
+      firstName: admin.firstName,
+      url: `${process.env.FRONTEND_URL}/auth/account/verify-account/${token}`,
+      message: 'click the link to verify your account',
+      year: new Date().getUTCFullYear()
+    }
 
     await sendEmail(accountEmail, subject, 'verify-account', messageData);
 
@@ -61,12 +62,12 @@ const registerAccount = async (req, res) => {
     console.log(error);
     return res.status(500).json({
       status: "Failed",
-      Message: error.message ??  "Unable to create an account",
+      Message: error.message ?? "Unable to create an account",
     });
   }
 };
 
- 
+
 const verifyAccount = async (req, res) => {
   try {
     const token = req.params.token;
@@ -108,7 +109,12 @@ const verifyAccount = async (req, res) => {
 
     const userEmail = user.email;
     const subject = "Account Verification";
-    const messageData = `hello ${user.firstName} click the link to verify your account ${process.env.FRONTEND_URL}/verify-account/${userToken}`
+    const messageData = {
+      firstName: user.firstName,
+      url: `${process.env.FRONTEND_URL}/verify-account/${userToken}`,
+      message: 'click the link to verify your account ',
+      year: new Date().getUTCFullYear()
+    }
     sendEmail(userEmail, subject, 'verify-email', messageData);
 
     account.verified = true;
