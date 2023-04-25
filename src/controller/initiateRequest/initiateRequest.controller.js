@@ -23,7 +23,7 @@ const initiateRequest = async (req, res) => {
       NIPSessionID: req.body.NIPSessionID,
       amount: req.body.amount,
       narration: req.body.narration,
-      payerAccountNumber:req.body.payerAccountNumber,
+      payerAccountNumber: req.body.payerAccountNumber,
       beneficiaryAccountName: req.body.beneficiaryAccountName,
       beneficiaryAccountNumber: req.body.beneficiaryAccountNumber,
       beneficiaryAccountType: req.body.beneficiaryAccountType,
@@ -72,13 +72,15 @@ const initiateRequest = async (req, res) => {
 
       //Mail notification
       const subject = "Transaction Request Initiated";
-      const message = `
-          <h3>Transaction Request Initiated</h3>
-          <p> Dear ${authoriser.firstName}. The below request was initiated for your authorization.</p>
-          <p>TransactionID: ${result._id}</p>
-          <p>Amount: ${result.amount}</p>
-          <p>Kindly login to your account to review</p>
-        `;
+
+      const message = {
+        firstName: authoriser.firstName,
+        message: `Dear ${authoriser.firstName}. The below request was initiated for your authorization.
+          TransactionID: ${result._id} Amount: ${result.amount}
+          `,
+        year: new Date().getFullYear()
+
+      }
 
       await sendEmail(authoriser.email, subject, 'transfer-request', message);
     }
@@ -594,12 +596,16 @@ const approveRequest = async (req, res) => {
       const verifierInfo = await User.findById(request.mandate.verifier).select("email firstName _id")
 
       const subject = "Verification Required";
-      const message = `
-          <h3>Transaction Request Initiated</h3>
-          <p> Dear ${verifierInfo.firstName}. The below request was initiated for your verification.</p>
-          <p>TransactionID: ${request._id}</p>
-          <p>Kindly login to your account to review</p>
-        `;
+
+
+      const message = {
+        firstName: verifierInfo.firstName,
+        message: `Dear ${verifierInfo.firstName}. The below request was initiated for your verification.
+            TransactionID: ${result._id} Amount: ${result.amount}
+            `,
+        year: new Date().getFullYear()
+
+      }
 
       await sendEmail(verifierInfo.email, subject, 'transfer-request', message)
     }
@@ -725,9 +731,9 @@ const verifierApproveRequest = async (req, res) => {
         TransactionReference: request.transactionReference,
         NIPSessionID: request.NIPSessionID,
         Token: authToken,
-        Narration:request.narration,
+        Narration: request.narration,
       };
-      
+
       transfer = await bankOneService.doInterBankTransfer(payload);
     } else {
       const payload = {
@@ -736,11 +742,11 @@ const verifierApproveRequest = async (req, res) => {
         FromAccountNumber: request.payerAccountNumber,
         ToAccountNumber: request.beneficiaryAccountNumber,
         AuthenticationKey: authToken,
-        Narration:request.narration,
+        Narration: request.narration,
       };
       transfer = await bankOneService.doIntraBankTransfer(payload);
     }
-  
+
     if (transfer?.Status === "Successful" || transfer?.ResponseCode === "00") {
       request.transferStatus = "successful";
       await request.save();
@@ -755,7 +761,7 @@ const verifierApproveRequest = async (req, res) => {
     return res.status(200).json({
       message: "Request approved successfully",
       status: "success",
-      meta:transfer
+      meta: transfer
     });
   } catch (error) {
     console.log(error);

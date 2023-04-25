@@ -39,7 +39,7 @@ const preLogin = async (req, res) => {
     if (user.is2FAEnabled) {
       const randomSecretQuestion =
         user.secretQuestions[
-          Math.floor(Math.random() * user.secretQuestions.length)
+        Math.floor(Math.random() * user.secretQuestions.length)
         ];
       //query secretquestion db to get the question
       const secretQuestion = await secretQuestionService.getQuestionById(
@@ -99,7 +99,7 @@ const login = async (req, res) => {
       // pick another question for the user
       const randomSecretQuestion =
         user.secretQuestions[
-          Math.floor(Math.random() * user.secretQuestions.length)
+        Math.floor(Math.random() * user.secretQuestions.length)
         ];
 
       const secretQuestion = await secretQuestionService.getQuestionById(
@@ -167,9 +167,14 @@ const forgetPassword = async (req, res) => {
     const link = `${process.env.FRONTEND_URL}/reset-password/${token}`;
 
     const subject = "Password Reset Link";
-    const context = `Hello ${user.firstName}  Please follow the link to verify your account ${link}`
-    
-    await sendEmail(user.email, subject, "reset-password", context);
+
+    const messageData = {
+      firstName: user.firstName,
+      url: link,
+      message: `Hello ${user.firstName}  Please follow the link to verify your account ${link}`,
+      year: new Date().getFullYear(),
+    }
+    await sendEmail(user.email, subject, "reset-password", messageData);
 
     res.status(200).json({
       status: "success",
@@ -209,7 +214,7 @@ const verifyUser = async (req, res) => {
         data: null,
       });
     }
-    
+
     const salt = await bcrypt.genSalt(10);
 
     if (user.isVerified) {
@@ -330,9 +335,12 @@ const registerUser = async (req, res) => {
 
     const subject = "Welcome on Board";
 
-    const data = `Hello ${user.firstName}  Please follow the link to verify your account ${link}`
-
-    await sendEmail(user.email, subject, "verify-email", data);
+    const messageData = {
+      firstName: user.firstName,
+      url: link,
+      message: ' Please follow the link to verify your account'
+    }
+    await sendEmail(user.email, subject, "verify-email", messageData);
 
     const result = await user.save();
 
