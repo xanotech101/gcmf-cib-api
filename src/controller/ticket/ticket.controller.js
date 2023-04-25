@@ -6,49 +6,49 @@ const { sendEmail } = require("../../utils/emailService");
 const { insertMany } = require("../../model/account");
 
 const getAllTickets = async (req, res) => {
- const { perPage, page } = req.query;
- const options = {
-  page: page || 1,
-  limit: perPage || PER_PAGE,
-  sort: { createdAt: -1 },
-};
+  const { perPage, page } = req.query;
+  const options = {
+    page: page || 1,
+    limit: perPage || PER_PAGE,
+    sort: { createdAt: -1 },
+  };
 
-try {
-  const tickets = await Ticket.find()
-    .populate({
-      path: 'createdBy',
-      model: 'User',
-    })
-    .populate({
-      path: 'organization',
-      model: 'Account',
-    })
-    .skip(options.limit * (options.page - 1))
-    .limit(options.limit)
-    .sort(options.sort);
+  try {
+    const tickets = await Ticket.find()
+      .populate({
+        path: 'createdBy',
+        model: 'User',
+      })
+      .populate({
+        path: 'organization',
+        model: 'Account',
+      })
+      .skip(options.limit * (options.page - 1))
+      .limit(options.limit)
+      .sort(options.sort);
 
-  if (tickets.length === 0) {
-    console.log("No tickets found");
-    return res.status(404).json({
-      message: "No tickets found",
-      status: "error",
-    });
-  }
+    if (tickets.length === 0) {
+      console.log("No tickets found");
+      return res.status(404).json({
+        message: "No tickets found",
+        status: "error",
+      });
+    }
 
-  console.log("Tickets:", tickets);
+    console.log("Tickets:", tickets);
 
-  res.status(200).json({
-    message: "Successfully fetched admin requests",
-    data: {
-      tickets,
-      meta: {
-        total: tickets.length,
-        page: options.page,
-        perPage: options.limit,
+    res.status(200).json({
+      message: "Successfully fetched admin requests",
+      data: {
+        tickets,
+        meta: {
+          total: tickets.length,
+          page: options.page,
+          perPage: options.limit,
+        },
       },
-    },
-    status: "success",
-  });
+      status: "success",
+    });
   } catch (error) {
     res.status(500).json({
       message: error.message,
@@ -176,8 +176,13 @@ const createTicket = async (req, res) => {
 
 
       requestSystemAdmin.map((admin) => {
-        const message = `A ticket has been created by ${checkForUserRole.firstName} and currently waiting your response.`
+
         const subject = 'new ticket'
+        const message = {
+          firstName: checkForUserRole.firstName,
+          message: `A ticket has been created by ${checkForUserRole.firstName} and currently waiting your response.`,
+          year: new Date().getFullYear()
+        }
         sendEmail(admin.email, subject, 'ticket', message)
       })
     }
@@ -237,8 +242,13 @@ const replyTicket = async (req, res) => {
       }
       await ticket.save();
       request_users.map((user) => {
-        const message = `Hello ${user.firstName} a response has been made to a ticket for your organization.`
+
         const subject = 'ticket response'
+        const message = {
+          firstName: user.firstName,
+          message: `Hello ${user.firstName} a response has been made to a ticket for your organization.`,
+          year: new Date().getFullYear()
+        }
         sendEmail(user.email, subject, 'ticket', message)
       })
 
@@ -261,8 +271,13 @@ const replyTicket = async (req, res) => {
 
 
     requestSystemAdmin.map((admin) => {
-      const message = `A response to a ticket has been made by ${checkForUserRole.firstName} and currently waiting your review.`
       const subject = 'ticket response'
+
+      const message = {
+        firstName: checkForUserRole.firstName,
+        message: `A response to a ticket has been made by ${checkForUserRole.firstName} and currently waiting your review.`,
+        year: new Date().getFullYear()
+      }
       sendEmail(admin.email, subject, 'ticket', message)
     })
     return res.status(200).json({

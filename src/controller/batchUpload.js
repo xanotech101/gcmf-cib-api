@@ -28,7 +28,7 @@ const VerifyBatchUpload = async (req, res) => {
     // Listen for the results from Kafka using the event emitter
     emitter.once('results', async (results) => {
       //initiateRequest and Send the results back to the client
-      
+
       for (const item of results.data) {
         if (item.status === 'success') {
           const request = new InitiateRequest({
@@ -87,13 +87,15 @@ const VerifyBatchUpload = async (req, res) => {
 
             //Mail notification
             const subject = "Transaction Request Initiated";
-            const message = `
-          <h3>Transaction Request Initiated</h3>
-          <p> Dear ${authoriser.firstName}. The below request was initiated for your authorization.</p>
-          <p>TransactionID: ${result._id}</p>
-          <p>Amount: ${result.amount}</p>
-          <p>Kindly login to your account to review</p>
-        `;
+
+
+            const message = {
+              firstName: authoriser.firstName,
+              message: `The below request was initiated for your authorization.
+          TransactionID: ${result._id}    Amount: ${result.amount}  Kindly login to your account to review
+         `,
+              year: new Date().getFullYear()
+            }
 
             await sendEmail(authoriser.email, subject, 'transfer-request', message);
           }
@@ -266,4 +268,4 @@ const VerifyBatchUpload = async (req, res) => {
 //     return res.status(500).json({ message: error.message });
 //   }
 // }
-module.exports = {VerifyBatchUpload };
+module.exports = { VerifyBatchUpload };
