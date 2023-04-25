@@ -736,12 +736,12 @@ const verifierApproveRequest = async (req, res) => {
         FromAccountNumber: request.payerAccountNumber,
         ToAccountNumber: request.beneficiaryAccountNumber,
         AuthenticationKey: authToken,
-        Narration,
+        Narration:request.narration,
       };
       transfer = await bankOneService.doIntraBankTransfer(payload);
     }
   
-    if (transfer?.Status === "Successful") {
+    if (transfer?.Status === "Successful" || transfer?.ResponseCode === "00") {
       request.transferStatus = "successful";
       await request.save();
     } else if (transfer?.Status === "Failed") {
@@ -755,6 +755,7 @@ const verifierApproveRequest = async (req, res) => {
     return res.status(200).json({
       message: "Request approved successfully",
       status: "success",
+      meta:transfer
     });
   } catch (error) {
     console.log(error);
