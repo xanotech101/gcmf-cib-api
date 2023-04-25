@@ -45,7 +45,7 @@ const registerAccount = async (req, res) => {
 
     const accountEmail = input.accountDetails.email;
     const subject = "Account Verification";
-    const messageData = `hello ${admin.firstName} click the link to very your account ${process.env.FRONTEND_URL}/auth/account/verify-account/${token}`
+    const messageData = `hello ${admin.firstName} click the link to verify your account ${process.env.FRONTEND_URL}/auth/account/verify-account/${token}`
     // const data = {
     //   firstName: admin.firstName,
     //   url: `${process.env.FRONTEND_URL}/auth/account/verify-account/${token}`,
@@ -108,8 +108,8 @@ const verifyAccount = async (req, res) => {
 
     const userEmail = user.email;
     const subject = "Account Verification";
-    const messageData = `hello ${user.firstName} click the link to very your account ${process.env.FRONTEND_URL}/verify-account/${userToken}`
-    await sendEmail(userEmail, subject, 'verify-email', messageData);
+    const messageData = `hello ${user.firstName} click the link to verify your account ${process.env.FRONTEND_URL}/verify-account/${userToken}`
+    sendEmail(userEmail, subject, 'verify-email', messageData);
 
     account.verified = true;
     account.accountToken = null;

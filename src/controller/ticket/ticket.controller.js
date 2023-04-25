@@ -6,73 +6,49 @@ const { sendEmail } = require("../../utils/emailService");
 const { insertMany } = require("../../model/account");
 
 const getAllTickets = async (req, res) => {
-  const { perPage, page } = req.query;
-  const options = {
-    page: page || 1,
-    limit: perPage || PER_PAGE,
-    sort: { createdAt: -1 },
-  };
+ const { perPage, page } = req.query;
+ const options = {
+  page: page || 1,
+  limit: perPage || PER_PAGE,
+  sort: { createdAt: -1 },
+};
 
-  try {
-    const tickets = await Ticket.aggregate([
-      {
-        $lookup: {
-          from: "users",
-          localField: "createdBy",
-          foreignField: "_id",
-          as: "createdBy",
-        },
-      },
-      {
-        $unwind: "$createdBy",
-      },
-      {
-        $lookup: {
-          from: "accounts",
-          localField: "organization",
-          foreignField: "_id",
-          as: "organization",
-        },
-      },
-      {
-        $unwind: "$organization",
-      },
-      {
-        $facet: {
-          data: [
-            {
-              $sort: { ...options.sort },
-            },
-            {
-              $skip: options.limit * (options.page - 1),
-            },
-            {
-              $limit: options.limit * 1,
-            },
-          ],
-          meta: [
-            {
-              $count: "total",
-            },
-            {
-              $addFields: {
-                page: options.page,
-                perPage: options.limit,
-              },
-            },
-          ],
-        },
-      },
-    ]);
+try {
+  const tickets = await Ticket.find()
+    .populate({
+      path: 'createdBy',
+      model: 'User',
+    })
+    .populate({
+      path: 'organization',
+      model: 'Account',
+    })
+    .skip(options.limit * (options.page - 1))
+    .limit(options.limit)
+    .sort(options.sort);
 
-    res.status(200).json({
-      message: "Successfully fetched admin requests",
-      data: {
-        tickets: tickets[0].data,
-        meta: tickets[0].meta[0],
-      },
-      status: "success",
+  if (tickets.length === 0) {
+    console.log("No tickets found");
+    return res.status(404).json({
+      message: "No tickets found",
+      status: "error",
     });
+  }
+
+  console.log("Tickets:", tickets);
+
+  res.status(200).json({
+    message: "Successfully fetched admin requests",
+    data: {
+      tickets,
+      meta: {
+        total: tickets.length,
+        page: options.page,
+        perPage: options.limit,
+      },
+    },
+    status: "success",
+  });
   } catch (error) {
     res.status(500).json({
       message: error.message,
