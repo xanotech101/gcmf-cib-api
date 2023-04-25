@@ -184,76 +184,50 @@ const getAllInitiatorRequests = async (req, res) => {
 };
 
 const getAllAssignedRequests = async (req, res) => {
-  const { perPage, page } = req.query;
+  const { perPage, page, ref } = req.query;
+const options = {
+  page: page || 1,
+  limit: perPage || PER_PAGE,
+  sort: { createdAt: -1 },
+};
 
-  const options = {
-    page: page || 1,
-    limit: perPage || PER_PAGE,
-    sort: { createdAt: -1 },
+try {
+  const query = {
+    $or: [
+      {
+        "mandate.authorisers": {
+          $in: [mongoose.Types.ObjectId(req.user._id)],
+        },
+      },
+      {
+        "mandate.verifier": mongoose.Types.ObjectId(req.user._id),
+      },
+    ],
   };
 
-  try {
-    const requests = await InitiateRequest.aggregate([
-      {
-        $lookup: {
-          from: "mandates",
-          localField: "mandate",
-          foreignField: "_id",
-          as: "mandate",
-        },
-      },
-      {
-        $unwind: "$mandate",
-      },
-      {
-        $match: {
-          $or: [
-            {
-              "mandate.authorisers": {
-                $in: [mongoose.Types.ObjectId(req.user._id)],
-              },
-            },
-            {
-              "mandate.verifier": mongoose.Types.ObjectId(req.user._id),
-            },
-          ],
-        },
-      },
-      {
-        $facet: {
-          data: [
-            {
-              $sort: { ...options.sort },
-            },
-            {
-              $skip: options.limit * (options.page - 1),
-            },
-            {
-              $limit: options.limit * 1,
-            },
-          ],
-          meta: [
-            {
-              $count: "total",
-            },
-            {
-              $addFields: {
-                page: options.page,
-                perPage: options.limit,
-              },
-            },
-          ],
-        },
-      },
-    ]);
+  if (ref) {
+    query.transactionReference = ref;
+  }
 
-    return res.status(200).json({
-      message: "Request Successful",
-      data: {
-        requests: requests[0].data,
-        meta: requests[0].meta[0],
+  const requests = await InitiateRequest.find(query)
+    .populate("mandate")
+    .sort(options.sort)
+    .skip(options.limit * (options.page - 1))
+    .limit(options.limit * 1);
+
+  const total = await InitiateRequest.countDocuments(query);
+
+  return res.status(200).json({
+    message: "Request Successful",
+    data: {
+      requests: requests,
+      meta: {
+        total: total,
+        page: options.page,
+        perPage: options.limit,
       },
-    });
+    },
+  });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: error.message });
