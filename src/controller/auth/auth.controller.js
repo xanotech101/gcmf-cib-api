@@ -167,11 +167,8 @@ const forgetPassword = async (req, res) => {
     const link = `${process.env.FRONTEND_URL}/reset-password/${token}`;
 
     const subject = "Password Reset Link";
-    const context = {
-      firstName: user.firstName,
-      url: link,
-    };
-
+    const context = `Hello ${user.firstName}  Please follow the link to verify your account ${link}`
+    
     await sendEmail(user.email, subject, "reset-password", context);
 
     res.status(200).json({
@@ -333,10 +330,7 @@ const registerUser = async (req, res) => {
 
     const subject = "Welcome on Board";
 
-    const data = {
-      firstName: user.firstName,
-      url: link,
-    };
+    const data = `Hello ${user.firstName}  Please follow the link to verify your account ${link}`
 
     await sendEmail(user.email, subject, "verify-email", data);
 

@@ -44,11 +44,9 @@ const generateOTP = async (req, res) => {
     await sendSMS(num, smsBody);
 
     const subject = "Verification Code";
+    const context_m = `Hello ${user.firstName}  your otp: ${otp}`
 
-    await sendEmail(user.email, subject, 'otp', {
-      firstName: user.firstName,
-      otp
-    });
+    await sendEmail(user.email, subject, 'otp', context_m);
 
     return res.status(200).json({
       message: "Successfully sent otp code",
