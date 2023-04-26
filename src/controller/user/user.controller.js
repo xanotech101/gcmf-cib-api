@@ -6,6 +6,7 @@ const mongoose = require("mongoose");
 const Privilege = require("../../model/privilege.model");
 
 const getOrganizationUsers = async (req, res) => {
+  //search first name lastname email
   const { organizationId } = req.user;
   try {
     const { perPage, page } = req.query;
@@ -316,10 +317,11 @@ const options = {
 
 const matchStage = {};
 if (name) {
-  const [firstName, lastName] = name ? name.split(" ") : ["", ""];
+  const [firstName, lastName, email] = name ? name.split(" ") : ["", ""];
   matchStage.$or = [
     { firstName: { $regex: new RegExp(firstName, "i") } },
     { lastName: { $regex: new RegExp(lastName, "i") } },
+    { email: { $regex: new RegExp(email, "i") } },
   ];
 }
 
