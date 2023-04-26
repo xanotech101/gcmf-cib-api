@@ -31,12 +31,16 @@ const getAccountByAccountNo = async (req, res) => {
 
 
 const getAccountByCustomerID = async (req, res) => {
+  try {
   let customerId = req.params.customerId || "004232";
 
   const accountDetails = await bankOneService.accountByCustomerID(
     customerId,
     authToken
   );
+  
+
+  console.log('account details ', accountDetails)
 
   if (!accountDetails) {
     return res.status(500).json({
@@ -50,6 +54,14 @@ const getAccountByCustomerID = async (req, res) => {
     message: "Account Details retrieved successfully",
     data: accountDetails,
   });
+
+} catch(error) {
+  console.log('get customer error ', error)
+  return res.status(500).json({
+    status: "Failed",
+    message: error,
+  });
+}
 };
 
 const getTransactionHistory = async (req, res) => {
