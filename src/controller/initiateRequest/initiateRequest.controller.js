@@ -112,8 +112,9 @@ const initiateRequest = async (req, res) => {
 };
 
 const getAllInitiatorRequests = async (req, res) => {
-  const { perPage, page } = req.query;
-  console.log(req.user._id);
+  ////search transactionReference and amount
+  const { perPage, page, ref, amount } = req.query;
+
   const mine = await User.findById(req.user._id);
   const organizationId = mine.organizationId;
 
@@ -123,14 +124,79 @@ const getAllInitiatorRequests = async (req, res) => {
     sort: { createdAt: -1 },
   };
 
+  const filter = {
+    organizationId,
+    initiator: mongoose.Types.ObjectId(req.user._id),
+  };
+
+  if (ref) {
+    filter.transactionReference = { $regex: ref, $options: "i" };
+  }
+
+  if (amount) {
+    filter.amount = parseInt(amount);
+  }
+
   try {
-    const requests = await InitiateRequest.aggregate([
-      {
-        $match: {
-          organizationId,
-          initiator: mongoose.Types.ObjectId(req.user._id),
+    const requests = await InitiateRequest.find(filter)
+      .sort(options.sort)
+      .skip(options.limit * (options.page - 1))
+      .limit(options.limit * 1)
+      .populate("mandate")
+      .lean();
+
+    const total = await InitiateRequest.countDocuments(filter);
+
+    return res.status(200).json({
+      message: "Request Successful",
+      data: {
+        requests,
+        meta: {
+          total,
+          page: options.page,
+          perPage: options.limit,
         },
       },
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+const getAllAssignedRequests = async (req, res) => {
+  //search transactionReference and amount
+  const { perPage, page, ref, amount } = req.query;
+
+  const options = {
+    page: page || 1,
+    limit: perPage || PER_PAGE,
+    sort: { createdAt: -1 },
+  };
+  
+  const query = {
+    $or: [
+      {
+        "mandate.authorisers": {
+          $in: [mongoose.Types.ObjectId(req.user._id)],
+        },
+      },
+      {
+        "mandate.verifier": mongoose.Types.ObjectId(req.user._id),
+      },
+    ],
+  };
+  
+  if (ref) {
+    query.transactionReference = { $regex: new RegExp(ref, "i") };
+  }
+  
+  if (amount) {
+    query.amount = parseInt(amount);
+  }
+  
+  try {
+    const requests = await InitiateRequest.aggregate([
       {
         $lookup: {
           from: "mandates",
@@ -141,6 +207,9 @@ const getAllInitiatorRequests = async (req, res) => {
       },
       {
         $unwind: "$mandate",
+      },
+      {
+        $match: query,
       },
       {
         $facet: {
@@ -169,7 +238,6 @@ const getAllInitiatorRequests = async (req, res) => {
         },
       },
     ]);
-
     return res.status(200).json({
       message: "Request Successful",
       data: {
@@ -177,57 +245,6 @@ const getAllInitiatorRequests = async (req, res) => {
         meta: requests[0].meta[0],
       },
     });
-  } catch (error) {
-    console.log(error);
-    return res.status(500).json({ message: error.message });
-  }
-};
-
-const getAllAssignedRequests = async (req, res) => {
-  const { perPage, page, ref } = req.query;
-const options = {
-  page: page || 1,
-  limit: perPage || PER_PAGE,
-  sort: { createdAt: -1 },
-};
-
-try {
-  const query = {
-    $or: [
-      {
-        "mandate.authorisers": {
-          $in: [mongoose.Types.ObjectId(req.user._id)],
-        },
-      },
-      {
-        "mandate.verifier": mongoose.Types.ObjectId(req.user._id),
-      },
-    ],
-  };
-
-  if (ref) {
-    query.transactionReference = ref;
-  }
-
-  const requests = await InitiateRequest.find(query)
-    .populate("mandate")
-    .sort(options.sort)
-    .skip(options.limit * (options.page - 1))
-    .limit(options.limit * 1);
-
-  const total = await InitiateRequest.countDocuments(query);
-
-  return res.status(200).json({
-    message: "Request Successful",
-    data: {
-      requests: requests,
-      meta: {
-        total: total,
-        page: options.page,
-        perPage: options.limit,
-      },
-    },
-  });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: error.message });
@@ -817,72 +834,66 @@ const verifierDeclineRequest = async (req, res) => {
 };
 
 const getAwaitingVerificationRequest = async (req, res) => {
-  const { page, perPage, status } = req.query;
-  const options = {
-    page: page || 1,
-    limit: perPage || PER_PAGE,
-    sort: { createdAt: -1 },
-  };
-  const matchStage = {};
-  if (status) {
-    matchStage.status = status;
-  } else {
-    matchStage.status = { $in: ["pending", "in progress", "awaiting verification"] };
-  }
-  try {
-    const request = await InitiateRequest.aggregate([
-      {
-        $match: matchStage,
+  //search transactionReference and amount
+  const { page, perPage, status, ref, amount } = req.query;
+const options = {
+  page: page || 1,
+  limit: perPage || PER_PAGE,
+  sort: { createdAt: -1 },
+};
+
+const matchStage = {
+  status: status || { $in: ["pending", "in progress", "awaiting verification"] },
+};
+
+if (ref || amount) {
+  matchStage.$or = [
+    { transactionReference: new RegExp(ref, "i") },
+    { amount: parseFloat(amount) },
+  ];
+}
+
+try {
+  const requests = await InitiateRequest.aggregate([
+    { $match: matchStage },
+    {
+      $lookup: {
+        from: "mandates",
+        localField: "mandate",
+        foreignField: "_id",
+        as: "mandate",
       },
-      {
-        $lookup: {
-          from: "mandates",
-          localField: "mandate",
-          foreignField: "_id",
-          as: "mandate",
-        },
-      },
-      {
-        $unwind: "$mandate",
-      },
-      {
-        $facet: {
-          data: [
-            {
-              $sort: { ...options.sort },
+    },
+    { $unwind: "$mandate" },
+    {
+      $facet: {
+        data: [
+          { $sort: options.sort },
+          { $skip: options.limit * (options.page - 1) },
+          { $limit: options.limit },
+        ],
+        meta: [
+          { $count: "total" },
+          {
+            $addFields: {
+              page: options.page,
+              perPage: options.limit,
             },
-            {
-              $skip: options.limit * (options.page - 1),
-            },
-            {
-              $limit: options.limit * 1,
-            },
-          ],
-          meta: [
-            {
-              $count: "total",
-            },
-            {
-              $addFields: {
-                page: options.page,
-                perPage: options.limit,
-              },
-            },
-          ],
-        },
+          },
+        ],
       },
-      {
-        $unwind: "$meta",
-      },
-    ]);
-    return res.status(200).json({
-      message: "Request fetched successfully",
-      status: "success",
-      data: {
-        requests: request[0]?.data || [],
-        meta: request[0]?.meta || {},
-      },
-    });
+    },
+    { $unwind: "$meta" },
+  ]);
+
+  return res.status(200).json({
+    message: "Request fetched successfully",
+    status: "success",
+    data: {
+      requests: requests[0]?.data || [],
+      meta: requests[0]?.meta || {},
+    },
+  });
   } catch (error) {
     console.log(error);
     res.status(500).json({
@@ -893,6 +904,7 @@ const getAwaitingVerificationRequest = async (req, res) => {
 };
 
 const getRequestSentToBankOne = async (req, res) => {
+  //search transactionReference and amount
   const { page, perPage } = req.query;
   const options = {
     page: page || 1,
