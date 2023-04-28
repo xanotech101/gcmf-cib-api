@@ -36,10 +36,7 @@ const userSchema = new mongoose.Schema(
         ref: "Privilege",
       },
     ],
-    organizationLabel:{
-      type: mongoose.Schema.Types.ObjectID,
-      ref: "organzationLabel",
-    },
+    
     role: {
       type: String,
       required: true,
