@@ -592,7 +592,7 @@ const approveRequest = async (req, res) => {
       const message = {
         firstName: verifierInfo.firstName,
         message: `Dear ${verifierInfo.firstName}. The below request was initiated for your verification.
-            TransactionID: ${result._id} Amount: ${result.amount}
+            TransactionID: ${request._id} Amount: ${request.amount}
             `,
         year: new Date().getFullYear()
 
