@@ -9,8 +9,8 @@ class BankOneService {
       );
       return data;
     } catch (error) {
-      console.log(error);
-      return null;
+      console.log('service',error.response.data);
+       throw error.response.data;;
     }
   }
 
@@ -41,8 +41,8 @@ class BankOneService {
       );
       return data;
     } catch (error) {
-      console.log(error);
-      return null;
+      console.log('service',error.response.data);
+       throw error.response.data;;
     }
   }
 
@@ -55,8 +55,8 @@ class BankOneService {
       });
       return data;
     } catch (error) {
-      console.log(error);
-      return null;
+      console.log('service',error.response.data);
+       throw error.response.data;;
     }
   }
 
@@ -69,8 +69,8 @@ class BankOneService {
       });
       return data;
     } catch (error) {
-      console.log(error);
-      return null;
+      console.log('service',error.response.data);
+       throw error.response.data;;
     }
   }
   
@@ -82,8 +82,8 @@ class BankOneService {
       });
       return data;
     } catch (error) {
-      console.log(error);
-      return null;
+      console.log('service',error.response.data);
+       throw error.response.data;;
     }
   }
 
@@ -126,7 +126,8 @@ class BankOneService {
       return data;
     } catch (error) {
       // return null;
-      console.log(error);
+      console.log('service',error.response.data);
+       throw error.response.data;
     }
   }
 
@@ -137,8 +138,8 @@ class BankOneService {
       const { data } = await axios.post(`${config.interbankTransfer}`, payload);
       return data;
     } catch (error) {
-      console.log(error)
-      return null;
+      console.log('service',error.response.data);
+       throw error.response.data;
     }
   }
 
@@ -147,8 +148,8 @@ class BankOneService {
       const { data } = await axios.post(`${config.intrabankTransfer}`, payload);
       return data;
     } catch (error) {
-      console.log(error)
-      return null;
+      console.log('service',error.response.data);
+       throw error.response.data;
     }
   }
 
@@ -167,8 +168,8 @@ class BankOneService {
       );
       return data;
     } catch (error) {
-      console.log(error);
-      return null;
+      console.log('service',error.response.data);
+       throw error.response.data;
     }
   }
 
@@ -179,8 +180,8 @@ class BankOneService {
       );
       return data;
     } catch (error) {
-      console.log(error);
-      return null;
+      console.log('service',error.response.data);
+      throw error.response.data;
     }
   }
 
@@ -201,8 +202,8 @@ class BankOneService {
       });
       return data;
     } catch (error) {
-      console.log(error);
-      return null;
+      console.log('service',error.response.data);
+       throw error.response.data;
     }
   }
 
@@ -213,8 +214,8 @@ class BankOneService {
       );
       return data;
     } catch (error) {
-      console.log(error);
-      return null;
+      console.log('service',error.response.data);
+       throw error.response.data;
     }
   }
 }

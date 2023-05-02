@@ -592,7 +592,7 @@ const approveRequest = async (req, res) => {
       const message = {
         firstName: verifierInfo.firstName,
         message: `Dear ${verifierInfo.firstName}. The below request was initiated for your verification.
-            TransactionID: ${result._id} Amount: ${result.amount}
+            TransactionID: ${request._id} Amount: ${request.amount}
             `,
         year: new Date().getFullYear()
 
@@ -757,7 +757,7 @@ const verifierApproveRequest = async (req, res) => {
   } catch (error) {
     console.log(error);
     res.status(500).json({
-      message: error.message,
+      message: error,
       status: "failed",
     });
   }
@@ -991,6 +991,22 @@ const getRequestSentToBankOne = async (req, res) => {
   }
 };
 
+
+const approveBulkRequest = async(req,res) =>{
+try {
+  const {data} = req.body
+
+  console.log(data)
+
+} catch (error) {
+  console.log(error);
+    res.status(500).json({
+      message: error.message,
+      status: "failed",
+    });
+}
+}
+
 module.exports = {
   initiateRequest,
   declineRequest,
@@ -1002,5 +1018,6 @@ module.exports = {
   verifierDeclineRequest,
   verifierApproveRequest,
   getAwaitingVerificationRequest,
-  getRequestSentToBankOne
+  getRequestSentToBankOne,
+  approveBulkRequest
 };
