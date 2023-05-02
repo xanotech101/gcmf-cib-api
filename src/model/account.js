@@ -18,6 +18,10 @@ const accountSchema = new mongoose.Schema(
       type: String
     },
     customerID: String,
+    organizationLabel:{
+      type: mongoose.Schema.Types.ObjectID,
+      ref: "organzationLabel",
+    },
     verified: {
       type: Boolean,
       default: false,
