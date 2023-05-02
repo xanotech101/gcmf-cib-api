@@ -36,6 +36,7 @@ const userSchema = new mongoose.Schema(
         ref: "Privilege",
       },
     ],
+    
     role: {
       type: String,
       required: true,
