@@ -1335,6 +1335,64 @@ const approveBulkRequest = async (req, res) => {
     });
   }
 }
+
+const verifierBulkaprove = async (req, res) => {
+  try {
+    const mine = await User.findById(req.user._id);
+    const transactionIds = req.body.transactions;
+    const userId = req.user._id;
+    
+    const error = [];
+    
+    const requests = await InitiateRequest.find({ _id: { $in: transactionIds } }).populate("mandate");
+    const requestIds = new Set(requests.map(request => request._id.toString()));
+    
+    const validTransactionIds = [];
+    let firstBatchVerificationId = null;
+    
+    requests.forEach(request => {
+      if (!firstBatchVerificationId) {
+        firstBatchVerificationId = request.batchVerificationID;
+      }
+      if (request.batchVerificationID === req.body.batchId) {
+        validTransactionIds.push(request._id);
+      } else {
+        error.push({ message: `Transaction ID ${request._id} does not belong to this batch.` });
+      }
+    });
+    
+    transactionIds.forEach(transactionId => {
+      if (!requestIds.has(transactionId)) {
+        error.push({ message:`Transaction ID ${transactionId} not found` });
+      }
+    });
+    
+    if (error.length > 0) {
+      return res.status(400).json({ errors: error });
+    }
+
+  
+    const otpDetails = await Otp.findOne({
+      otp: req.body.otp,
+      user: userId,
+      transaction: req.body.batchId,
+    });
+
+    if (!otpDetails) {
+      return res.status(404).json({
+        message: "OTP is incorrect or used",
+        status: "failed",
+      });
+    }
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: error.message,
+      status: "failed",
+    });
+  }
+}
 module.exports = {
   initiateRequest,
   declineRequest,
@@ -1347,5 +1405,6 @@ module.exports = {
   verifierApproveRequest,
   getAwaitingVerificationRequest,
   getRequestSentToBankOne,
-  approveBulkRequest
+  approveBulkRequest,
+  verifierBulkaprove
 };
