@@ -18,6 +18,7 @@ const initiateRequestSchema = new mongoose.Schema(
     beneficiaryAccountName: String,
     beneficiaryPhoneNumber: String,
     narration: String,
+    batchVerificationID: String,
     beneficiaryAccountType: {
       type: String,
       enum: ["savings", "current"],
