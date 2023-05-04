@@ -1,9 +1,0 @@
-﻿{
-  "agentId": 2,
-  "agentName": "gcmf-cib-api",
-  "poolId": 1,
-  "poolName": "Default",
-  "serverUrl": "https://pipelines.actions.githubusercontent.com/B8LofIgQtWGHv1Di7hWH5w3BtQ2muQeJ60DoeCd9N7KhTKYKsf",
-  "gitHubUrl": "https://github.com/xanotech101/gcmf-cib-api",
-  "workFolder": "_work"
-}
