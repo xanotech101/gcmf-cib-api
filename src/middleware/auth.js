@@ -226,6 +226,7 @@ async function validateAuthorization(req, res, next) {
     }
 
     checkUser.requestCount += 1
+    checkUser.updatedAt = new Date.now()
     checkUser.save()
     req.user = user
     next()
