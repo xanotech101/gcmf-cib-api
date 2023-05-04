@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const thirdPartyModel = require("../model/user.model");
+const thirdPartyModel = require("../model/thirdParty.model");
 
 function superUserAuth(req, res, next) {
   const authHeader = req.headers.authorization;

@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const thirdPartyModel = require("../../model/user.model");
+const thirdPartyModel = require("../../model/thirdParty.model");
 const organization = require("../../model/organization");
 async function generateUserToken(req, res) {
     try {
