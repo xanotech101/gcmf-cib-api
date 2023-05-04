@@ -1335,6 +1335,136 @@ const approveBulkRequest = async (req, res) => {
     });
   }
 }
+
+const verifierBulkaprove = async (req, res) => {
+  try {
+    const transactionIds = req.body.transactions
+    const userId = req.user._id;
+    const requests = await InitiateRequest.find({ _id: { $in: transactionIds } }).populate("mandate");
+
+    const requestsByBatchVerificationId = requests.reduce((accumulator, request) => {
+      const batchVerificationId = request.batchVerificationID.toString();
+      accumulator[batchVerificationId] = accumulator[batchVerificationId] || [];
+      accumulator[batchVerificationId].push(request);
+      return accumulator;
+    }, {});
+
+    const batchVerificationId = req.body.batchId;
+
+    if (!batchVerificationId) {
+      return res.status(400).json({ message: "Batch verification ID is required", status: "error" });
+    }
+
+    if (!(batchVerificationId in requestsByBatchVerificationId)) {
+      return res.status(400).json({ message: `No transactions found for batch verification ID ${batchVerificationId}`, status: "error" });
+    }
+
+    const requestsToApprove = requestsByBatchVerificationId[batchVerificationId];
+
+    const otpDetails = await Otp.findOne({
+      otp: req.body.otp,
+      user: userId,
+      transaction: req.body.batchId,
+    });
+
+    if (!otpDetails) {
+      return res.status(404).json({
+        message: "OTP is incorrect or used",
+        status: "failed",
+      });
+    }
+
+    requestsToApprove.map(async (request) => {
+      // update and save request
+      request.status = "approved";
+      request.transferStatus = "disburse pending";
+      request.verifierAction = {
+        status: "approved",
+        reason: req.body.reason,
+      };
+      await request.save()
+
+
+      // notify initiator and authorizers
+      const authorizers = request.mandate.authorisers;
+      await notificationService.createNotifications([
+        {
+          transaction: request._id,
+          user: request.initiator,
+          title: "Request approved",
+          message: `Your transaction request for ${request.customerName} has been approved`,
+        },
+        ...authorizers.map((authorizer) => ({
+          transaction: request._id,
+          user: authorizer,
+          title: "Request approved",
+          message: `Transaction request for ${request.customerName} has been approved`,
+        })),
+      ]);
+
+      // create audit trail
+      const user = await User.findById(req.user._id);
+      const { date, time } = getDateAndTime();
+      await auditTrailService.createAuditTrail({
+        user: req.user._id,
+        type: "transaction",
+        transaction: request._id,
+        message: `${user.firstName} approved a transaction request on ${date} by ${time}`,
+        organization: mine.organizationId,
+      });
+
+      // delete otp from database
+      await Otp.findByIdAndDelete(otpDetails._id);
+
+      // update request date
+      request.updatedAt = new Date();
+      await request.save();
+
+      // send request to bank one
+      let transfer;
+
+      if (request.type === "inter-bank") {
+        const payload = {
+          Amount: request.amount,
+          Payer: `${mine.firstName} ${mine.lastName}`,
+          PayerAccountNumber: request.payerAccountNumber,
+          ReceiverAccountNumber: request.beneficiaryAccountNumber,
+          ReceiverAccountType: request.beneficiaryAccountType,
+          ReceiverBankCode: request.beneficiaryBankCode,
+          ReceiverPhoneNumber: request.beneficiaryPhoneNumber,
+          ReceiverName: request.beneficiaryBankName,
+          ReceiverBVN: "",
+          ReceiverKYC: "",
+          TransactionReference: request.transactionReference,
+          NIPSessionID: request.NIPSessionID,
+          Token: authToken,
+          Narration: request.narration,
+        };
+
+        transfer = await bankOneService.doInterBankTransfer(payload);
+      } else {
+        const payload = {
+          Amount: request.amount,
+          RetrievalReference: request.transactionReference,
+          FromAccountNumber: request.payerAccountNumber,
+          ToAccountNumber: request.beneficiaryAccountNumber,
+          AuthenticationKey: authToken,
+          Narration: request.narration,
+        };
+        transfer = await bankOneService.doIntraBankTransfer(payload);
+      }
+    })
+
+
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: error.message,
+      status: "failed",
+    });
+  }
+}
 module.exports = {
   initiateRequest,
   declineRequest,
@@ -1347,5 +1477,6 @@ module.exports = {
   verifierApproveRequest,
   getAwaitingVerificationRequest,
   getRequestSentToBankOne,
-  approveBulkRequest
+  approveBulkRequest,
+  verifierBulkaprove
 };

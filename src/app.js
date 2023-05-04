@@ -23,6 +23,7 @@ const secretQuestionRoute = require("./routes/secretQuestion.route");
 const bankoneRoute = require("./routes/bankone.route");
 const settingsRoute = require("./routes/settings.route")
 const organizationRoute = require('./routes/organization')
+const externalRoute = require('./routes/external.route')
 
 
 const cors = require("cors");
@@ -81,6 +82,7 @@ app.use("/api/ticket", ticket);
 app.use("/api/bank", bankoneRoute);
 app.use("/api/settings", settingsRoute);
 app.use("/api/organization", organizationRoute);
+app.use('/api/thirdparty',externalRoute)
 app.use("/", (req, res) => {
   return res.send("Server is connected")
 })

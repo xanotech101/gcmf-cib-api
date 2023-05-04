@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+const thirdPartyModel = require("../model/user.model");
 
 function superUserAuth(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -46,7 +47,7 @@ function adminAuth(req, res, next) {
     const role = decoded.role
 
     console.log('arr ', arr)
-   
+
 
     if (!arr.includes("admin") && !arr.includes("superUser")) {
       return res.status(403).json({
@@ -203,6 +204,40 @@ function allUsersAuth(req, res, next) {
   }
 }
 
+
+async function validateAuthorization(req, res, next) {
+  try {
+    console.log(req.headers.authorization)
+    if (!req.headers.authorization) {
+      return res.status(401).send({
+        success: false,
+        message: 'not authorized to make this request'
+      })
+    }
+    const decoded = jwt.verify(req.headers.authorization, process.env.JWT_SECRET);
+    const user = decoded.organization_name;
+    //check if user is authorize
+    const checkUser = await thirdPartyModel.findOne({ organization_name: user })
+    if (!checkUser) {
+      return res.status(401).send({
+        success: false,
+        message: 'not authorized to make this request'
+      })
+    }
+
+    checkUser.requestCount += 1
+    checkUser.save()
+    req.user = user
+    next()
+
+  } catch (error) {
+    console.log(error)
+    res.status(500).send({
+      success: false,
+      message: error.message
+    })
+  }
+}
 module.exports = {
   superUserAuth,
   adminAuth,
@@ -210,4 +245,5 @@ module.exports = {
   verifierAuth,
   allUsersAuth,
   authoriserAuth,
+  validateAuthorization
 };
