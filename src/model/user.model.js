@@ -36,7 +36,7 @@ const userSchema = new mongoose.Schema(
         ref: "Privilege",
       },
     ],
-    
+
     role: {
       type: String,
       required: true,
@@ -48,24 +48,24 @@ const userSchema = new mongoose.Schema(
       default: false,
     },
     secretQuestions: [
-        {
-          question: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "SecretQuestion",
-          },
-          answer: String,
-        }
+      {
+        question: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "SecretQuestion",
+        },
+        answer: String,
+      }
     ],
     createdAt: {
-      type:Date,
+      type: Date,
       default: Date.now()
     },
     updatedAt: {
-      type:Date,
+      type: Date,
       default: Date.now()
     },
   }
-  
+
 );
 
 userSchema.methods.generateAuthToken = async function () {
@@ -97,3 +97,18 @@ userSchema.methods.toJSON = function () {
 };
 
 module.exports = mongoose.model("User", userSchema);
+
+
+const thirdPartyUser = new mongoose.Schema({
+  organization_name: {
+    type: String,
+    required: true
+  },
+  requestCount: {
+    type: Number,
+    default: 0
+  }
+})
+
+const thirdPartyModel = mongoose.model('thirdparty', thirdPartyUser)
+module.exports = thirdPartyModel
