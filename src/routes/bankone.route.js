@@ -11,13 +11,15 @@ const {
   interbankTransfer,
    getAccountDetails,
   getAccountInfo,
-  getTransactionStatus
+  getTransactionStatus,
+  getAccountByAccountNoV2
 } = require("../controller/bankone/bankDetails");
 const { adminAuth, allUsersAuth } = require("../middleware/auth");
 
 
 router.get("/detail/:customerId", allUsersAuth, getAccountByCustomerID);
 router.get("/balance/:accountNo", allUsersAuth, getAccountByAccountNo);
+router.get("/getaccount2/:accountNo", allUsersAuth, getAccountByAccountNoV2);
 router.get("/history/:accountNo", allUsersAuth, getTransactionHistory);
 router.get("/statement/:account", allUsersAuth, getAccountStatement);
 router.post("/name-enquiry", allUsersAuth, getNameEnquiry);

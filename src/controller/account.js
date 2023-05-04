@@ -35,6 +35,7 @@ const registerAccount = async (req, res) => {
       adminId: admin._id,
       accountToken: token,
       adminID: admin._id,
+      organizationLabel:input.accountDetails.organizationLabel,
       customerID: input.accountDetails.customerID,
     });
 
