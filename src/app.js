@@ -37,6 +37,10 @@ if (process.env.NODE_ENV == "development") {
   URI = "mongodb://localhost/xanotech";
 }
 
+if(process.env.NODE_ENV == "QA"){
+  URI = "mongodb+srv://xanostage:Update32tH1@cluster0.xs3ox4u.mongodb.net/?retryWrites=true&w=majority"
+}
+
 connectDB(URI, () => {
   app.listen(process.env.PORT, () => {
     console.log(
