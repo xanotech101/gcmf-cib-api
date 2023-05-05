@@ -741,12 +741,15 @@ const verifierApproveRequest = async (req, res) => {
 
     if (transfer?.Status === "Successful" || transfer?.ResponseCode === "00") {
       request.transferStatus = "successful";
+      request.meta = transfer
       await request.save();
     } else if (transfer?.Status === "Failed") {
+      request.meta = transfer
       request.transferStatus = "failed";
       request.updatedAt = new Date();
       await request.save();
     } else {
+      request.meta = transfer
       request.updatedAt = new Date();
       await request.save();
     }
@@ -1227,7 +1230,7 @@ const approveBulkRequest = async (req, res) => {
         transaction: requests[0].batchVerificationID,
         user: request.initiator,
         title: "Transaction Request Approved",
-        message: `An authoriser has approved your transaction request for ${request.customerName}`,
+        message: `An authoriser has approved your transaction request for ${request.mandate.accountName}`,
       });
 
       request.status = "in progress";
@@ -1338,8 +1341,11 @@ const approveBulkRequest = async (req, res) => {
 
 const verifierBulkaprove = async (req, res) => {
   try {
+    const mine = await User.findById(req.user._id);
     const transactionIds = req.body.transactions
     const userId = req.user._id;
+    let transfer;
+
     const requests = await InitiateRequest.find({ _id: { $in: transactionIds } }).populate("mandate");
 
     const requestsByBatchVerificationId = requests.reduce((accumulator, request) => {
@@ -1352,11 +1358,11 @@ const verifierBulkaprove = async (req, res) => {
     const batchVerificationId = req.body.batchId;
 
     if (!batchVerificationId) {
-      return res.status(400).json({ message: "Batch verification ID is required", status: "error" });
+      return res.status(400).json({ message: "Batch verification ID is required", success: false });
     }
 
     if (!(batchVerificationId in requestsByBatchVerificationId)) {
-      return res.status(400).json({ message: `No transactions found for batch verification ID ${batchVerificationId}`, status: "error" });
+      return res.status(400).json({ message: `No transactions found for batch verification ID ${batchVerificationId}`, success: false });
     }
 
     const requestsToApprove = requestsByBatchVerificationId[batchVerificationId];
@@ -1376,6 +1382,7 @@ const verifierBulkaprove = async (req, res) => {
 
     requestsToApprove.map(async (request) => {
       // update and save request
+
       request.status = "approved";
       request.transferStatus = "disburse pending";
       request.verifierAction = {
@@ -1385,20 +1392,21 @@ const verifierBulkaprove = async (req, res) => {
       await request.save()
 
 
-      // notify initiator and authorizers
+      // add notification and audit trail to arrays
       const authorizers = request.mandate.authorisers;
+
       await notificationService.createNotifications([
         {
           transaction: request._id,
           user: request.initiator,
           title: "Request approved",
-          message: `Your transaction request for ${request.customerName} has been approved`,
+          message: `Your transaction request for ${request.mandate.accountName} has been approved`,
         },
         ...authorizers.map((authorizer) => ({
           transaction: request._id,
           user: authorizer,
           title: "Request approved",
-          message: `Transaction request for ${request.customerName} has been approved`,
+          message: `Transaction request for ${request.mandate.accountName} has been approved`,
         })),
       ]);
 
@@ -1421,7 +1429,6 @@ const verifierBulkaprove = async (req, res) => {
       await request.save();
 
       // send request to bank one
-      let transfer;
 
       if (request.type === "inter-bank") {
         const payload = {
@@ -1453,8 +1460,28 @@ const verifierBulkaprove = async (req, res) => {
         };
         transfer = await bankOneService.doIntraBankTransfer(payload);
       }
+
+      if (transfer?.Status === "Successful" || transfer?.ResponseCode === "00") {
+        request.meta = transfer
+        request.transferStatus = "successful";
+        await request.save();
+      } else if (transfer?.Status === "Failed") {
+        request.meta = transfer
+        request.transferStatus = "failed";
+        request.updatedAt = new Date();
+        await request.save();
+      } else {
+        request.meta = transfer
+        request.updatedAt = new Date();
+        await request.save();
+      }
     })
 
+    return res.status(200).json({
+      message: "Request approved successfully",
+      status: "success",
+      meta: transfer
+    });
 
 
   } catch (error) {

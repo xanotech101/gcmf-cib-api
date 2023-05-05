@@ -292,13 +292,13 @@ const resetPassword = async (req, res) => {
 const registerUser = async (req, res) => {
   try {
     const { organizationId } = req.user;
-    const userExits = await User.findOne({ email: req.body.email });
+    const userExits = await User.findOne({ email: req.body.email, organizationId });
 
     if (userExits) {
       return res.status(400).send({
         status: "failed",
         data: null,
-        message: "User is already registered",
+        message: "User is already registered to this organization",
       });
     }
 
