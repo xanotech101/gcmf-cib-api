@@ -3,13 +3,13 @@ const organizationmodel = require('../../model/organization');
 
 const createOrganizationLabel = async (req, res) => {
     try {
-        console.log(req.body)
         const createLabel = await organizationmodel.findOne({ label: req.body.label })
         if (createLabel) {
             return res.status(400).json({ message: 'oraganizationLabel already created' });
         }
         await organizationmodel.create({
-            label: req.body.label
+            label: req.body.label,
+            code: getInitials(req.body.label)
         })
 
         return res.status(200).json({ message: 'organization created successfully' });
@@ -31,5 +31,16 @@ const getAllOrganizationLabel = async (req, res) => {
         return res.status(500).json({ message: error.message });
     }
 }
+
+function getInitials(str) {
+    // Check if the string has a space
+    const spaceIndex = str.indexOf(' ');
+    
+    if (spaceIndex !== -1) {
+      return str.charAt(0) + str.charAt(spaceIndex + 1);
+    } else {
+      return str.substring(0, 2);
+    }
+  }
 
 module.exports = { createOrganizationLabel, getAllOrganizationLabel }
