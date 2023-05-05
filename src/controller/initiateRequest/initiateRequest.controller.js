@@ -1392,7 +1392,6 @@ const verifierBulkaprove = async (req, res) => {
       // add notification and audit trail to arrays
       const authorizers = request.mandate.authorisers;
 
-      console.log(request)
       await notificationService.createNotifications([
         {
           transaction: request._id,
