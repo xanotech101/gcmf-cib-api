@@ -98,17 +98,3 @@ userSchema.methods.toJSON = function () {
 
 module.exports = mongoose.model("User", userSchema);
 
-
-const thirdPartyUser = new mongoose.Schema({
-  organization_name: {
-    type: String,
-    required: true
-  },
-  requestCount: {
-    type: Number,
-    default: 0
-  }
-})
-
-const thirdPartyModel = mongoose.model('thirdparty', thirdPartyUser)
-module.exports = thirdPartyModel

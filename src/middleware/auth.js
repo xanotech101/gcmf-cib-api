@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const thirdPartyModel = require("../model/user.model");
+const thirdPartyModel = require("../model/thirdParty.model");
 
 function superUserAuth(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -226,6 +226,7 @@ async function validateAuthorization(req, res, next) {
     }
 
     checkUser.requestCount += 1
+    checkUser.updatedAt = new Date.now()
     checkUser.save()
     req.user = user
     next()
