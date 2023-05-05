@@ -77,6 +77,7 @@ const initiateRequestSchema = new mongoose.Schema(
       enum: ["inter-bank", "intra-bank"],
       type: String,
     },
+    meta:{},
     time: Date,
     createdAt: {
       type: Date,
