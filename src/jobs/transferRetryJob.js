@@ -35,7 +35,7 @@ const transferRetryJob = new CronJob("*/1 * * * *", async () => {
         await transaction.save()
       }
       if(response.IsSuccessful && response.Status === 'Failed') {
-        transaction.transferStatus = "successful"
+        transaction.transferStatus = "failed"
         transaction.retryCount = transaction.retryCount + 1
         transaction.meta = {
           ...(transaction.meta ?? {}),
