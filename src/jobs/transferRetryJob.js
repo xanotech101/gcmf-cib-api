@@ -4,7 +4,7 @@ const connectDB = require('../config/db');
 const InitiateRequest = require("../model/initiateRequest.model");
 const bankOneService = require('../services/bankOne.service');
 
-const transferRetryJob = new CronJob("*/1 * * * *", async () => {
+const transferRetryJob = new CronJob("*/15 * * * *", async () => {
   console.info('transfer retry job started')
   await connectDB(process.env.MONGO_URI, () => {
     console.info('connected to db for transfer retry job')
