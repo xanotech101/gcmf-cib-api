@@ -3,7 +3,6 @@ require("dotenv").config();
 const connectDB = require('../config/db');
 const InitiateRequest = require("../model/initiateRequest.model");
 const bankOneService = require('../services/bankOne.service');
-const mongoose = require("mongoose");
 
 const transferRetryJob = new CronJob("*/1 * * * *", async () => {
   console.info('transfer retry job started')
@@ -30,6 +29,7 @@ const transferRetryJob = new CronJob("*/1 * * * *", async () => {
           ResponseCode: response.ResponseCode,
           ResponseMessage: response.ResponseMessage,
           ResponseDescription: response.ResponseDescription,
+          StatusDescription: response.Status,
           ResponseStatus: response.ResponseStatus
         }
         await transaction.save()
@@ -44,6 +44,7 @@ const transferRetryJob = new CronJob("*/1 * * * *", async () => {
           ResponseMessage: response.ResponseMessage,
           ResponseCode: response.ResponseCode,
           ResponseDescription: response.ResponseDescription,
+          StatusDescription: response.Status,
           ResponseStatus: response.ResponseStatus,
         }
         await transaction.save()
