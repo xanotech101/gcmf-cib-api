@@ -743,14 +743,14 @@ const verifierApproveRequest = async (req, res) => {
       request.transferStatus = "successful";
       request.meta = transfer
       await request.save();
-    } else if (transfer?.Status === "Failed") {
+    } else if (transfer?.Status === "Pending" || ['91', '06'].includes(transfer?.ResponseCode)) {
       request.meta = transfer
-      request.transferStatus = "failed";
       request.updatedAt = new Date();
       await request.save();
     } else {
       request.meta = transfer
       request.updatedAt = new Date();
+      request.transferStatus = 'failed'
       await request.save();
     }
     return res.status(200).json({
