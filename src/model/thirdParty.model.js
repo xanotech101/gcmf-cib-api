@@ -9,15 +9,12 @@ const thirdPartyUser = new mongoose.Schema({
       type: Number,
       default: 0
     },
-    createdAt: {
-      type: Date,
-      default: Date.now()
-    },
-    updatedAt: {
-      type: Date,
-      default: Date.now()
-    },
-  })
+    bvnCount:{
+      type: Number,
+      default: 0
+    }
+  },
+  {timestamps:true})
   
   const thirdPartyModel = mongoose.model('thirdparty', thirdPartyUser)
   module.exports = thirdPartyModel

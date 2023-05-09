@@ -87,6 +87,19 @@ class BankOneService {
        throw error.response.data;;
     }
   }
+
+  async getBVNEnquiry(authToken, bvn) {
+    try {
+      const { data } = await axios.post(`${config.bvnEnquiry}`, {
+        BVN:bvn,
+        Token: authToken,
+      });
+      return data;
+    } catch (error) {
+      console.log('service',error.response.data);
+       throw error.response.data;;
+    }
+  }
   
   async getbankDetails(authToken, accountNumber) {
     try {
