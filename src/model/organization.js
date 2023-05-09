@@ -9,6 +9,7 @@ const organizationLabel = new mongoose.Schema({
         type: Date,
         default: Date.now()
       },
+      code:String,
       updatedAt: {
         type: Date,
         default: Date.now()

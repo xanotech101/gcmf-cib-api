@@ -205,9 +205,8 @@ function allUsersAuth(req, res, next) {
 }
 
 
-async function validateAuthorization(req, res, next) {
+async function validateThirdPartyAuthorization(req, res, next) {
   try {
-    console.log(req.headers.authorization)
     if (!req.headers.authorization) {
       return res.status(401).send({
         success: false,
@@ -225,12 +224,20 @@ async function validateAuthorization(req, res, next) {
       })
     }
 
-    checkUser.requestCount += 1
-    checkUser.updatedAt = new Date.now()
-    checkUser.save()
-    req.user = user
-    next()
+    if (req.body.requestType === 'bvn') {
+      checkUser.bvnCount += 1
+      checkUser.updatedAt = Date.now()
+      checkUser.save()
+      req.user = user
+      next()
 
+    } else {
+      checkUser.requestCount += 1
+      checkUser.updatedAt = Date.now()
+      checkUser.save()
+      req.user = user
+      next()
+    }
   } catch (error) {
     console.log(error)
     res.status(500).send({
@@ -246,5 +253,5 @@ module.exports = {
   verifierAuth,
   allUsersAuth,
   authoriserAuth,
-  validateAuthorization
+  validateThirdPartyAuthorization
 };

@@ -38,7 +38,7 @@ async function generateUserToken(req, res) {
         );
 
         await thirdPartyModel.create({
-            organization_name: req.body.organization_name
+            organization_name: req.body.organization_name,
         })
 
         return res.status(200).send({
