@@ -9,7 +9,8 @@ const createOrganizationLabel = async (req, res) => {
             return res.status(400).json({ message: 'oraganizationLabel already created' });
         }
         await organizationmodel.create({
-            label: req.body.label
+            label: req.body.label,
+            code: getInitials(req.body.label)
         })
 
         return res.status(200).json({ message: 'organization created successfully' });
@@ -30,6 +31,20 @@ const getAllOrganizationLabel = async (req, res) => {
         console.log('organizations', error)
         return res.status(500).json({ message: error.message });
     }
+}
+
+function getInitials(name) {
+    let initials = '';
+    const words = name.split(' ');
+
+    for (let i = 0; i < words.length; i++) {
+        const word = words[i];
+        if (word.length > 0) {
+            initials += word[0];
+        }
+    }
+
+    return initials.substring(0, 2);
 }
 
 module.exports = { createOrganizationLabel, getAllOrganizationLabel }

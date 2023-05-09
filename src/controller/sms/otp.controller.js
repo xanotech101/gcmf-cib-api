@@ -17,9 +17,14 @@ const generateOTP = async (req, res) => {
     const smsBody = `Your GCMB confirmation OTP code is ${otp}.`;
 
     let num = `${user.phone}`;
-    if (num.startsWith("0")) {
-      num = num.replace("0", "+234");
+    if (/^080|^081|^070|^071|^090|^091/.test(num)) {
+      // Replace the first 0 with +234
+      num = num.replace(/^0/, "+234");
+    } else if (/^\+2340/.test(num)) {
+      // Remove the first 0
+      num = num.replace(/^0/, "");
     }
+  
 
     let newOtp = {}
 
@@ -88,7 +93,7 @@ const generateOtpForBatchUpload = async (req, res) => {
 
     let newOtp = {}
 
-    const checkForTransactionIds = await initiateRequestModel.find({ $or:[{_id: { $in: transactionIds }, status: "pending"},{_id: { $in: transactionIds }, status: "in progress"},{_id: { $in: transactionIds }, status: "awaiting verification"} ]})
+    const checkForTransactionIds = await initiateRequestModel.find({ $or: [{ _id: { $in: transactionIds }, status: "pending" }, { _id: { $in: transactionIds }, status: "in progress" }, { _id: { $in: transactionIds }, status: "awaiting verification" }] })
     if (checkForTransactionIds.length !== transactionIds.length) {
       return res.status(400).send({ message: 'Some of these transactions do not exist or are not pending.' })
     }

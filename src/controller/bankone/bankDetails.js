@@ -220,6 +220,35 @@ const getNameEnquiry = async (req, res) => {
     });
   }
 };
+const bvnEnquiry = async (req, res) =>{
+  try {
+    const {bvn } = req.body;
+
+    const enquiry = await bankOneService.getBVNEnquiry(
+      authToken,
+      bvn
+    );
+
+    if (!enquiry) {
+      return res.status(500).json({
+        status: "Failed",
+        message: "Unable to get BVN details",
+      });
+    }
+
+    return res.status(200).json({
+      status: "Success",
+      message: "BVN Enquiry retrieved successfully",
+      data: enquiry,
+    });
+  } catch (error) {
+    console.log('controller', error)
+    return res.status(500).json({
+      status: "Failed",
+      message: error,
+    });
+  }
+}
 
 const getTransactionsPaginated = async (req, res) => {
   try {
@@ -384,7 +413,8 @@ module.exports = {
   getAccountDetails,
   getAccountInfo,
   getTransactionStatus,
-  getAccountByAccountNoV2
+  getAccountByAccountNoV2,
+  bvnEnquiry
 };
 
 

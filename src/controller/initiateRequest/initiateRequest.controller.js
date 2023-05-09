@@ -710,8 +710,8 @@ const verifierApproveRequest = async (req, res) => {
     let transfer;
     if (request.type === "inter-bank") {
       const payload = {
-        Amount: request.amount,
-        Payer: `${mine.firstName} ${mine.lastName}`,
+        Amount: request.amount * 100,
+        Payer: organization.accountName,
         PayerAccountNumber: request.payerAccountNumber,
         ReceiverAccountNumber: request.beneficiaryAccountNumber,
         ReceiverAccountType: request.beneficiaryAccountType,
@@ -729,7 +729,7 @@ const verifierApproveRequest = async (req, res) => {
       transfer = await bankOneService.doInterBankTransfer(payload);
     } else {
       const payload = {
-        Amount: request.amount,
+        Amount: request.amount * 100,
         RetrievalReference: request.transactionReference,
         FromAccountNumber: request.payerAccountNumber,
         ToAccountNumber: request.beneficiaryAccountNumber,
@@ -1195,6 +1195,7 @@ const approveBulkRequest = async (req, res) => {
 const verifierBulkaprove = async (req, res) => {
   try {
     const mine = await User.findById(req.user._id);
+     const organization = await Account.findById(mine.organizationId);
     const transactionIds = req.body.transactions
     const userId = req.user._id;
     let transfer;
@@ -1285,8 +1286,8 @@ const verifierBulkaprove = async (req, res) => {
 
       if (request.type === "inter-bank") {
         const payload = {
-          Amount: request.amount,
-          Payer: `${mine.firstName} ${mine.lastName}`,
+          Amount: request.amount * 100,
+          Payer:organization.accountName,
           PayerAccountNumber: request.payerAccountNumber,
           ReceiverAccountNumber: request.beneficiaryAccountNumber,
           ReceiverAccountType: request.beneficiaryAccountType,
@@ -1304,7 +1305,7 @@ const verifierBulkaprove = async (req, res) => {
         transfer = await bankOneService.doInterBankTransfer(payload);
       } else {
         const payload = {
-          Amount: request.amount,
+          Amount: request.amount * 100,
           RetrievalReference: request.transactionReference,
           FromAccountNumber: request.payerAccountNumber,
           ToAccountNumber: request.beneficiaryAccountNumber,
