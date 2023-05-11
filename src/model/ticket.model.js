@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { toISOLocal } = require("../utils/utils");
 
 const ticketSchema = new mongoose.Schema(
   {
@@ -25,11 +26,11 @@ const ticketSchema = new mongoose.Schema(
         }
       }
     ],
-    meta: {}
+    meta: {},
+    createdAt: { type: String, default: toISOLocal(new Date()) },
+    updatedAt: { type: String, default: toISOLocal(new Date()) },
   },
-  {
-    timestamps: true,
-  }
+
 );
 
 module.exports = mongoose.model("Ticket", ticketSchema);

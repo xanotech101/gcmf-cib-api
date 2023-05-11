@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { toISOLocal } = require("../utils/utils");
 
 const otpSchema = new mongoose.Schema(
   {
@@ -12,14 +13,8 @@ const otpSchema = new mongoose.Schema(
     },
     context: String,
     otp: String,
-    createdAt: {
-      type: Date,
-      default: Date.now()
-    },
-    updatedAt: {
-      type: Date,
-      default: Date.now()
-    },
+    createdAt: { type: String, default: toISOLocal(new Date()) },
+  updatedAt: { type: String, default: toISOLocal(new Date()) },
   }
 );
 

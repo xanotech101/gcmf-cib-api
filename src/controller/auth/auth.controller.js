@@ -10,7 +10,7 @@ const preLogin = async (req, res) => {
   const { email, password } = req.body;
   try {
     const user = await User.findOne({ email });
-  
+
     if (!user) {
       return res.status(400).send({
         data: null,
@@ -360,6 +360,42 @@ const registerUser = async (req, res) => {
   }
 };
 
+const refreshAuth = async (req, res) => {
+  const { email } = req.body
+
+  const requestUser = await User.findOne({ email })
+
+  if (!requestUser) {
+    return res.status(400).send({ message: 'No user with this information available', status: 'fail' })
+  }
+
+  //sign user and generate token
+  //Email Details
+  const verificationToken = jwt.sign(
+    { user_email: email },
+    process.env.EMAIL_SECRET,
+    {
+      expiresIn: "30m",
+    }
+  );
+
+  requestUser.verificationToken = verificationToken;
+
+  const link = `${process.env.FRONTEND_URL}/verify-account/${verificationToken}`;
+
+  const subject = "Reset Verification Token";
+
+  const messageData = {
+    firstName: requestUser.firstName,
+    url: link,
+    message: `Dear ${requestUser.firstName}, welcome on board, Kinldy click below to confirm your account`,
+    year: new Date().getFullYear(),
+  }
+  sendEmail(email, subject, "reset-password", messageData);
+  const user = requestUser.save()
+  return res.status(200).send({ message: 'token generated', data: registerUser })
+}
+
 module.exports = {
   verifyUser,
   forgetPassword,
@@ -367,4 +403,5 @@ module.exports = {
   resetPassword,
   registerUser,
   preLogin,
+  refreshAuth
 };

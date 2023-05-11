@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
+const { toISOLocal } = require("../utils/utils");
 
 const accountSchema = new mongoose.Schema(
   {
@@ -26,14 +27,8 @@ const accountSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    createdAt: {
-      type:Date,
-      default: Date.now()
-    },
-    updatedAt: {
-      type:Date,
-      default: Date.now()
-    },
+    createdAt: { type: String, default: toISOLocal(new Date()) },
+  updatedAt: { type: String, default: toISOLocal(new Date()) },
   }
 );
 

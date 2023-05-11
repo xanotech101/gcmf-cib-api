@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
 const Privilege = require("./privilege.model");
+const { toISOLocal } = require("../utils/utils");
 
 const userSchema = new mongoose.Schema(
   {
@@ -56,14 +57,8 @@ const userSchema = new mongoose.Schema(
         answer: String,
       }
     ],
-    createdAt: {
-      type: Date,
-      default: Date.now()
-    },
-    updatedAt: {
-      type: Date,
-      default: Date.now()
-    },
+    createdAt: { type: String, default: toISOLocal(new Date()) },
+    updatedAt: { type: String, default: toISOLocal(new Date()) },
   }
 
 );
