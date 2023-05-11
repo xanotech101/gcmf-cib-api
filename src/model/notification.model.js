@@ -1,5 +1,6 @@
 
 const mongoose = require("mongoose");
+const { toISOLocal } = require("../utils/utils");
 
 const notificationSchema = new mongoose.Schema(
   {
@@ -19,14 +20,8 @@ const notificationSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    createdAt: {
-      type: Date,
-      default: new Date()
-    },
-    updatedAt: {
-      type: Date,
-      default: new Date()
-    },
+    createdAt: { type: String, default: toISOLocal(new Date()) },
+    updatedAt: { type: String, default: toISOLocal(new Date()) },
   }
 );
 
