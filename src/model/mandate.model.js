@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { toISOLocal } = require("../utils/utils");
 
 const mandateSchema = new mongoose.Schema(
   {
@@ -20,14 +21,8 @@ const mandateSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
-    createdAt: {
-      type: Date,
-      default: Date.now()
-    },
-    updatedAt: {
-      type: Date,
-      default: Date.now()
-    },
+    createdAt: { type: String, default: toISOLocal(new Date()) },
+    updatedAt: { type: String, default: toISOLocal(new Date()) },
   }
 );
 

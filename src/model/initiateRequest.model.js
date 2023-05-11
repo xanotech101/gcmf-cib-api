@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { toISOLocal } = require("../utils/utils");
 
 const initiateRequestSchema = new mongoose.Schema(
   {
@@ -79,14 +80,8 @@ const initiateRequestSchema = new mongoose.Schema(
     },
     meta:{},
     time: Date,
-    createdAt: {
-      type: Date,
-      default: Date.now()
-    },
-    updatedAt: {
-      type: Date,
-      default: Date.now()
-    },
+    createdAt: { type: String, default: toISOLocal(new Date()) },
+  updatedAt: { type: String, default: toISOLocal(new Date()) },
   }
 );
 

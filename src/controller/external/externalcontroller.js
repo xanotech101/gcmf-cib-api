@@ -4,6 +4,7 @@ const organization = require("../../model/organization");
 async function generateUserToken(req, res) {
     try {
 
+
         if (!req.body.organization_name) {
             return res.status(400).send({
                 success: false,
@@ -103,4 +104,5 @@ async function getAllThirdPartyOrganizations(req, res) {
         })
     }
 }
+
 module.exports = { generateUserToken, getAllThirdPartyOrganizations }
