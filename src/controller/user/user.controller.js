@@ -1,5 +1,4 @@
 const User = require("../../model/user.model");
-const { validateChangePasswordSchema } = require("../../utils/utils");
 const bcrypt = require("bcrypt");
 const { PER_PAGE } = require("../../utils/constants");
 const mongoose = require("mongoose");
@@ -21,13 +20,14 @@ const getOrganizationUsers = async (req, res) => {
 
     const { privilege, withPagination } = req.query;
 
-    const privilegeId = (await Privilege.findOne({ name: privilege })?._id) || null;
+    const privilegeId =
+      (await Privilege.findOne({ name: privilege })?._id) || null;
 
     if (withPagination === "true") {
       const users = await User.aggregate([
         {
           $match: {
-            organizationId: mongoose.Types.ObjectId(id)
+            organizationId: mongoose.Types.ObjectId(id),
           },
         },
         {
@@ -58,10 +58,10 @@ const getOrganizationUsers = async (req, res) => {
             localField: "organizationId",
             foreignField: "_id",
             as: "organizationId",
-          }
+          },
         },
         {
-          $unwind : "$organizationId"
+          $unwind: "$organizationId",
         },
         {
           $project: {
@@ -104,7 +104,7 @@ const getOrganizationUsers = async (req, res) => {
         },
       });
     }
-    
+
     const users = await User.aggregate([
       {
         $match: {
@@ -134,8 +134,8 @@ const getOrganizationUsers = async (req, res) => {
           as: "privileges",
           pipeline: [{ $project: { name: 1 } }],
         },
-      }
-    ])
+      },
+    ]);
 
     if (!users) {
       res.status(404).json({
@@ -160,7 +160,9 @@ const getOrganizationUsers = async (req, res) => {
 
 const getUserProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).populate('privileges organizationId')
+    const user = await User.findById(req.user._id).populate(
+      "privileges organizationId"
+    );
     res.status(200).json({
       message: "Successfully fetched user",
       data: { user },
@@ -178,7 +180,7 @@ const getUserProfile = async (req, res) => {
 
 const getUserProfileById = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id).populate('organizationId');
+    const user = await User.findById(req.params.id).populate("organizationId");
     res.status(200).json({
       message: "Successfully fetched user",
       data: { user },
@@ -203,9 +205,9 @@ const updateUserProfile = async (req, res) => {
     user.firstName = firstName ?? user.firstName;
     user.lastName = lastName ?? user.lastName;
     user.phone = phone ?? user.phone;
-    user.imageUrl = imageUrl ??  user.imageUrl;
+    user.imageUrl = imageUrl ?? user.imageUrl;
 
-    console.log('user', user)
+    console.log("user", user);
 
     await user.save();
 
@@ -228,14 +230,8 @@ const updateUserPriviledge = async (req, res) => {
   try {
     const { privileges, id } = req.body;
     const user = await User.findById(id);
-
-   
-
     user.privileges = privileges;
-   
-
     await user.save();
-
     res.status(200).json({
       message: "Successfully updated",
       data: { user },
@@ -254,10 +250,8 @@ const updateUserPriviledge = async (req, res) => {
 const changePassword = async (req, res) => {
   const { _id } = req.user;
   try {
-
-   
-const validateChangePassword = (user) => (payload) =>
-  user.validate(payload, { abortEarly: false });
+    const validateChangePassword = (user) => (payload) =>
+      user.validate(payload, { abortEarly: false });
 
     const { error } = validateChangePassword(req.body);
     if (error) {
@@ -308,67 +302,88 @@ const validateChangePassword = (user) => (payload) =>
 const getAllUsers = async (req, res) => {
   try {
     const { page, perPage, name } = req.query;
+    console.log("🚀 ~ file: user.controller.js:305 ~ getAllUsers ~ perPage:", perPage)
 
-const options = {
-  limit: perPage || PER_PAGE,
-  page: page || 1,
-  sort: { createdAt: -1 },
-};
+    const options = {
+      limit: perPage || PER_PAGE,
+      page: page || 1,
+      sort: { createdAt: -1 },
+    };
 
-const matchStage = {};
-if (name) {
-  const [firstName, lastName, email] = name ? name.split(" ") : ["", ""];
-  matchStage.$or = [
-    { firstName: { $regex: new RegExp(firstName, "i") } },
-    { lastName: { $regex: new RegExp(lastName, "i") } },
-    { email: { $regex: new RegExp(email, "i") } },
-  ];
-}
+    const matchStage = {};
+    if (name) {
+      const [firstName, lastName, email] = name ? name.split(" ") : ["", ""];
+      matchStage.$or = [
+        { firstName: { $regex: new RegExp(firstName, "i") } },
+        { lastName: { $regex: new RegExp(lastName, "i") } },
+        { email: { $regex: new RegExp(email, "i") } },
+      ];
+    }
 
-const user = await User.aggregate([
-  { $match: matchStage },
-  {
-    $facet: {
-      data: [
-        {
-          $sort: { ...options.sort },
+    const user = await User.aggregate([
+      { $match: matchStage },
+      {
+        $lookup: {
+          from: "accounts",
+          localField: "organizationId",
+          foreignField: "_id",
+          as: "organizationId",
+          pipeline: [{ $project: { accountName: 1 } }],
         },
-        {
-          $skip: options.limit * (options.page - 1),
+      },
+      {
+        $unwind: "$organizationId",
+      },
+      {
+        $lookup: {
+          from: "privileges",
+          localField: "privileges",
+          foreignField: "_id",
+          as: "privileges",
+          pipeline: [{ $project: { name: 1 } }],
         },
-        {
-          $limit: options.limit * 1,
+      },
+      {
+        $facet: {
+          data: [
+            {
+              $sort: { ...options.sort },
+            },
+            {
+              $skip: options.limit * (options.page - 1),
+            },
+            {
+              $limit: options.limit * 1,
+            },
+          ],
+          meta: [
+            {
+              $count: "total",
+            },
+            {
+              $addFields: {
+                page: options.page,
+                perPage: options.limit,
+              },
+            },
+          ],
         },
-      ],
-      meta: [
-        {
-          $count: "total",
-        },
-        {
-          $addFields: {
-            page: options.page,
-            perPage: options.limit,
-          },
-        },
-      ],
-    },
-  },
-]);
+      },
+    ]);
 
-if (user[0].meta.total === 0) {
-  return res.status(404).json({
-    message: "No user found with the provided name",
-    status: "failed",
-  });
-}
+    if (user[0].meta.total === 0) {
+      return res.status(404).json({
+        message: "No user found with the provided name",
+        status: "failed",
+      });
+    }
 
-return res.status(200).json({
-  message: "Successfully fetched users",
-  data: { user },
-  status: "success",
-});
+    return res.status(200).json({
+      message: "Successfully fetched users",
+      data: { users: user[0].data, meta: user[0].meta?.[0] ?? {} },
+      status: "success",
+    });
   } catch (error) {
-    console.log(error);
     res.status(500).json({
       message: error.message,
       data: null,
@@ -430,37 +445,31 @@ const createSecurityQuestions = async (req, res) => {
   try {
     const user = await User.findOne({ email });
 
-  if (!user) {
-    return res.status(400).json({
-      message: "User does not exist",
-      data: null,
-      status: "failed",
-    });
-  }
-
-    // //  loop through the array of security questions and hash the answer for each one of them
-    // for (let i = 0; i < secretQuestions.length; i++) {
-    //   secretQuestions[i].answer = await securityQuestionService.hashAnswer(secretQuestions[i].answer);
-    // }
+    if (!user) {
+      return res.status(400).json({
+        message: "User does not exist",
+        data: null,
+        status: "failed",
+      });
+    }
 
     user.secretQuestions = secretQuestions;
     user.is2FAEnabled = true;
 
-    if(password){
+    if (password) {
       const salt = await bcrypt.genSalt(10);
       user.password = await bcrypt.hash(password, salt);
     }
 
     await user.save();
 
-    //up date the user
+    //update the user
     res.status(200).json({
       message: "Security questions created successfully",
       data: user,
       status: "success",
     });
   } catch (error) {
-    console.log(error);
     return res.status(500).json({
       message: error.message,
       data: null,
@@ -479,5 +488,5 @@ module.exports = {
   deleteAnyUser,
   createSecurityQuestions,
   updateUserPriviledge,
-  getUserProfileById
+  getUserProfileById,
 };

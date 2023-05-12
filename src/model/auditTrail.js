@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { toISOLocal } = require("../utils/utils");
 
 const auditTrailSchema = new mongoose.Schema(
   {
@@ -16,14 +17,8 @@ const auditTrailSchema = new mongoose.Schema(
     },
     message: String,
     organizationId: String,
-    createdAt: {
-      type: Date,
-      default: Date.now()
-    },
-    updatedAt: {
-      type: Date,
-      default: Date.now()
-    },
+    createdAt: { type: String, default: toISOLocal(new Date()) },
+  updatedAt: { type: String, default: toISOLocal(new Date()) },
   },
 
 );

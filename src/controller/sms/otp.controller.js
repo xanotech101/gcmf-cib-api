@@ -93,6 +93,7 @@ const generateOtpForBatchUpload = async (req, res) => {
 
     let newOtp = {}
 
+    //check if the requested transactions are pending or in review
     const checkForTransactionIds = await initiateRequestModel.find({ $or: [{ _id: { $in: transactionIds }, status: "pending" }, { _id: { $in: transactionIds }, status: "in progress" }, { _id: { $in: transactionIds }, status: "awaiting verification" }] })
     if (checkForTransactionIds.length !== transactionIds.length) {
       return res.status(400).send({ message: 'Some of these transactions do not exist or are not pending.' })
@@ -160,6 +161,7 @@ const generateOtpForBatchUpload = async (req, res) => {
       message: "Successfully sent otp code",
       data: otp,
       status: "success",
+      batchID: newBatchverificationID
     });
 
   } catch (error) {
