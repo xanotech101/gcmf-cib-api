@@ -167,7 +167,7 @@ const getAllInitiatorRequests = async (req, res) => {
 
 const getAllAssignedRequests = async (req, res) => {
   //search transactionReference and amount
-  const { perPage, page, ref, amount } = req.query;
+  const { perPage, page, ref, amount, status } = req.query;
 
   const options = {
     page: page || 1,
@@ -194,6 +194,10 @@ const getAllAssignedRequests = async (req, res) => {
 
   if (amount) {
     query.amount = parseInt(amount);
+  }
+
+  if(status) {
+    query.status = status;
   }
 
   try {
@@ -1346,6 +1350,7 @@ const verifierBulkaprove = async (req, res) => {
     });
   }
 }
+
 module.exports = {
   initiateRequest,
   declineRequest,
