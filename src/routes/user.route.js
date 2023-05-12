@@ -30,7 +30,7 @@ router.post("/secret-questions/create", createSecurityQuestions)
 
 //admin routes
 router.get("/allbranchusers", allUsersAuth, getOrganizationUsers);
-router.get("/all", adminAuth, getAllUsers);
+router.get("/all", superUserAuth, getAllUsers);
 router.delete("/delete_user", superUserAuth, deleteAnyUser);
 router.delete("/delete_nonadmin", adminAuth, deleteNonAdminUsers);
 // router.post("/priviledges", superUserAuth, createPriviledges);
