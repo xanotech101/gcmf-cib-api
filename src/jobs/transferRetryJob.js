@@ -1,10 +1,15 @@
 var CronJob = require('cron').CronJob;
+const fs = require('fs')
+const path = require('path')
+
 require("dotenv").config();
 const connectDB = require('../config/db');
 const InitiateRequest = require("../model/initiateRequest.model");
 const bankOneService = require('../services/bankOne.service');
 
-const transferRetryJob = new CronJob("*/15 * * * *", async () => {
+const filePath = path.join(__dirname, '../transferRetryJob.log')
+
+const transferRetryJob = new CronJob("*/1 * * * *", async () => {
   console.info('transfer retry job started')
   await connectDB(process.env.MONGO_URI, () => {
     console.info('connected to db for transfer retry job')
@@ -49,8 +54,19 @@ const transferRetryJob = new CronJob("*/15 * * * *", async () => {
         }
         await transaction.save()
       }
+      const message = {
+        response,
+        date: new Date(),
+        transaction: transaction._id
+      }
+      fs.appendFileSync(filePath, JSON.stringify(message))
     }catch(error) {
-      console.log("🚀 ~ file: transferRetryJob.js:22 ~ cursor.on ~ error:", error, transaction._id)
+      const message = {
+        response: error,
+        date: new Date(),
+        transaction: transaction._id
+      }
+      fs.appendFileSync(filePath, JSON.stringify(message))
     }
   }).on('close', () => {
     console.info('transfer retry job closed')

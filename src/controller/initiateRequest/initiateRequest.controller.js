@@ -114,7 +114,7 @@ const initiateRequest = async (req, res) => {
 
 const getAllInitiatorRequests = async (req, res) => {
   ////search transactionReference and amount
-  const { perPage, page, ref, amount } = req.query;
+  const { perPage, page, ref, amount, status } = req.query;
 
   const mine = await User.findById(req.user._id);
   const organizationId = mine.organizationId;
@@ -136,6 +136,10 @@ const getAllInitiatorRequests = async (req, res) => {
 
   if (amount) {
     filter.amount = parseInt(amount);
+  }
+
+  if(status) {
+    filter.status = status;
   }
 
   try {
@@ -257,21 +261,35 @@ const getAllAssignedRequests = async (req, res) => {
 };
 
 const getAllRequestPerOrganization = async (req, res) => {
-  const { page, perPage } = req.query;
+  const { page, perPage, ref, amount, status, branchId } = req.query;
   const mine = await User.findById(req.user._id);
-  const organizationId = req.query?.branchId ?? mine.organizationId;
+  const organizationId = branchId ?? mine.organizationId;
   const options = {
     page: page || 1,
     limit: perPage || PER_PAGE,
     sort: { createdAt: -1 },
   };
 
+  const query = {
+    organizationId: new mongoose.Types.ObjectId(organizationId),
+  };
+
+  if (ref) {
+    query.transactionReference = { $regex: new RegExp(ref, "i") };
+  }
+
+  if (amount) {
+    query.amount = parseInt(amount);
+  }
+
+  if(status) {
+    query.status = status;
+  }
+
   try {
     const request = await InitiateRequest.aggregate([
       {
-        $match: {
-          organizationId: new mongoose.Types.ObjectId(organizationId),
-        },
+        $match: query,
       },
       {
         $lookup: {
