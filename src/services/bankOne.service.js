@@ -33,7 +33,6 @@ class BankOneService {
       const { data } = await axios.get(
         `${config.getAccountByCustomerID}?authtoken=${authToken}&customerId=${customerId}`
       );
-      console.log(data)
       return data;
     } catch (error) {
       console.log('service',error.response.data);

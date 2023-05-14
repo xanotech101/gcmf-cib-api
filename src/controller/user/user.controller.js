@@ -302,8 +302,6 @@ const changePassword = async (req, res) => {
 const getAllUsers = async (req, res) => {
   try {
     const { page, perPage, name } = req.query;
-    console.log("🚀 ~ file: user.controller.js:305 ~ getAllUsers ~ perPage:", perPage)
-
     const options = {
       limit: perPage || PER_PAGE,
       page: page || 1,

@@ -81,7 +81,7 @@ const initiateRequestSchema = new mongoose.Schema(
     meta:{},
     time: Date,
     createdAt: { type: String, default: toISOLocal(new Date()) },
-  updatedAt: { type: String, default: toISOLocal(new Date()) },
+    updatedAt: { type: String, default: toISOLocal(new Date()) },
   }
 );
 
