@@ -33,7 +33,7 @@ const transferRetryJob = new CronJob("*/1 * * * *", async () => {
           IsSuccessful: response.IsSuccessful,
           ResponseCode: response.ResponseCode,
           ResponseMessage: response.ResponseMessage,
-          ResponseDescription: response.ResponseDescription,
+          ResponseDescription: response.ResponseMessage,
           StatusDescription: response.Status,
           ResponseStatus: response.ResponseStatus
         }
@@ -48,7 +48,7 @@ const transferRetryJob = new CronJob("*/1 * * * *", async () => {
           IsSuccessful: response.IsSuccessful,
           ResponseMessage: response.ResponseMessage,
           ResponseCode: response.ResponseCode,
-          ResponseDescription: response.ResponseDescription,
+          ResponseDescription: response.ResponseMessage,
           StatusDescription: response.Status,
           ResponseStatus: response.ResponseStatus,
         }
