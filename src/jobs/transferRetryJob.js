@@ -1,8 +1,13 @@
 var CronJob = require('cron').CronJob;
+const fs = require('fs')
+const path = require('path')
+
 require("dotenv").config();
 const connectDB = require('../config/db');
 const InitiateRequest = require("../model/initiateRequest.model");
 const bankOneService = require('../services/bankOne.service');
+
+const filePath = path.join(__dirname, '../transferRetryJob.log')
 
 const transferRetryJob = new CronJob("*/15 * * * *", async () => {
   console.info('transfer retry job started')
@@ -28,7 +33,7 @@ const transferRetryJob = new CronJob("*/15 * * * *", async () => {
           IsSuccessful: response.IsSuccessful,
           ResponseCode: response.ResponseCode,
           ResponseMessage: response.ResponseMessage,
-          ResponseDescription: response.ResponseDescription,
+          ResponseDescription: response.ResponseMessage,
           StatusDescription: response.Status,
           ResponseStatus: response.ResponseStatus
         }
@@ -43,14 +48,25 @@ const transferRetryJob = new CronJob("*/15 * * * *", async () => {
           IsSuccessful: response.IsSuccessful,
           ResponseMessage: response.ResponseMessage,
           ResponseCode: response.ResponseCode,
-          ResponseDescription: response.ResponseDescription,
+          ResponseDescription: response.ResponseMessage,
           StatusDescription: response.Status,
           ResponseStatus: response.ResponseStatus,
         }
         await transaction.save()
       }
+      const message = {
+        response,
+        date: new Date(),
+        transaction: transaction._id
+      }
+      fs.appendFileSync(filePath, JSON.stringify(message))
     }catch(error) {
-      console.log("🚀 ~ file: transferRetryJob.js:22 ~ cursor.on ~ error:", error, transaction._id)
+      const message = {
+        response: error,
+        date: new Date(),
+        transaction: transaction._id
+      }
+      fs.appendFileSync(filePath, JSON.stringify(message))
     }
   }).on('close', () => {
     console.info('transfer retry job closed')

@@ -25,7 +25,6 @@ function superUserAuth(req, res, next) {
     req.user = decoded;
     next();
   } catch (ex) {
-    console.log(ex);
     res.status(400).send("Invalid token.");
   }
 }
@@ -33,7 +32,6 @@ function superUserAuth(req, res, next) {
 function adminAuth(req, res, next) {
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(" ")[1];
-  console.log('token ', token)
   try {
     if (!token) {
       return res.sendStatus(401).send({
@@ -45,9 +43,6 @@ function adminAuth(req, res, next) {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const arr = decoded.privileges;
     const role = decoded.role
-
-    console.log('arr ', arr)
-
 
     if (!arr.includes("admin") && !arr.includes("superUser")) {
       return res.status(403).json({
@@ -61,7 +56,6 @@ function adminAuth(req, res, next) {
 
     next();
   } catch (ex) {
-    console.log(ex);
     return res.status(401).send("Invalid token.");
   }
 }
@@ -95,7 +89,6 @@ function initiatorAuth(req, res, next) {
     req.user = decoded;
     next();
   } catch (ex) {
-    console.log(ex);
     return res.status(401).send("Invalid token.");
   }
 }
@@ -125,7 +118,6 @@ function verifierAuth(req, res, next) {
       });
     }
     req.user = decoded;
-    console.log("I am here in line 5");
     next();
   } catch (ex) {
     console.log(ex);
@@ -158,7 +150,6 @@ function authoriserAuth(req, res, next) {
       });
     }
     req.user = decoded;
-    console.log("I am here in line 5");
     next();
   } catch (ex) {
     console.log(ex);
