@@ -9,7 +9,7 @@ const bankOneService = require('../services/bankOne.service');
 
 const filePath = path.join(__dirname, '../transferRetryJob.log')
 
-const transferRetryJob = new CronJob("*/1 * * * *", async () => {
+const transferRetryJob = new CronJob("*/15 * * * *", async () => {
   console.info('transfer retry job started')
   await connectDB(process.env.MONGO_URI, () => {
     console.info('connected to db for transfer retry job')
