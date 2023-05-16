@@ -8,7 +8,10 @@ const {
   registerAccount,
   verifyAccount,
   getAccount,
+  bulkOnboard,
+  getAllAccountsByLabel
 } = require("../controller/account");
+const upload = require("../middleware/multer");
 
 router.post(
   "/register",
@@ -26,5 +29,10 @@ router.get(
 );
 
 router.get("/all_accounts/:id", allUsersAuth, getAccount);
+
+//onboard multiple account
+router.post("/bulkOnboard", superUserAuth, upload.array("files"), bulkOnboard)
+
+router.get("/getAccount_oragnizationlabel/:organizationlabel", allUsersAuth, getAllAccountsByLabel)
 
 module.exports = router;
