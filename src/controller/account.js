@@ -362,7 +362,9 @@ const getAllAccountsByLabel = async (req, res) => {
     // Find accounts based on organizationLabel
     const accounts = await Account.find({ organizationLabel })
       .skip(skip)
-      .limit(PAGE_SIZE);
+      .limit(PAGE_SIZE)
+      .populate('adminID')
+      .populate('organizationLabel');
 
     // Return the accounts
     return res.status(200).json({
