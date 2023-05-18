@@ -195,6 +195,36 @@ function allUsersAuth(req, res, next) {
   }
 }
 
+function gcAuth(req, res, next) {
+  const authHeader = req.headers.authorization;
+  const token = authHeader && authHeader.split(" ")[1];
+  try {
+    if (!token) {
+      return res.sendStatus(401).send({
+        message: "Access denied. No token provided.",
+        data: null,
+        status: "failed",
+      });
+    }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const arr = decoded.privileges;
+    const role = decoded.role
+
+    if (!arr.includes("gcadmin") && !arr.includes("superUser")) {
+      return res.status(403).json({
+        message: "Access denied. You are not authorized to perform this action",
+        data: null,
+        status: "failed",
+      });
+    }
+
+    req.user = decoded;
+
+    next();
+  } catch (ex) {
+    return res.status(401).send("Invalid token.");
+  }
+}
 
 async function validateThirdPartyAuthorization(req, res, next) {
   try {
@@ -244,5 +274,6 @@ module.exports = {
   verifierAuth,
   allUsersAuth,
   authoriserAuth,
-  validateThirdPartyAuthorization
+  validateThirdPartyAuthorization,
+  gcAuth
 };
