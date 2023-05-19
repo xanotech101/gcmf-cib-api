@@ -116,19 +116,42 @@ async function Verify_Account(req, res, next) {
     }
 }
 
-function sendToGolang(data) {
-    //http://35.169.118.252
-    try {
-        axios.post(`http://35.169.118.252:3003/api/verify_account`, data, { timeout: 30000 })
+// function sendToGolang(data) {
+//     //http://35.169.118.252
+//     try {
+//         axios.post(`http://35.169.118.252:3003/api/verify_account`, data)
         
-            .then((response) => {
-                emitter.emit('results', response.data)
-            }).catch((error) => {
-                console.log(error)
-            })
+//             .then((response) => {
+//                 emitter.emit('results', response.data)
+//             }).catch((error) => {
+//                 console.log(error)
+//             })
 
-    } catch (error) {
-        console.log(error)
-    }
-}
+//     } catch (error) {
+//         console.log(error)
+//     }
+// }
+
+function sendToGolang(data) {
+    const batchSize = 20; // Number of elements to send in each batch
+  
+    const sendDataBatch = async (batch) => {
+      try {
+        const response = await axios.post('http://35.169.118.252:3003/api/verify_account', batch);
+        emitter.emit('results', response.data);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+  
+    const sendBatches = async () => {
+      for (let i = 0; i < data.length; i += batchSize) {
+        const batch = data.slice(i, i + batchSize);
+        await sendDataBatch(batch);
+        console.log(`Batch ${i + 1}-${i + batchSize} sent successfully.`);
+      }
+    };
+  
+    sendBatches();
+  }
 module.exports = { Verify_Account };

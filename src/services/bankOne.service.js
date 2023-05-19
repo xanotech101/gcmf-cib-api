@@ -22,11 +22,20 @@ class BankOneService {
       );
       return data;
     } catch (error) {
-      console.log('service',error.response.data);
        throw error.response.data;;
     }
   }
 
+  async BulkOnboardingaccountByAccountNo(accountNo, authToken) {
+    try {
+      const { data } = await axios.get(
+        `${config.getAccountByAccountNoV2}?authtoken=${authToken}&accountNumber=${accountNo}`
+      );
+      return data;
+    } catch (error) {
+      console.log(error.response.data)
+    }
+  }
 
   async accountByCustomerID(customerId, authToken) {
     try {

@@ -1,6 +1,6 @@
 const express = require("express");
 const { validate, accountSchemas } = require("../validations");
-const { superUserAuth, adminAuth, allUsersAuth } = require("../middleware/auth");
+const { superUserAuth, adminAuth, allUsersAuth, gcAuth } = require("../middleware/auth");
 
 const router = express.Router();
 const {
@@ -8,7 +8,10 @@ const {
   registerAccount,
   verifyAccount,
   getAccount,
+  bulkOnboard,
+  getAllAccountsByLabel
 } = require("../controller/account");
+const upload = require("../middleware/multer");
 
 router.post(
   "/register",
@@ -26,5 +29,10 @@ router.get(
 );
 
 router.get("/all_accounts/:id", allUsersAuth, getAccount);
+
+//onboard multiple account
+router.post("/bulkOnboard", superUserAuth, upload.array("files"), bulkOnboard)
+
+router.get("/getAccount_oragnizationlabel/:organizationlabel", gcAuth, getAllAccountsByLabel)
 
 module.exports = router;
