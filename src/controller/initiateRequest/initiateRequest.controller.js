@@ -866,78 +866,8 @@ const verifierDeclineRequest = async (req, res) => {
   }
 };
 
-const getAwaitingVerificationRequest = async (req, res) => {
-  const { page, perPage, status, search } = req.query;
-  const options = {
-    page: page || 1,
-    limit: perPage || PER_PAGE,
-    sort: { createdAt: -1 },
-  };
 
-  const matchStage = {
-    status: status || {
-      $in: ["pending", "in progress", "awaiting verification"],
-    },
-  };
-
-  if (search) {
-    matchStage.$or = [
-      { transactionReference: new RegExp(search, "i") },
-      ...(isNaN(search) ? [] : [{ amount: parseInt(search) }]),
-    ];
-  }
-
-  try {
-    const requests = await InitiateRequest.aggregate([
-      { $match: matchStage },
-      {
-        $lookup: {
-          from: "mandates",
-          localField: "mandate",
-          foreignField: "_id",
-          as: "mandate",
-        },
-      },
-      { $unwind: "$mandate" },
-      {
-        $facet: {
-          data: [
-            { $sort: options.sort },
-            { $skip: options.limit * (options.page - 1) },
-            { $limit: options.limit },
-          ],
-          meta: [
-            { $count: "total" },
-            {
-              $addFields: {
-                page: options.page,
-                perPage: options.limit,
-              },
-            },
-          ],
-        },
-      },
-      { $unwind: "$meta" },
-    ]);
-
-    return res.status(200).json({
-      message: "Request fetched successfully",
-      status: "success",
-      data: {
-        requests: requests[0]?.data || [],
-        meta: requests[0]?.meta || {},
-      },
-    });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({
-      message: error.message,
-      status: "failed",
-    });
-  }
-};
-
-const getRequestSentToBankOne = async (req, res) => {
+const getAllTransferRequests = async (req, res) => {
   const { page, perPage, search, status } = req.query;
   const options = {
     page: page || 1,
@@ -945,9 +875,7 @@ const getRequestSentToBankOne = async (req, res) => {
     sort: { createdAt: -1 },
   };
 
-  const matchStage = {
-    transferStatus: { $in: ["disburse pending", "pending", "in progress"] },
-  };
+  const matchStage = {};
 
   if (search) {
     matchStage.$or = [
@@ -979,11 +907,15 @@ const getRequestSentToBankOne = async (req, res) => {
           from: "accounts",
           localField: "organizationId",
           foreignField: "_id",
-          as: "originatingAccount",
+          as: "organization",
+          pipeline: [{ $project: { accountName: 1 } }],
         },
       },
       {
-        $unwind: "$originatingAccount",
+        $unwind: "$organization",
+      },
+      {
+        $unwind: "$organization",
       },
       {
         $facet: {
@@ -1414,8 +1346,7 @@ module.exports = {
   getAllAssignedRequests,
   verifierDeclineRequest,
   verifierApproveRequest,
-  getAwaitingVerificationRequest,
-  getRequestSentToBankOne,
+  getAllTransferRequests,
   approveBulkRequest,
   verifierBulkaprove,
 };
