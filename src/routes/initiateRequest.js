@@ -20,8 +20,7 @@ const {
   getRequestById,
   verifierApproveRequest,  
   verifierDeclineRequest,
-  getAwaitingVerificationRequest,
-  getRequestSentToBankOne,
+  getAllTransferRequests,
   approveBulkRequest,
   verifierBulkaprove
 } = require("../controller/initiateRequest/initiateRequest.controller");
@@ -55,8 +54,7 @@ router.put("/verifier/approve/:id", verifierAuth, verifierApproveRequest);
 router.get("/analysis/backoffice/dashboard", allUsersAuth, dashBoardAnalytics)
 router.get("/analysis/backoffice/:year", allUsersAuth, getReportAnalysis)
 router.get("/analysis/account/:accountNumber/:year", allUsersAuth, getReportAnalysisForCooperateAccount)
-router.get("/backoffice/awaiting-approval", allUsersAuth, getAwaitingVerificationRequest)
-router.get("/backoffice/transfers", allUsersAuth, getRequestSentToBankOne)
+router.get("/backoffice/transfer-requests/all", allUsersAuth, getAllTransferRequests)
 
 
 // batch/bulk upload
