@@ -141,7 +141,8 @@ async function sendToGolang(data) {
         })
       }
       
-      emitter.emit('results', filteredResponse);
+      const mergedArray = [].concat(...filteredResponse)
+      emitter.emit('results', mergedArray);
     } catch (error) {
       console.error('Error sending data:', error);
     }
