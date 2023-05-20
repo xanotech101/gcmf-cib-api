@@ -1,5 +1,7 @@
 const jwt = require("jsonwebtoken");
 const thirdPartyModel = require("../model/thirdParty.model");
+const { toISOLocal } = require("../utils/utils");
+const thirdPartyRequestCOuntModel = require("../model/thirdpartyCount.model");
 
 function superUserAuth(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -246,16 +248,18 @@ async function validateThirdPartyAuthorization(req, res, next) {
     }
 
     if (req.body.requestType === 'bvn') {
-      checkUser.bvnCount += 1
-      checkUser.updatedAt = Date.now()
-      checkUser.save()
+      await thirdPartyRequestCOuntModel.create({
+        userid:checkUser._id,
+        requestType: 'Bvn'
+      })
       req.user = user
       next()
 
     } else {
-      checkUser.requestCount += 1
-      checkUser.updatedAt = Date.now()
-      checkUser.save()
+      await thirdPartyRequestCOuntModel.create({
+        userid:checkUser._id,
+        requestType: 'NameEnquiry'
+      })
       req.user = user
       next()
     }
