@@ -261,7 +261,6 @@ const bulkOnboard = async (req, res) => {
           email: account.email,
           phone: account.phone,
           gender: account.gender,
-          imageUrl: account.imageUrl,
         },
         accountDetails: {
           accountNumber: account.accountNumber,
