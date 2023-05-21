@@ -7,15 +7,6 @@ const thirdPartyUser = new mongoose.Schema({
     type: String,
     required: true
   },
-  requestCount: {
-    type: Number,
-    default: 0
-  },
-  bvnCount: {
-    type: Number,
-    default: 0
-  },
-
   createdAt: { type: String, default: toISOLocal(new Date()) },
   updatedAt: { type: String, default: toISOLocal(new Date()) },
 }

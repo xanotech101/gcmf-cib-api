@@ -116,42 +116,35 @@ async function Verify_Account(req, res, next) {
     }
 }
 
-// function sendToGolang(data) {
-//     //http://35.169.118.252
-//     try {
-//         axios.post(`http://35.169.118.252:3003/api/verify_account`, data)
-        
-//             .then((response) => {
-//                 emitter.emit('results', response.data)
-//             }).catch((error) => {
-//                 console.log(error)
-//             })
-
-//     } catch (error) {
-//         console.log(error)
-//     }
-// }
-
-function sendToGolang(data) {
-    const batchSize = 20; // Number of elements to send in each batch
+async function sendToGolang(data) {
+    const batchSize = 30; // Number of elements to send in each batch
+    const responses = []; // Array to store all the responses
+    const filteredResponse = []
   
-    const sendDataBatch = async (batch) => {
-      try {
-        const response = await axios.post('http://35.169.118.252:3003/api/verify_account', batch);
-        emitter.emit('results', response.data);
-      } catch (error) {
-        console.log(error);
-      }
-    };
-  
-    const sendBatches = async () => {
+    try {
       for (let i = 0; i < data.length; i += batchSize) {
         const batch = data.slice(i, i + batchSize);
-        await sendDataBatch(batch);
-        console.log(`Batch ${i + 1}-${i + batchSize} sent successfully.`);
-      }
-    };
   
-    sendBatches();
+        try {
+          const response = await axios.post('http://35.169.118.252:3003/api/verify_account', batch);
+          responses.push(response.data);
+          console.log(`Batch ${i + 1}-${i + batchSize} sent successfully. ${response.data}`);
+        } catch (error) {
+          console.error(`Error sending batch ${i + 1}-${i + batchSize}:`, error);
+        }
+      }
+  
+      // All requests have been sent
+      if(responses.length > 0){
+        responses.map((item)=>{
+            filteredResponse.push(item.data)
+        })
+      }
+      
+      const mergedArray = [].concat(...filteredResponse)
+      emitter.emit('results', mergedArray);
+    } catch (error) {
+      console.error('Error sending data:', error);
+    }
   }
 module.exports = { Verify_Account };

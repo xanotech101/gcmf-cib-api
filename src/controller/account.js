@@ -238,12 +238,11 @@ const bulkOnboard = async (req, res) => {
 
     // Convert account data and add admin ID
     const accounts = formattedData.map((obj) => ({
-      firstName: obj.FIRSTNAME ? obj.FIRSTNAME.trim() : "",
-      lastName: obj.LASTNAME ? obj.LASTNAME.trim() : "",
-      email: obj.USEREMAIL ? obj.USEREMAIL.trim() : "",
+      firstName: obj.ADMIN_FIRSTNAME ? obj.ADMIN_FIRSTNAME.trim() : "",
+      lastName: obj.ADMIN_LASTNAME ? obj.ADMIN_LASTNAME.trim() : "",
+      email: obj.ADMIN_EMAIL ? obj.ADMIN_EMAIL.trim() : "",
       phone: obj.PHONENUMBER ? obj.PHONENUMBER.trim() : "",
       gender: obj.GENDER ? obj.GENDER.trim() : "",
-      imageUrl: obj.IMAGEURL ? obj.IMAGEURL.trim() : "",
       accountNumber: obj.ACCOUNTNUMBER ? obj.ACCOUNTNUMBER.trim() : "",
       accountName: obj.ACCOUNTNAME ? obj.ACCOUNTNAME.trim() : "",
       customerID: obj.CUSTOMERID ? obj.CUSTOMERID.trim() : "",
@@ -262,7 +261,6 @@ const bulkOnboard = async (req, res) => {
           email: account.email,
           phone: account.phone,
           gender: account.gender,
-          imageUrl: account.imageUrl,
         },
         accountDetails: {
           accountNumber: account.accountNumber,

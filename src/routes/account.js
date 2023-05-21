@@ -9,7 +9,6 @@ const {
   verifyAccount,
   getAccount,
   bulkOnboard,
-  getAllAccountsByLabel
 } = require("../controller/account");
 const upload = require("../middleware/multer");
 
@@ -33,6 +32,5 @@ router.get("/all_accounts/:id", allUsersAuth, getAccount);
 //onboard multiple account
 router.post("/bulkOnboard", superUserAuth, upload.array("files"), bulkOnboard)
 
-router.get("/getAccount_oragnizationlabel/:organizationlabel", gcAuth, getAllAccountsByLabel)
 
 module.exports = router;
