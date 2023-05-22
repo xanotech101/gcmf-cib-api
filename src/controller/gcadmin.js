@@ -1,6 +1,8 @@
+const { default: mongoose } = require("mongoose");
 const Account = require("../model/account");
 const organization = require("../model/organization");
 const userModel = require("../model/user.model");
+const { getMonthName } = require("./external/externalcontroller");
 
 async function getAllusersTiedToGCAccount(req, res) {
     try {
@@ -72,4 +74,55 @@ async function getAllusersTiedToAnAccount(req, res) {
         return res.status(500).json({ message: error.message });
     }
 }
-module.exports = { getAllusersTiedToGCAccount, getAllusersTiedToAnAccount }
+
+async function getGcAnalytics(req, res) {
+    try {
+        const requestlabel = await organization.findOne({ label: 'Grooming Centre' });
+        if (!requestlabel) {
+            return res.status(400).send({
+                success: false,
+                message: 'No organization with that label'
+            });
+        }
+        
+        const requestedYear = req.query.date; 
+        const requestedRequestType = req.query.requesttype;
+        
+        const analytics = await Account.aggregate([
+            {
+                $match: {
+                    organizationLabel: mongoose.Types.ObjectId(requestlabel._id),
+                    createdAt: { $regex: new RegExp(requestedYear), $options: "i" },
+                    requestType: requestedRequestType
+                }
+            },
+            {
+                $group: {
+                    _id: {
+                        year: { $year: { $dateFromString: { dateString: "$createdAt" } } },
+                        month: { $month: { $dateFromString: { dateString: "$createdAt" } } }
+                    },
+                    numberOfRequests: { $sum: 1 },
+                    accounts: { $push: "$$ROOT" } // Add this $push aggregation to include the accounts
+                }
+            }
+        ]);
+        
+        const formattedAnalytics = analytics.map((item) => ({
+            year: item._id.year,
+            month: getMonthName(item._id.month),
+            numberOfRequests: item.numberOfRequests,
+            accounts: item.accounts
+        }));
+        
+        res.json({
+            success: true,
+            analytics: formattedAnalytics
+        });
+        
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: error.message });
+    }
+}
+module.exports = { getAllusersTiedToGCAccount, getAllusersTiedToAnAccount, getGcAnalytics }
