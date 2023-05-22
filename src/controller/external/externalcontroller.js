@@ -163,4 +163,4 @@ function getMonthName(month) {
 
     return monthNames[month - 1];
 }
-module.exports = { generateUserToken, getAllThirdPartyOrganizations, getthirdpartyAnalytics }
+module.exports = { generateUserToken, getAllThirdPartyOrganizations, getthirdpartyAnalytics,getMonthName }
