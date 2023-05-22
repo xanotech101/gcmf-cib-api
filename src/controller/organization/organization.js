@@ -3,7 +3,7 @@ const organizationmodel = require('../../model/organization');
 
 const createOrganizationLabel = async (req, res) => {
     try {
-        console.log(req.body)
+       
         const createLabel = await organizationmodel.findOne({ label: req.body.label })
         if (createLabel) {
             return res.status(400).json({ message: 'oraganizationLabel already created' });

@@ -1,6 +1,8 @@
 const jwt = require("jsonwebtoken");
 const thirdPartyModel = require("../../model/thirdParty.model");
 const organization = require("../../model/organization");
+const thirdPartyRequestCOuntModel = require("../../model/thirdpartyCount.model");
+const { default: mongoose } = require("mongoose");
 async function generateUserToken(req, res) {
     try {
 
@@ -40,7 +42,10 @@ async function generateUserToken(req, res) {
 
         await thirdPartyModel.create({
             organization_name: req.body.organization_name,
+            requestCount: [],
+            bvnCount: []
         })
+
 
         return res.status(200).send({
             success: true,
@@ -105,4 +110,57 @@ async function getAllThirdPartyOrganizations(req, res) {
     }
 }
 
-module.exports = { generateUserToken, getAllThirdPartyOrganizations }
+async function getthirdpartyAnalytics(req, res) {
+    try {
+        const userId = req.params.userid; // Assuming you get the user ID from req.params.userid
+        const requestedYear = req.query.date; // Assuming you get the requested year from req.query.date
+        const requestedRequestType = req.query.requesttype; // Assuming you get the requested request type from req.query.requesttype
+
+        const analytics = await thirdPartyRequestCOuntModel.aggregate([
+            {
+                $match: {
+                    userid: mongoose.Types.ObjectId(userId),
+                    createdAt: { $regex: new RegExp(requestedYear), $options: "i" },
+                    requestType: requestedRequestType
+                }
+            },
+            {
+                $group: {
+                    _id: {
+                        year: { $year: { $dateFromString: { dateString: "$createdAt" } } },
+                        month: { $month: { $dateFromString: { dateString: "$createdAt" } } }
+                    },
+                    numberOfRequests: { $sum: 1 }
+                }
+            }
+        ]);
+
+        const formattedAnalytics = analytics.map((item) => ({
+            year: item._id.year,
+            month: getMonthName(item._id.month),
+            numberOfRequests: item.numberOfRequests
+        }));
+
+        res.json({
+            success: true,
+            analytics: formattedAnalytics
+        });
+    } catch (error) {
+        console.log(error.message)
+        res.status(500).send({
+            success: false,
+            message: error.message
+        })
+    }
+}
+
+function getMonthName(month) {
+    const monthNames = [
+        "January", "February", "March", "April",
+        "May", "June", "July", "August",
+        "September", "October", "November", "December"
+    ];
+
+    return monthNames[month - 1];
+}
+module.exports = { generateUserToken, getAllThirdPartyOrganizations, getthirdpartyAnalytics }

@@ -116,19 +116,35 @@ async function Verify_Account(req, res, next) {
     }
 }
 
-function sendToGolang(data) {
-    //http://35.169.118.252
+async function sendToGolang(data) {
+    const batchSize = 30; // Number of elements to send in each batch
+    const responses = []; // Array to store all the responses
+    const filteredResponse = []
+  
     try {
-        axios.post(`http://35.169.118.252:3003/api/verify_account`, data, { timeout: 30000 })
-        
-            .then((response) => {
-                emitter.emit('results', response.data)
-            }).catch((error) => {
-                console.log(error)
-            })
-
+      for (let i = 0; i < data.length; i += batchSize) {
+        const batch = data.slice(i, i + batchSize);
+  
+        try {
+          const response = await axios.post('http://35.169.118.252:3003/api/verify_account', batch);
+          responses.push(response.data);
+          console.log(`Batch ${i + 1}-${i + batchSize} sent successfully. ${response.data}`);
+        } catch (error) {
+          console.error(`Error sending batch ${i + 1}-${i + batchSize}:`, error);
+        }
+      }
+  
+      // All requests have been sent
+      if(responses.length > 0){
+        responses.map((item)=>{
+            filteredResponse.push(item.data)
+        })
+      }
+      
+      const mergedArray = [].concat(...filteredResponse)
+      emitter.emit('results', mergedArray);
     } catch (error) {
-        console.log(error)
+      console.error('Error sending data:', error);
     }
-}
+  }
 module.exports = { Verify_Account };

@@ -476,6 +476,43 @@ const createSecurityQuestions = async (req, res) => {
   }
 };
 
+const getAllAdmins = async (req, res) => {
+  try {
+    const { page = 1, limit = 10, name = '' } = req.query;
+
+    const filter = {};
+    if (name) {
+      filter.$or = [
+        { firstName: { $regex: name, $options: 'i' } },
+        { lastName: { $regex: name, $options: 'i' } },
+      ];
+    }
+    filter.role = 'admin';
+
+    const count = await User.countDocuments(filter);
+    const totalPages = Math.ceil(count / limit);
+
+    const fetchAdmins = await User.find(filter)
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit));
+
+    return res.status(200).json({
+      message: 'Admins retrieved successfully',
+      data: fetchAdmins,
+      totalPages,
+      totalData: count,
+      currentPage: page,
+      status: 'success',
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: error.message,
+      data: null,
+      status: 'failed',
+    });
+  }
+};
+
 module.exports = {
   getOrganizationUsers,
   getUserProfile,
@@ -487,4 +524,5 @@ module.exports = {
   createSecurityQuestions,
   updateUserPriviledge,
   getUserProfileById,
+  getAllAdmins
 };

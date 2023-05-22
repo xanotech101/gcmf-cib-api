@@ -1,5 +1,5 @@
 const express = require("express")
-const { generateUserToken, getAllThirdPartyOrganizations } = require("../controller/external/externalcontroller")
+const { generateUserToken, getAllThirdPartyOrganizations, getthirdpartyAnalytics } = require("../controller/external/externalcontroller")
 const { validateThirdPartyAuthorization } = require("../middleware/auth")
 const { getNameEnquiry, bvnEnquiry } = require("../controller/bankone/bankDetails")
 
@@ -9,6 +9,9 @@ externalRoute.post('/requestToken', generateUserToken)
 externalRoute.get('/requestNameEnquiry', validateThirdPartyAuthorization, getNameEnquiry)
 externalRoute.get('/bvnValidation', validateThirdPartyAuthorization, bvnEnquiry)
 externalRoute.get('/getthirdpartyOrganization', getAllThirdPartyOrganizations)
+externalRoute.get('/getthirdpartyAnalytics', getAllThirdPartyOrganizations)
+externalRoute.get('/thridpartyAnalytics/:userid', getthirdpartyAnalytics)
+
 
 
 module.exports = externalRoute
