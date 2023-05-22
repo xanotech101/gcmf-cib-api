@@ -266,21 +266,21 @@ const getAllRequestPerOrganization = async (req, res) => {
   const { page, perPage, search, status, branchId } = req.query;
   const mine = await User.findById(req.user._id);
   const organizationId = branchId ?? mine.organizationId;
-
+  
   const options = {
-    page: page || 1,
-    limit: perPage || PER_PAGE,
+    page: parseInt(page) || 1,
+    limit: parseInt(perPage) || PER_PAGE,
     sort: { createdAt: -1 },
   };
-
+  
   const query = {
     organizationId: new mongoose.Types.ObjectId(organizationId),
   };
-
+  
   if (status) {
     query.status = status;
   }
-
+  
   if (search) {
     query.$or = [
       {
@@ -289,56 +289,24 @@ const getAllRequestPerOrganization = async (req, res) => {
       ...(isNaN(search) ? [] : [{ amount: parseInt(search) }]),
     ];
   }
-
+  
   try {
-    const request = await InitiateRequest.aggregate([
-      {
-        $match: query,
-      },
-      {
-        $lookup: {
-          from: "mandates",
-          localField: "mandate",
-          foreignField: "_id",
-          as: "mandate",
-        },
-      },
-      {
-        $unwind: "$mandate",
-      },
-      {
-        $facet: {
-          data: [
-            {
-              $sort: { ...options.sort },
-            },
-            {
-              $skip: options.limit * (options.page - 1),
-            },
-            {
-              $limit: options.limit * 1,
-            },
-          ],
-          meta: [
-            {
-              $count: "total",
-            },
-            {
-              $addFields: {
-                page: options.page,
-                perPage: options.limit,
-              },
-            },
-          ],
-        },
-      },
-    ]);
-
+    const total = await InitiateRequest.countDocuments(query);
+    const requests = await InitiateRequest.find(query)
+      .sort(options.sort)
+      .skip((options.page - 1) * options.limit)
+      .limit(options.limit)
+      .populate("mandate");
+  
     res.status(200).json({
       message: "Request Successful",
       data: {
-        requests: request[0].data,
-        meta: request[0].meta[0],
+        requests,
+        meta: {
+          total,
+          page: options.page,
+          perPage: options.limit,
+        },
       },
     });
   } catch (error) {
