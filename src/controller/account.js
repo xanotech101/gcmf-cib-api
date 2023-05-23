@@ -363,6 +363,13 @@ const bulkOnboard = async (req, res) => {
       }
     }
     // Return the created accounts
+    const errors = [].concat(invalidAccount, duplicateUsers, duplicateAccounts);
+
+    return res.status(201).json({
+      status: 'Success',
+      errors: errors,
+      accounts: createdAccounts,
+    });
     return res.status(201).json({
       status: "Success",
       accounts: createdAccounts,
