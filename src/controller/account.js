@@ -245,7 +245,6 @@ const bulkOnboard = async (req, res) => {
       gender: obj.GENDER ? obj.GENDER.trim() : "",
       accountNumber: obj.ACCOUNTNUMBER ? obj.ACCOUNTNUMBER.trim() : "",
       accountName: obj.ACCOUNTNAME ? obj.ACCOUNTNAME.trim() : "",
-      customerID: obj.CUSTOMERID ? obj.CUSTOMERID.trim() : "",
       accountemail: obj.ACCOUNTEMAIL ? obj.ACCOUNTEMAIL.trim() : "",
     }));
 
@@ -267,7 +266,7 @@ const bulkOnboard = async (req, res) => {
         accountDetails: {
           accountNumber: [account.accountNumber], // Store accountNumber as an array
           accountName: account.accountName,
-          customerID: account.customerID,
+          customerID: '',
           email: account.accountemail,
         },
       };
@@ -288,6 +287,10 @@ const bulkOnboard = async (req, res) => {
 
         )
       } else {
+        const customerID = checkAccountNum.customerID; // Extract customerID from the response
+
+        input.accountDetails.customerID = customerID
+
         const checkAdmin = await User.findOne({ email: input.admin.email });
 
         if (checkAdmin) {
@@ -337,9 +340,9 @@ const bulkOnboard = async (req, res) => {
             });
 
             admin.organizationId = result._id;
-           
-              await admin.save();
-            
+
+            await admin.save();
+
 
 
             const accountEmail = input.accountDetails.email;
