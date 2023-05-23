@@ -252,6 +252,8 @@ const bulkOnboard = async (req, res) => {
     // Perform account creation
     const createdAccounts = [];
     const invalidAccount = []
+    const duplicateUsers = [];
+    const duplicateAccounts = [];
 
     for (const account of accounts) {
       const input = {
@@ -270,24 +272,15 @@ const bulkOnboard = async (req, res) => {
         },
       };
 
-      const checkAccountNum = await bankOneService.BulkOnboardingaccountByAccountNo(
-        input.accountDetails.accountNumber,
-        authToken
-      );
+      const checkAdmin = await User.findOne({ email: input.admin.email });
 
-      if (!checkAccountNum) {
-        invalidAccount.push(
-          {
-            message: 'unable to resolve this account',
-            accountName: input.accountDetails,
-            checkAccountNum
-          }
-
-        )
+      if (checkAdmin) {
+        duplicateUsers.push(checkAdmin);
       } else {
         let role = 'admin';
 
         const privilege = await Privilege.findOne({ name: 'admin' });
+
         const admin = await User.create({
           ...input.admin,
           token: '',
@@ -295,40 +288,44 @@ const bulkOnboard = async (req, res) => {
           privileges: [privilege._id],
         });
 
-        const token = jwt.sign(
-          { accountDetails: account.accountNumber },
-          process.env.EMAIL_SECRET,
-          {
-            expiresIn: '10h',
-          }
-        )
+        const checkAccount = await Account.findOne({ accountNumber: input.accountDetails.accountNumber });
 
-        // create account
-        const result = await Account.create({
-          ...input.accountDetails,
-          adminId: admin._id,
-          accountToken: token,
-          adminID: admin._id,
-          organizationLabel: req.body.organizationLabel,
-          customerID: input.accountDetails.customerID,
-        });
+        if (checkAccount) {
+          duplicateAccounts.push(checkAccount);
+        } else {
+          const token = jwt.sign(
+            { accountDetails: account.accountNumber },
+            process.env.EMAIL_SECRET,
+            {
+              expiresIn: '10h',
+            }
+          );
 
-        // update admin organization id
-        admin.organizationId = result._id;
-        await admin.save();
+          const result = await Account.create({
+            ...input.accountDetails,
+            adminId: admin._id,
+            accountToken: token,
+            adminID: admin._id,
+            organizationLabel: req.body.organizationLabel,
+            customerID: input.accountDetails.customerID,
+          });
 
-        const accountEmail = input.accountDetails.email;
-        const subject = "Account Verification";
-        const messageData = {
-          firstName: admin.firstName,
-          url: `${process.env.FRONTEND_URL}/auth/account/verify-account/${token}`,
-          message: 'click the link to verify your account',
-          year: new Date().getUTCFullYear()
+          admin.organizationId = result._id;
+          await admin.save();
+
+          const accountEmail = input.accountDetails.email;
+          const subject = "Account Verification";
+          const messageData = {
+            firstName: admin.firstName,
+            url: `${process.env.FRONTEND_URL}/auth/account/verify-account/${token}`,
+            message: 'click the link to verify your account',
+            year: new Date().getUTCFullYear(),
+          };
+
+          sendEmail(accountEmail, subject, 'verify-account', messageData);
+
+          createdAccounts.push(result);
         }
-
-        sendEmail(accountEmail, subject, 'verify-account', messageData);
-
-        createdAccounts.push(result)
       }
     }
 
@@ -336,7 +333,9 @@ const bulkOnboard = async (req, res) => {
     return res.status(201).json({
       status: "Success",
       accounts: createdAccounts,
-      invalidAccounts: invalidAccount
+      invalidAccounts: invalidAccount,
+      duplicateUsers:duplicateUsers,
+      duplicateAccounts:duplicateAccounts
     });
   } catch (error) {
     console.log(error)
