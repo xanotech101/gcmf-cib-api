@@ -272,65 +272,93 @@ const bulkOnboard = async (req, res) => {
         },
       };
 
-      const checkAdmin = await User.findOne({ email: input.admin.email });
 
-      if (checkAdmin) {
-        duplicateUsers.push(checkAdmin);
+      const checkAccountNum = await bankOneService.BulkOnboardingaccountByAccountNo(
+        input.accountDetails.accountNumber,
+        authToken
+      );
+
+      if (!checkAccountNum) {
+        invalidAccount.push(
+          {
+            message: 'unable to resolve this account',
+            accountName: input.accountDetails,
+            checkAccountNum
+          }
+
+        )
       } else {
-        let role = 'admin';
+        const checkAdmin = await User.findOne({ email: input.admin.email });
 
-        const privilege = await Privilege.findOne({ name: 'admin' });
-
-        const admin = await User.create({
-          ...input.admin,
-          token: '',
-          role,
-          privileges: [privilege._id],
-        });
-
-        const checkAccount = await Account.findOne({
-          accountNumber: { $in: input.accountDetails.accountNumber },
-        })
-
-        if (checkAccount) {
-          duplicateAccounts.push(checkAccount);
-        } else {
-          const token = jwt.sign(
-            { accountDetails: account.accountNumber },
-            process.env.EMAIL_SECRET,
+        if (checkAdmin) {
+          duplicateUsers.push(
             {
-              expiresIn: '10h',
+              message: 'this user already exist',
+              account: input.admin
             }
           );
+        } else {
+          let role = 'admin';
 
-          const result = await Account.create({
-            ...input.accountDetails,
-            adminId: admin._id,
-            accountToken: token,
-            adminID: admin._id,
-            organizationLabel: req.body.organizationLabel,
-            customerID: input.accountDetails.customerID,
+          const privilege = await Privilege.findOne({ name: 'admin' });
+
+          const admin = await User.create({
+            ...input.admin,
+            token: '',
+            role,
+            privileges: [privilege._id],
           });
 
-          admin.organizationId = result._id;
-          await admin.save();
+          const checkAccount = await Account.findOne({
+            accountNumber: { $in: input.accountDetails.accountNumber },
+          })
 
-          const accountEmail = input.accountDetails.email;
-          const subject = 'Account Verification';
-          const messageData = {
-            firstName: admin.firstName,
-            url: `${process.env.FRONTEND_URL}/auth/account/verify-account/${token}`,
-            message: 'click the link to verify your account',
-            year: new Date().getUTCFullYear(),
-          };
+          if (checkAccount) {
+            duplicateAccounts.push({
+              message: 'this account nummber already exist',
+              account: input.accountDetails
+            });
+          } else {
+            const token = jwt.sign(
+              { accountDetails: account.accountNumber },
+              process.env.EMAIL_SECRET,
+              {
+                expiresIn: '10h',
+              }
+            );
 
-          sendEmail(accountEmail, subject, 'verify-account', messageData);
+            const result = await Account.create({
+              ...input.accountDetails,
+              adminId: admin._id,
+              accountToken: token,
+              adminID: admin._id,
+              organizationLabel: req.body.organizationLabel,
+              customerID: input.accountDetails.customerID,
+            });
 
-          createdAccounts.push(result);
+            admin.organizationId = result._id;
+           
+              await admin.save();
+            
+
+
+            const accountEmail = input.accountDetails.email;
+            const subject = 'Account Verification';
+            const messageData = {
+              firstName: admin.firstName,
+              url: `${process.env.FRONTEND_URL}/auth/account/verify-account/${token}`,
+              message: 'click the link to verify your account',
+              year: new Date().getUTCFullYear(),
+            };
+
+            sendEmail(accountEmail, subject, 'verify-account', messageData);
+
+            createdAccounts.push(result);
+          }
         }
+
       }
     }
-
     // Return the created accounts
     return res.status(201).json({
       status: "Success",
