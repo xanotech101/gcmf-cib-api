@@ -241,11 +241,11 @@ const bulkOnboard = async (req, res) => {
       firstName: obj.ADMIN_FIRSTNAME ? obj.ADMIN_FIRSTNAME.trim() : "",
       lastName: obj.ADMIN_LASTNAME ? obj.ADMIN_LASTNAME.trim() : "",
       email: obj.ADMIN_EMAIL ? obj.ADMIN_EMAIL.trim() : "",
-      phone: obj.PHONENUMBER ? obj.PHONENUMBER.trim() : "",
+      phone: obj.ADMIN_PHONE_NUMBER ? obj.ADMIN_PHONE_NUMBER.trim() : "",
       gender: obj.GENDER ? obj.GENDER.trim() : "",
-      accountNumber: obj.ACCOUNTNUMBER ? obj.ACCOUNTNUMBER.trim() : "",
-      accountName: obj.ACCOUNTNAME ? obj.ACCOUNTNAME.trim() : "",
-      accountemail: obj.ACCOUNTEMAIL ? obj.ACCOUNTEMAIL.trim() : "",
+      accountNumber: obj.ACCOUNT_NUMBER ? obj.ACCOUNT_NUMBER.trim() : "",
+      accountName: obj.ACCOUNT_NAME ? obj.ACCOUNT_NAME.trim() : "",
+      accountemail: obj.ACCOUNT_EMAIL ? obj.ACCOUNT_EMAIL.trim() : "",
     }));
 
     // Perform account creation
