@@ -265,7 +265,7 @@ const bulkOnboard = async (req, res) => {
           gender: account.gender,
         },
         accountDetails: {
-          accountNumber: account.accountNumber,
+          accountNumber: [account.accountNumber], // Store accountNumber as an array
           accountName: account.accountName,
           customerID: account.customerID,
           email: account.accountemail,
@@ -288,7 +288,9 @@ const bulkOnboard = async (req, res) => {
           privileges: [privilege._id],
         });
 
-        const checkAccount = await Account.findOne({ accountNumber: input.accountDetails.accountNumber });
+        const checkAccount = await Account.findOne({
+          accountNumber: { $in: input.accountDetails.accountNumber },
+        })
 
         if (checkAccount) {
           duplicateAccounts.push(checkAccount);
@@ -314,7 +316,7 @@ const bulkOnboard = async (req, res) => {
           await admin.save();
 
           const accountEmail = input.accountDetails.email;
-          const subject = "Account Verification";
+          const subject = 'Account Verification';
           const messageData = {
             firstName: admin.firstName,
             url: `${process.env.FRONTEND_URL}/auth/account/verify-account/${token}`,
@@ -334,8 +336,8 @@ const bulkOnboard = async (req, res) => {
       status: "Success",
       accounts: createdAccounts,
       invalidAccounts: invalidAccount,
-      duplicateUsers:duplicateUsers,
-      duplicateAccounts:duplicateAccounts
+      duplicateUsers: duplicateUsers,
+      duplicateAccounts: duplicateAccounts
     });
   } catch (error) {
     console.log(error)
