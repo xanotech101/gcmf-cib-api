@@ -241,17 +241,18 @@ const bulkOnboard = async (req, res) => {
       firstName: obj.ADMIN_FIRSTNAME ? obj.ADMIN_FIRSTNAME.trim() : "",
       lastName: obj.ADMIN_LASTNAME ? obj.ADMIN_LASTNAME.trim() : "",
       email: obj.ADMIN_EMAIL ? obj.ADMIN_EMAIL.trim() : "",
-      phone: obj.PHONENUMBER ? obj.PHONENUMBER.trim() : "",
+      phone: obj.ADMIN_PHONE_NUMBER ? obj.ADMIN_PHONE_NUMBER.trim() : "",
       gender: obj.GENDER ? obj.GENDER.trim() : "",
-      accountNumber: obj.ACCOUNTNUMBER ? obj.ACCOUNTNUMBER.trim() : "",
-      accountName: obj.ACCOUNTNAME ? obj.ACCOUNTNAME.trim() : "",
-      customerID: obj.CUSTOMERID ? obj.CUSTOMERID.trim() : "",
-      accountemail: obj.ACCOUNTEMAIL ? obj.ACCOUNTEMAIL.trim() : "",
+      accountNumber: obj.ACCOUNT_NUMBER ? obj.ACCOUNT_NUMBER.trim() : "",
+      accountName: obj.ACCOUNT_NAME ? obj.ACCOUNT_NAME.trim() : "",
+      accountemail: obj.ACCOUNT_EMAIL ? obj.ACCOUNT_EMAIL.trim() : "",
     }));
 
     // Perform account creation
     const createdAccounts = [];
     const invalidAccount = []
+    const duplicateUsers = [];
+    const duplicateAccounts = [];
 
     for (const account of accounts) {
       const input = {
@@ -263,12 +264,13 @@ const bulkOnboard = async (req, res) => {
           gender: account.gender,
         },
         accountDetails: {
-          accountNumber: account.accountNumber,
+          accountNumber: [account.accountNumber], // Store accountNumber as an array
           accountName: account.accountName,
-          customerID: account.customerID,
+          customerID: '',
           email: account.accountemail,
         },
       };
+
 
       const checkAccountNum = await bankOneService.BulkOnboardingaccountByAccountNo(
         input.accountDetails.accountNumber,
@@ -285,58 +287,95 @@ const bulkOnboard = async (req, res) => {
 
         )
       } else {
-        let role = 'admin';
+        const customerID = checkAccountNum.customerID; // Extract customerID from the response
 
-        const privilege = await Privilege.findOne({ name: 'admin' });
-        const admin = await User.create({
-          ...input.admin,
-          token: '',
-          role,
-          privileges: [privilege._id],
-        });
+        input.accountDetails.customerID = customerID
 
-        const token = jwt.sign(
-          { accountDetails: account.accountNumber },
-          process.env.EMAIL_SECRET,
-          {
-            expiresIn: '10h',
+        const checkAdmin = await User.findOne({ email: input.admin.email });
+
+        if (checkAdmin) {
+          duplicateUsers.push(
+            {
+              message: 'this user already exist',
+              account: input.admin
+            }
+          );
+        } else {
+          let role = 'admin';
+
+          const privilege = await Privilege.findOne({ name: 'admin' });
+
+          const admin = await User.create({
+            ...input.admin,
+            token: '',
+            role,
+            privileges: [privilege._id],
+          });
+
+          const checkAccount = await Account.findOne({
+            accountNumber: { $in: input.accountDetails.accountNumber },
+          })
+
+          if (checkAccount) {
+            duplicateAccounts.push({
+              message: 'this account nummber already exist',
+              account: input.accountDetails
+            });
+          } else {
+            const token = jwt.sign(
+              { accountDetails: account.accountNumber },
+              process.env.EMAIL_SECRET,
+              {
+                expiresIn: '10h',
+              }
+            );
+
+            const result = await Account.create({
+              ...input.accountDetails,
+              adminId: admin._id,
+              accountToken: token,
+              adminID: admin._id,
+              organizationLabel: req.body.organizationLabel,
+              customerID: input.accountDetails.customerID,
+            });
+
+            admin.organizationId = result._id;
+
+            await admin.save();
+
+
+
+            const accountEmail = input.accountDetails.email;
+            const subject = 'Account Verification';
+            const messageData = {
+              firstName: admin.firstName,
+              url: `${process.env.FRONTEND_URL}/auth/account/verify-account/${token}`,
+              message: 'click the link to verify your account',
+              year: new Date().getUTCFullYear(),
+            };
+
+            sendEmail(accountEmail, subject, 'verify-account', messageData);
+
+            createdAccounts.push(result);
           }
-        )
-
-        // create account
-        const result = await Account.create({
-          ...input.accountDetails,
-          adminId: admin._id,
-          accountToken: token,
-          adminID: admin._id,
-          organizationLabel: req.body.organizationLabel,
-          customerID: input.accountDetails.customerID,
-        });
-
-        // update admin organization id
-        admin.organizationId = result._id;
-        await admin.save();
-
-        const accountEmail = input.accountDetails.email;
-        const subject = "Account Verification";
-        const messageData = {
-          firstName: admin.firstName,
-          url: `${process.env.FRONTEND_URL}/auth/account/verify-account/${token}`,
-          message: 'click the link to verify your account',
-          year: new Date().getUTCFullYear()
         }
 
-        sendEmail(accountEmail, subject, 'verify-account', messageData);
-
-        createdAccounts.push(result)
       }
     }
-
     // Return the created accounts
+    const errors = [].concat(invalidAccount, duplicateUsers, duplicateAccounts);
+
+    return res.status(201).json({
+      status: 'Success',
+      errors: errors,
+      accounts: createdAccounts,
+    });
     return res.status(201).json({
       status: "Success",
       accounts: createdAccounts,
-      invalidAccounts: invalidAccount
+      invalidAccounts: invalidAccount,
+      duplicateUsers: duplicateUsers,
+      duplicateAccounts: duplicateAccounts
     });
   } catch (error) {
     console.log(error)
