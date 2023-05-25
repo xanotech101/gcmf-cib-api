@@ -332,7 +332,7 @@ const users = await User.find(matchStage)
     select: "name",
   });
 
-if (users.length === 0) {
+if (totalCount == 0) {
   return res.status(404).json({
     message: "No user found with the provided name",
     status: "failed",
