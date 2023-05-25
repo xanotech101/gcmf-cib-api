@@ -10,7 +10,6 @@ const excelToJson = require("convert-excel-to-json");
 const bankOneService = require("../services/bankOne.service");
 const authToken = process.env.AUTHTOKEN;
 
-
 const registerAccount = async (req, res) => {
   try {
     const input = _.pick(req.body, ["admin", "accountDetails"]);
@@ -22,7 +21,7 @@ const registerAccount = async (req, res) => {
       ...input.admin,
       token: "",
       role,
-      privileges: [privilege._id]
+      privileges: [privilege._id],
     });
 
     const token = jwt.sign(
@@ -47,17 +46,16 @@ const registerAccount = async (req, res) => {
     admin.organizationId = result._id;
     await admin.save();
 
-
     const accountEmail = input.accountDetails.email;
     const subject = "Account Verification";
     const messageData = {
       firstName: admin.firstName,
       url: `${process.env.FRONTEND_URL}/auth/account/verify-account/${token}`,
-      message: 'click the link to verify your account',
-      year: new Date().getUTCFullYear()
-    }
+      message: "click the link to verify your account",
+      year: new Date().getUTCFullYear(),
+    };
 
-    await sendEmail(accountEmail, subject, 'verify-account', messageData);
+    await sendEmail(accountEmail, subject, "verify-account", messageData);
 
     return res.status(201).json({
       status: "Success",
@@ -71,7 +69,6 @@ const registerAccount = async (req, res) => {
     });
   }
 };
-
 
 const verifyAccount = async (req, res) => {
   try {
@@ -117,10 +114,10 @@ const verifyAccount = async (req, res) => {
     const messageData = {
       firstName: user.firstName,
       url: `${process.env.FRONTEND_URL}/verify-account/${userToken}`,
-      message: 'click the link to verify your account ',
-      year: new Date().getUTCFullYear()
-    }
-    sendEmail(userEmail, subject, 'verify-email', messageData);
+      message: "click the link to verify your account ",
+      year: new Date().getUTCFullYear(),
+    };
+    sendEmail(userEmail, subject, "verify-email", messageData);
 
     account.verified = true;
     account.accountToken = null;
@@ -146,13 +143,14 @@ const getAllAccount = async (req, res) => {
   try {
     const name = req.query.name;
     if (name) {
-      const allAccount = await Account.find({ accountName: { $regex: name, $options: "i" } }).populate("adminID");
+      const allAccount = await Account.find({
+        accountName: { $regex: name, $options: "i" },
+      }).populate("adminID");
 
       return res.status(200).json({
         status: "Success",
         data: allAccount,
       });
-
     }
     const allAccount = await Account.find().populate("adminID");
 
@@ -182,8 +180,7 @@ const getAccount = async (req, res) => {
       error: error.message,
     });
   }
-}
-
+};
 
 //onboard multiple accounts
 const bulkOnboard = async (req, res) => {
@@ -222,7 +219,6 @@ const bulkOnboard = async (req, res) => {
           break;
         }
         formattedData = formattedData.concat(data[result]);
-
       } else if (csvDocs.includes(fileExtension)) {
         data = csvToJson.fieldDelimiter(",").getJsonFromCsv(file.path);
         formattedData = formattedData.concat(data);
@@ -250,7 +246,7 @@ const bulkOnboard = async (req, res) => {
 
     // Perform account creation
     const createdAccounts = [];
-    const invalidAccount = []
+    const invalidAccount = [];
     const duplicateUsers = [];
     const duplicateAccounts = [];
 
@@ -266,67 +262,61 @@ const bulkOnboard = async (req, res) => {
         accountDetails: {
           accountNumber: [account.accountNumber], // Store accountNumber as an array
           accountName: account.accountName,
-          customerID: '',
+          customerID: "",
           email: account.accountemail,
         },
       };
 
-
-      const checkAccountNum = await bankOneService.BulkOnboardingaccountByAccountNo(
-        input.accountDetails.accountNumber,
-        authToken
-      );
+      const checkAccountNum =
+        await bankOneService.BulkOnboardingaccountByAccountNo(
+          input.accountDetails.accountNumber,
+          authToken
+        );
 
       if (!checkAccountNum) {
-        invalidAccount.push(
-          {
-            message: 'unable to resolve this account',
-            accountName: input.accountDetails,
-            checkAccountNum
-          }
-
-        )
+        invalidAccount.push({
+          message: "unable to resolve this account",
+          account: input.accountDetails,
+        });
       } else {
         const customerID = checkAccountNum.customerID; // Extract customerID from the response
 
-        input.accountDetails.customerID = customerID
+        input.accountDetails.customerID = customerID;
 
         const checkAdmin = await User.findOne({ email: input.admin.email });
 
         if (checkAdmin) {
-          duplicateUsers.push(
-            {
-              message: 'this user already exist',
-              account: input.admin
-            }
-          );
+          duplicateUsers.push({
+            message: "this user already exist",
+            account: input.admin,
+          });
         } else {
-          let role = 'admin';
+          let role = "admin";
 
-          const privilege = await Privilege.findOne({ name: 'admin' });
+          const privilege = await Privilege.findOne({ name: "admin" });
 
           const admin = await User.create({
             ...input.admin,
-            token: '',
+            token: "",
             role,
             privileges: [privilege._id],
           });
 
           const checkAccount = await Account.findOne({
             accountNumber: { $in: input.accountDetails.accountNumber },
-          })
+          });
 
           if (checkAccount) {
             duplicateAccounts.push({
-              message: 'this account nummber already exist',
-              account: input.accountDetails
+              message: "this account nummber already exist",
+              account: input.accountDetails,
             });
           } else {
             const token = jwt.sign(
               { accountDetails: account.accountNumber },
               process.env.EMAIL_SECRET,
               {
-                expiresIn: '10h',
+                expiresIn: "10h",
               }
             );
 
@@ -343,49 +333,41 @@ const bulkOnboard = async (req, res) => {
 
             await admin.save();
 
-
-
             const accountEmail = input.accountDetails.email;
-            const subject = 'Account Verification';
+            const subject = "Account Verification";
             const messageData = {
               firstName: admin.firstName,
               url: `${process.env.FRONTEND_URL}/auth/account/verify-account/${token}`,
-              message: 'click the link to verify your account',
+              message: "click the link to verify your account",
               year: new Date().getUTCFullYear(),
             };
 
-            sendEmail(accountEmail, subject, 'verify-account', messageData);
+            sendEmail(accountEmail, subject, "verify-account", messageData);
 
             createdAccounts.push(result);
           }
         }
-
       }
     }
     // Return the created accounts
     const errors = [].concat(invalidAccount, duplicateUsers, duplicateAccounts);
 
     return res.status(201).json({
-      status: 'Success',
-      errors: errors,
-      accounts: createdAccounts,
-    });
-    return res.status(201).json({
+      message: "Accounts created successfully",
       status: "Success",
       accounts: createdAccounts,
       invalidAccounts: invalidAccount,
       duplicateUsers: duplicateUsers,
-      duplicateAccounts: duplicateAccounts
+      duplicateAccounts: duplicateAccounts,
     });
   } catch (error) {
-    console.log(error)
+    console.log(error);
     return res.status(500).send({
       success: false,
-      messsage: error
-    })
+      messsage: error,
+    });
   }
-}
-
+};
 
 const getAllAccountsByLabel = async (req, res) => {
   try {
@@ -400,20 +382,27 @@ const getAllAccountsByLabel = async (req, res) => {
     const accounts = await Account.find({ organizationLabel })
       .skip(skip)
       .limit(PAGE_SIZE)
-      .populate('adminID')
-      .populate('organizationLabel');
+      .populate("adminID")
+      .populate("organizationLabel");
 
     // Return the accounts
     return res.status(200).json({
-      status: 'Success',
+      status: "Success",
       accounts,
     });
   } catch (error) {
-    console.log(error)
+    console.log(error);
     return res.status(500).send({
       success: false,
-      messsage: error.message
-    })
+      messsage: error.message,
+    });
   }
-}
-module.exports = { getAllAccount, registerAccount, verifyAccount, getAccount, bulkOnboard, getAllAccountsByLabel };
+};
+module.exports = {
+  getAllAccount,
+  registerAccount,
+  verifyAccount,
+  getAccount,
+  bulkOnboard,
+  getAllAccountsByLabel,
+};
