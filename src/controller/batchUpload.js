@@ -21,19 +21,22 @@ const authToken = process.env.AUTHTOKEN;
 // Verify batchupload from bankOne
 const VerifyBatchUpload = async (req, res) => {
   try {
-
+    let counter = 1; // Initialize a unique counter
     const unresolvedMandates = [];
     const unresolvedAccount = [];
     const mine = await User.findById(req.user._id);
     const batchId = uuid.v4().substring(0, 8);
     // Listen for the results from Kafka using the event emitter
     emitter.once('results', async (results) => {
-      //initiateRequest and Send the results back to the client
 
-      for (const item of results.data) {
+      for (const item of results) {
         if (item.status === 'success') {
-          const mongooseId = mongoose.Types.ObjectId().toString().substr(0, 11);
-          const randomNumber = Math.floor(Math.random() * 9) + 1;
+          const timestamp = Date.now().toString(); 
+          const paddedCounter = counter.toString().padStart(11 - timestamp.length, '0'); 
+          const transactionReference = `${timestamp}${paddedCounter}`; 
+          
+          counter++; // Increment the counter for the next iteration
+          
 
           const request = new InitiateRequest({
             NIPSessionID: item.data.SessionID,
@@ -48,7 +51,7 @@ const VerifyBatchUpload = async (req, res) => {
             beneficiaryBankName: item.bankName,
             beneficiaryKYC: item.data.KYC,
             organizationId: mine.organizationId.toString(),
-            transactionReference: mongooseId + randomNumber,
+            transactionReference: transactionReference,
             type: item.bankType,
             batchId: batchId
           });

@@ -402,7 +402,35 @@ const getTransactionStatus = async (req, res) => {
 };
 
 
+const IntrabankAccountEnquiry = async (req, res) => {
+  try {
+    const AccountEnquiryInfo = await bankOneService.IntrabankAccountEnquiry(
+      authToken,
+      req.body.AccountNo
+    )
+    if (!AccountEnquiryInfo) {
+      return res.status(500).json({
+        status: "Failed",
+        message: "Unable to get account details",
+      });
+    }
+
+    return res.status(200).json({
+      status: "Success",
+      message: "Account Details retrieved successfully",
+      data: AccountEnquiryInfo,
+    });
+  } catch (error) {
+    console.log('controller', error)
+    return res.status(500).json({
+      status: "Failed",
+      message: error,
+    });
+  }
+};
+
 module.exports = {
+  IntrabankAccountEnquiry,
   getAccountByAccountNo,
   getAccountByCustomerID,
   getTransactionHistory,

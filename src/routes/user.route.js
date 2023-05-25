@@ -9,7 +9,8 @@ const {
   deleteAnyUser,
   createSecurityQuestions,
   updateUserPriviledge,
-  getUserProfileById
+  getUserProfileById,
+  getAllAdmins
 } = require("../controller/user/user.controller");
 const {
   adminAuth,
@@ -31,6 +32,8 @@ router.post("/secret-questions/create", createSecurityQuestions)
 //admin routes
 router.get("/allbranchusers", allUsersAuth, getOrganizationUsers);
 router.get("/all", superUserAuth, getAllUsers);
+router.get("/alladmins", superUserAuth, getAllAdmins);
+
 router.delete("/delete_user", superUserAuth, deleteAnyUser);
 router.delete("/delete_nonadmin", adminAuth, deleteNonAdminUsers);
 // router.post("/priviledges", superUserAuth, createPriviledges);

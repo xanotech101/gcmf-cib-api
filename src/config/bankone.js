@@ -21,7 +21,8 @@ const bankone = {
     `${process.env.BankOneUrl}/BankOneWebAPI/api/Account/GetTransactionsPaginated/2`,
   getAccountInfo: `${process.env.BankOneUrl}/BankOneWebAPI/api/Account/GetAccountSummary/2`,
   transactionStatus: `${process.env.BankOneUrl}/thirdpartyapiservice/apiservice/CoreTransactions/TransactionStatusQuery`,
-  bvnEnquiry: `${process.env.BankOneUrl}/thirdpartyapiservice/apiservice/Account/BVN/GetBVNDetails`
+  bvnEnquiry: `${process.env.BankOneUrl}/thirdpartyapiservice/apiservice/Account/BVN/GetBVNDetails`,
+  intraBankAccountEnquiry: `${process.env.BankOneUrl}/thirdpartyapiservice/apiservice/Account/AccountEnquiry`
 };
 
 module.exports = bankone;

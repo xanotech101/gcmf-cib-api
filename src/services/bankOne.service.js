@@ -9,8 +9,8 @@ class BankOneService {
       );
       return data;
     } catch (error) {
-      console.log('service',error.response.data);
-       throw error.response.data;;
+      console.log('service', error.response.data);
+      throw error.response.data;;
     }
   }
 
@@ -22,11 +22,20 @@ class BankOneService {
       );
       return data;
     } catch (error) {
-      console.log('service',error.response.data);
-       throw error.response.data;;
+      throw error.response.data;;
     }
   }
 
+  async BulkOnboardingaccountByAccountNo(accountNo, authToken) {
+    try {
+      const { data } = await axios.get(
+        `${config.getAccountByAccountNoV2}?authtoken=${authToken}&accountNumber=${accountNo}`
+      );
+      return data;
+    } catch (error) {
+      console.log(error.response.data)
+    }
+  }
 
   async accountByCustomerID(customerId, authToken) {
     try {
@@ -35,8 +44,8 @@ class BankOneService {
       );
       return data;
     } catch (error) {
-      console.log('service',error.response.data);
-       throw error.response.data;
+      console.log('service', error.response.data);
+      throw error.response.data;
     }
   }
 
@@ -48,14 +57,14 @@ class BankOneService {
     numberOfItems
   ) {
     try {
-      
+
       const { data } = await axios.get(
         `${config.transactionHistory}?authtoken=${authToken}&accountNumber=${accountNumber}&fromDate=${fromDate}&toDate=${toDate}&numberOfItems=${numberOfItems}`
       );
       return data;
     } catch (error) {
-      console.log('service',error.response.data);
-       throw error.response.data;;
+      console.log('service', error.response.data);
+      throw error.response.data;;
     }
   }
 
@@ -68,8 +77,8 @@ class BankOneService {
       });
       return data;
     } catch (error) {
-      console.log('service',error.response.data);
-       throw error.response.data;;
+      console.log('service', error.response.data);
+      throw error.response.data;;
     }
   }
 
@@ -82,24 +91,24 @@ class BankOneService {
       });
       return data;
     } catch (error) {
-      console.log('service',error.response.data);
-       throw error.response.data;;
+      console.log('service', error.response.data);
+      throw error.response.data;;
     }
   }
 
   async getBVNEnquiry(authToken, bvn) {
     try {
       const { data } = await axios.post(`${config.bvnEnquiry}`, {
-        BVN:bvn,
+        BVN: bvn,
         Token: authToken,
       });
       return data;
     } catch (error) {
-      console.log('service',error.response.data);
-       throw error.response.data;;
+      console.log('service', error.response.data);
+      throw error.response.data;;
     }
   }
-  
+
   async getbankDetails(authToken, accountNumber) {
     try {
       const { data } = await axios.post(`${config.getAccountByAccountNo}`, {
@@ -108,8 +117,8 @@ class BankOneService {
       });
       return data;
     } catch (error) {
-      console.log('service',error.response.data);
-       throw error.response.data;;
+      console.log('service', error.response.data);
+      throw error.response.data;;
     }
   }
 
@@ -152,8 +161,8 @@ class BankOneService {
       return data;
     } catch (error) {
       // return null;
-      console.log('service',error.response.data);
-       throw error.response.data;
+      console.log('service', error.response.data);
+      throw error.response.data;
     }
   }
 
@@ -164,8 +173,8 @@ class BankOneService {
       const { data } = await axios.post(`${config.interbankTransfer}`, payload);
       return data;
     } catch (error) {
-      console.log('service',error.response.data);
-       throw error.response.data;
+      console.log('service', error.response.data);
+      throw error.response.data;
     }
   }
 
@@ -174,8 +183,8 @@ class BankOneService {
       const { data } = await axios.post(`${config.intrabankTransfer}`, payload);
       return data;
     } catch (error) {
-      console.log('service',error.response.data);
-       throw error.response.data;
+      console.log('service', error.response.data);
+      throw error.response.data;
     }
   }
 
@@ -194,8 +203,8 @@ class BankOneService {
       );
       return data;
     } catch (error) {
-      console.log('service',error.response.data);
-       throw error.response.data;
+      console.log('service', error.response.data);
+      throw error.response.data;
     }
   }
 
@@ -206,7 +215,7 @@ class BankOneService {
       );
       return data;
     } catch (error) {
-      console.log('service',error.response.data);
+      console.log('service', error.response.data);
       throw error.response.data;
     }
   }
@@ -228,8 +237,8 @@ class BankOneService {
       });
       return data;
     } catch (error) {
-      console.log('service',error.response.data);
-       throw error.response.data;
+      console.log('service', error.response.data);
+      throw error.response.data;
     }
   }
 
@@ -240,11 +249,27 @@ class BankOneService {
       );
       return data;
     } catch (error) {
-      console.log('service',error.response.data);
-       throw error.response.data;
+      console.log('service', error.response.data);
+      throw error.response.data;
+    }
+  }
+
+  async IntrabankAccountEnquiry(authToken, accountNumber) {
+    try {
+      const { data } = await axios.post(
+        `${config.intraBankAccountEnquiry}`, {
+        AccountNo: accountNumber,
+        AuthenticationCode: authToken
+      }
+      );
+      return data;
+    } catch (error) {
+      console.log('service', error.response.data);
+      throw error.response.data;
     }
   }
 }
+
 
 
 
