@@ -302,85 +302,49 @@ const changePassword = async (req, res) => {
 const getAllUsers = async (req, res) => {
   try {
     const { page, perPage, name } = req.query;
-    const options = {
-      limit: perPage || PER_PAGE,
-      page: page || 1,
-      sort: { createdAt: -1 },
-    };
+const options = {
+  limit: perPage || PER_PAGE,
+  page: page || 1,
+  sort: { _id: -1 },
+};
 
-    const matchStage = {};
-    if (name) {
-      const [firstName, lastName, email] = name ? name.split(" ") : ["", ""];
-      matchStage.$or = [
-        { firstName: { $regex: new RegExp(firstName, "i") } },
-        { lastName: { $regex: new RegExp(lastName, "i") } },
-        { email: { $regex: new RegExp(email, "i") } },
-      ];
-    }
+const matchStage = {};
+if (name) {
+  const [firstName, lastName, email] = name ? name.split(" ") : ["", ""];
+  matchStage.$or = [
+    { firstName: { $regex: new RegExp(firstName, "i") } },
+    { lastName: { $regex: new RegExp(lastName, "i") } },
+    { email: { $regex: new RegExp(email, "i") } },
+  ];
+}
 
-    const user = await User.aggregate([
-      { $match: matchStage },
-      {
-        $lookup: {
-          from: "accounts",
-          localField: "organizationId",
-          foreignField: "_id",
-          as: "organizationId",
-          pipeline: [{ $project: { accountName: 1 } }],
-        },
-      },
-      {
-        $unwind: "$organizationId",
-      },
-      {
-        $lookup: {
-          from: "privileges",
-          localField: "privileges",
-          foreignField: "_id",
-          as: "privileges",
-          pipeline: [{ $project: { name: 1 } }],
-        },
-      },
-      {
-        $facet: {
-          data: [
-            {
-              $sort: { ...options.sort },
-            },
-            {
-              $skip: options.limit * (options.page - 1),
-            },
-            {
-              $limit: options.limit * 1,
-            },
-          ],
-          meta: [
-            {
-              $count: "total",
-            },
-            {
-              $addFields: {
-                page: options.page,
-                perPage: options.limit,
-              },
-            },
-          ],
-        },
-      },
-    ]);
+const totalCount = await User.countDocuments(matchStage);
+const users = await User.find(matchStage)
+  .sort(options.sort)
+  .skip((options.page - 1) * options.limit)
+  .limit(options.limit)
+  .populate({
+    path: "organizationId",
+    select: "accountName",
+  })
+  .populate({
+    path: "privileges",
+    select: "name",
+  });
 
-    if (user[0].meta.total === 0) {
-      return res.status(404).json({
-        message: "No user found with the provided name",
-        status: "failed",
-      });
-    }
+if (users.length === 0) {
+  return res.status(404).json({
+    message: "No user found with the provided name",
+    status: "failed",
+  });
+}
 
-    return res.status(200).json({
-      message: "Successfully fetched users",
-      data: { users: user[0].data, meta: user[0].meta?.[0] ?? {} },
-      status: "success",
-    });
+return res.status(200).json({
+  message: "Successfully fetched users",
+  data: { users, meta: { total: totalCount, page: options.page, perPage: options.limit } },
+  status: "success",
+});
+
   } catch (error) {
     res.status(500).json({
       message: error.message,
