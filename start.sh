@@ -1,3 +1,3 @@
 #!/bin/bash
-npm run start:dev
+npm run build
 npm run start:cron
