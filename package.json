@@ -8,7 +8,7 @@
     "start:dev": "nodemon src/app.js",
     "seed:db": "node src/seeders/seed.js",
     "start:cron": "node src/jobs/transferRetryJob.js",
-    "build": "node src/app.js"
+    "build": "npm install && node src/app.js"
   },
   "repository": {
     "type": "git",
