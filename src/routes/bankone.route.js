@@ -29,7 +29,7 @@ router.post("/transfer/interbank", adminAuth, interbankTransfer);
 router.post("/details", allUsersAuth, getAccountDetails);
 router.get("/info", allUsersAuth, getAccountInfo);
 router.post("/status", allUsersAuth, getTransactionStatus);
-router.post("/intra-bank/Accountquery", superUserAuth, IntrabankAccountEnquiry);
+router.post("/intra-bank/name-enquiry", allUsersAuth, IntrabankAccountEnquiry);
 
 
 module.exports = router;
