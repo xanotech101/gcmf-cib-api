@@ -6,149 +6,70 @@ const Privilege = require("../../model/privilege.model");
 
 const getOrganizationUsers = async (req, res) => {
   //search first name lastname email
-  const { organizationId } = req.user;
-  try {
-    const { perPage, page } = req.query;
+  try{
+  const { perPage, page } = req.query;
 
-    const id = req.query?.branchId ?? organizationId;
+  const id = req.query?.branchId ?? organizationId;
 
-    const options = {
-      page: page || 1,
-      limit: perPage || PER_PAGE,
-      sort: { createdAt: -1 },
+  const options = {
+    page: page || 1,
+    limit: perPage || PER_PAGE,
+    sort: { _id: -1 },
+  };
+
+  const { privilege, withPagination } = req.query;
+
+  const privilegeId =
+    (await Privilege.findOne({ name: privilege })?._id) || null;
+
+  if (withPagination === 'true') {
+    const totalCount = await User.countDocuments({ organizationId: mongoose.Types.ObjectId(id) });
+
+    const users = await User.find({ organizationId: mongoose.Types.ObjectId(id) })
+      .sort(options.sort)
+      .skip((options.page - 1) * options.limit)
+      .limit(options.limit)
+      .select('firstName lastName email phone gender role privileges organizationId isVerified')
+      .populate({ path: 'privileges', select: 'name' })
+      .populate({ path: 'organizationId', select: '_id' });
+
+    const meta = {
+      totalCount,
+      page: options.page,
+      perPage: options.limit,
     };
 
-    const { privilege, withPagination } = req.query;
-
-    const privilegeId =
-      (await Privilege.findOne({ name: privilege })?._id) || null;
-
-    if (withPagination === "true") {
-      const users = await User.aggregate([
-        {
-          $match: {
-            organizationId: mongoose.Types.ObjectId(id),
-          },
-        },
-        {
-          $addFields: {
-            privileges: {
-              $map: {
-                input: "$privileges",
-                as: "privilege",
-                in: {
-                  $toObjectId: "$$privilege",
-                },
-              },
-            },
-          },
-        },
-        {
-          $lookup: {
-            from: "privileges",
-            localField: "privileges",
-            foreignField: "_id",
-            as: "privileges",
-            pipeline: [{ $project: { name: 1 } }],
-          },
-        },
-        {
-          $lookup: {
-            from: "accounts",
-            localField: "organizationId",
-            foreignField: "_id",
-            as: "organizationId",
-          },
-        },
-        {
-          $unwind: "$organizationId",
-        },
-        {
-          $project: {
-            firstName: 1,
-            lastName: 1,
-            email: 1,
-            phone: 1,
-            gender: 1,
-            role: 1,
-            privileges: 1,
-            organizationId: 1,
-            isVerified: 1,
-          },
-        },
-        {
-          $facet: {
-            data: [
-              { $skip: options.limit * (options.page - 1) },
-              { $limit: options.limit },
-              { $sort: { ...options.sort } },
-            ],
-            totalCount: [
-              { $count: "count" },
-              {
-                $addFields: {
-                  page: options.page,
-                  perPage: options.limit,
-                },
-              },
-            ],
-          },
-        },
-      ]);
-
-      return res.status(200).json({
-        message: "Successfully fetched user",
-        data: {
-          users: users[0].data,
-          meta: users[0].meta,
-        },
-      });
-    }
-
-    const users = await User.aggregate([
-      {
-        $match: {
-          organizationId: mongoose.Types.ObjectId(id),
-          privileges: privilegeId ? { $in: [privilege] } : { $exists: true },
-          isVerified: true,
-        },
+    return res.status(200).json({
+      message: 'Successfully fetched user',
+      data: {
+        users,
+        meta,
       },
-      {
-        $addFields: {
-          privileges: {
-            $map: {
-              input: "$privileges",
-              as: "privilege",
-              in: {
-                $toObjectId: "$$privilege",
-              },
-            },
-          },
-        },
-      },
-      {
-        $lookup: {
-          from: "privileges",
-          localField: "privileges",
-          foreignField: "_id",
-          as: "privileges",
-          pipeline: [{ $project: { name: 1 } }],
-        },
-      },
-    ]);
-
-    if (!users) {
-      res.status(404).json({
-        message: "User not found",
-        data: null,
-        status: "failed",
-      });
-    }
-
-    res.status(200).json({
-      message: "Successfully fetched user",
-      data: users ?? [],
     });
+  }
+
+  const users = await User.find({
+    organizationId: mongoose.Types.ObjectId(id),
+    privileges: privilegeId ? { $in: [privilege] } : { $exists: true },
+    isVerified: true,
+  })
+    .sort({ _id: -1 })
+    .select('firstName lastName email phone gender role privileges organizationId isVerified')
+    .populate({ path: 'privileges', select: 'name' });
+  
+  if (users.length === 0) {
+    return res.status(404).json({
+      message: 'User not found',
+      data: null,
+      status: 'failed',
+    });
+  }
+  
+  return res.status(200).json({
+    message: 'Successfully fetched user',
+    data: users,
+  });
+  
   } catch (error) {
     console.log(error);
     res.status(500).json({
