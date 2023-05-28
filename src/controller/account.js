@@ -8,6 +8,7 @@ let csvToJson = require("convert-csv-to-json");
 const fs = require("fs");
 const excelToJson = require("convert-excel-to-json");
 const bankOneService = require("../services/bankOne.service");
+const userModel = require("../model/user.model");
 const authToken = process.env.AUTHTOKEN;
 
 const registerAccount = async (req, res) => {
@@ -398,6 +399,46 @@ const getAllAccountsByLabel = async (req, res) => {
     });
   }
 };
+
+const DeleteAccount = async (req, res) => {
+  try {
+
+    const findAccount = await userModel.findOne({ _id: req.params.id });
+
+    if (!findAccount) {
+      return res.status(400).send({
+        success: false,
+        message: 'This account does not exist'
+      });
+    }
+
+    const deleteUser = await userModel.deleteOne({ _id: req.params.id });
+
+    if (deleteUser.deletedCount < 1) {
+      return res.status(500).send({
+        success: false,
+        message: 'something went wrong error deleting user'
+      })
+    }
+    const checkForAdmin = await Account.findOne({ adminID: req.params.id });
+    if (checkForAdmin) {
+      await Account.updateOne(
+        { adminID: req.params.id },
+        { $unset: { adminID: "" } }
+      );
+    }
+    return res.status(200).send({
+      success: true,
+      message: 'user successfully deleted'
+    })
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send({
+      success: false,
+      messsage: error.message,
+    });
+  }
+}
 module.exports = {
   getAllAccount,
   registerAccount,
@@ -405,4 +446,5 @@ module.exports = {
   getAccount,
   bulkOnboard,
   getAllAccountsByLabel,
+  DeleteAccount
 };
