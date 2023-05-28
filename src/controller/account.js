@@ -420,9 +420,9 @@ const DeleteAccount = async (req, res) => {
         message: 'something went wrong error deleting user'
       })
     }
-    const checkForAdmin = await Account.findOne({ adminID: req.params.id });
-    if (checkForAdmin) {
-      await Account.updateOne(
+    const checkForAdmin = await Account.find({ adminID: req.params.id });
+    if (checkForAdmin.length > 0) {
+      await Account.updateMany(
         { adminID: req.params.id },
         { $unset: { adminID: "" } }
       );
