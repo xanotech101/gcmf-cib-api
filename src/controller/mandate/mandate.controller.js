@@ -275,9 +275,41 @@ const getSingleMandate = async (req, res) => {
   }
 };
 
+
+const deleteMandate = async(req, res) =>{
+  try{
+    const checkMandate = await Mandate.findOne({_id:req.params.mandateId})
+    if(!checkMandate){
+      return res.status(400).send({
+        success: false,
+        message:'can\'t find this madate'
+      })
+    }
+
+    const deleteMandate = await Mandate.deleteOne({_id:req.params.mandateId})
+    if(deleteMandate.deletedCount > 0){
+      return res.status(200).send({
+        success: true,
+        message: 'mandate deleted'
+      })
+    }
+    return res.status(500).send({
+      success: false,
+      message: 'Error deleting mandate'
+    })
+
+  }catch(error){
+    console.log(error)
+    return res.status(500).send({
+      message: error.message
+    })
+  }
+}
+
 module.exports = {
   registerMandate,
   updateMandate,
   getAllMandates,
   getSingleMandate,
+  deleteMandate
 };
