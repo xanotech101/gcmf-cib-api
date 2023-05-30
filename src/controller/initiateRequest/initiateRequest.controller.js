@@ -11,7 +11,7 @@ const {
   auditTrailService,
   notificationService,
 } = require("../../services");
-const { getDateAndTime } = require("../../utils/utils");
+const { getDateAndTime, toISOLocal } = require("../../utils/utils");
 const bankOneService = require("../../services/bankOne.service");
 const Account = require("../../model/account");
 const authToken = process.env.AUTHTOKEN;
@@ -35,6 +35,8 @@ const initiateRequest = async (req, res) => {
       organizationId: mine.organizationId.toString(),
       transactionReference: mongoose.Types.ObjectId().toString().substr(0, 12),
       type: req.body.type,
+      createdAt: toISOLocal(new Date()),
+      updatedAt: toISOLocal(new Date())
     });
 
     const mandate = await Mandate.findOne({

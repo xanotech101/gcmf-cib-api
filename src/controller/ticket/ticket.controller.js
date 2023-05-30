@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const userModel = require("../../model/user.model");
 const { sendEmail } = require("../../utils/emailService");
 const { insertMany } = require("../../model/account");
+const { toISOLocal } = require("../../utils/utils");
 
 const getAllTickets = async (req, res) => {
   const { perPage, page } = req.query;
@@ -161,6 +162,8 @@ const createTicket = async (req, res) => {
       message: req.body.message,
       meta: req.body.meta,
       organization: mongoose.Types.ObjectId(req.user.organizationId),
+      createdAt: toISOLocal(new Date()),
+      updatedAt: toISOLocal(new Date())
     });
 
 
