@@ -416,6 +416,79 @@ const getAllAdmins = async (req, res) => {
   }
 };
 
+const disableAccount = async (req, res) =>{
+  try{
+    const checkUser = await User.findOne({_id:req.params.userid})
+    if(!checkUser){
+      return res.status(400).send({
+        success: false,
+        message: 'user not found on this system'
+      })
+    }
+
+
+    if(checkUser.disabled === true){
+      return res.status(400).send({
+        success: false,
+        message: 'this account is already disabled'
+      })
+    }
+
+    const disableUser = await User.updateOne({_id:req.params.userid},{$set:{disabled: true}})
+    if(disableUser.modifiedCount > 0){
+      return res.status(200).send({
+        success: true,
+        message: 'Account successfully disabled'
+      })
+    }
+    return res.status(500).send({
+      success: false,
+      message: 'Error disabling account'
+    })
+  }catch(error){
+    return res.status(500).send({
+      success:false,
+      message: error.message
+    })
+  }
+}
+
+const enableAccount = async (req, res) =>{
+  try{
+    const checkUser = await User.findOne({_id:req.params.userid})
+    if(!checkUser){
+      return res.status(400).send({
+        success: false,
+        message: 'user not found on this system'
+      })
+    }
+
+
+    if(checkUser.disabled === false){
+      return res.status(400).send({
+        success: false,
+        message: 'this account is already enabled'
+      })
+    }
+
+    const enableUser = await User.updateOne({_id:req.params.userid},{$set:{disabled: false}})
+    if(enableUser.modifiedCount > 0){
+      return res.status(200).send({
+        success: true,
+        message: 'Account successfully enable'
+      })
+    }
+    return res.status(500).send({
+      success: false,
+      message: 'Error enabling account'
+    })
+  }catch(error){
+    return res.status(500).send({
+      success:false,
+      message: error.message
+    })
+  }
+}
 module.exports = {
   getOrganizationUsers,
   getUserProfile,
@@ -428,4 +501,6 @@ module.exports = {
   updateUserPriviledge,
   getUserProfileById,
   getAllAdmins,
+  disableAccount,
+  enableAccount
 };
