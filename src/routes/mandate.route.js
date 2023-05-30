@@ -4,7 +4,8 @@ const {
   registerMandate,
   updateMandate,
   getAllMandates,
-  getSingleMandate
+  getSingleMandate,
+  deleteMandate
 } = require("../controller/mandate/mandate.controller");
 const { validate, mandateSchemas } = require("../validations");
 const {
@@ -23,6 +24,7 @@ router.post(
 router.put("/update", adminAuth, updateMandate);
 router.get("/all", allUsersAuth, getAllMandates);
 router.get("/:id", allUsersAuth, getSingleMandate);
+router.delete('/deleteMandate/:mandateId', superUserAuth, deleteMandate)
 
 
 
