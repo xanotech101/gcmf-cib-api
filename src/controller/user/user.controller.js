@@ -6,70 +6,77 @@ const Privilege = require("../../model/privilege.model");
 
 const getOrganizationUsers = async (req, res) => {
   //search first name lastname email
-  try{
-  const { perPage, page } = req.query;
+  try {
+    const { perPage, page } = req.query;
 
-  const id = req.query?.branchId ?? organizationId;
+    const id = req.query?.branchId ?? organizationId;
 
-  const options = {
-    page: page || 1,
-    limit: perPage || PER_PAGE,
-    sort: { _id: -1 },
-  };
-
-  const { privilege, withPagination } = req.query;
-
-  const privilegeId =
-    (await Privilege.findOne({ name: privilege })?._id) || null;
-
-  if (withPagination === 'true') {
-    const totalCount = await User.countDocuments({ organizationId: mongoose.Types.ObjectId(id) });
-
-    const users = await User.find({ organizationId: mongoose.Types.ObjectId(id) })
-      .sort(options.sort)
-      .skip((options.page - 1) * options.limit)
-      .limit(options.limit)
-      .select('firstName lastName email phone gender role privileges organizationId isVerified')
-      .populate({ path: 'privileges', select: 'name' })
-      .populate({ path: 'organizationId', select: '_id' });
-
-    const meta = {
-      totalCount,
-      page: options.page,
-      perPage: options.limit,
+    const options = {
+      page: page || 1,
+      limit: perPage || PER_PAGE,
+      sort: { _id: -1 },
     };
 
-    return res.status(200).json({
-      message: 'Successfully fetched user',
-      data: {
-        users,
-        meta,
-      },
-    });
-  }
+    const { privilege, withPagination } = req.query;
 
-  const users = await User.find({
-    organizationId: mongoose.Types.ObjectId(id),
-    privileges: privilegeId ? { $in: [privilege] } : { $exists: true },
-    isVerified: true,
-  })
-    .sort({ _id: -1 })
-    .select('firstName lastName email phone gender role privileges organizationId isVerified')
-    .populate({ path: 'privileges', select: 'name' });
-  
-  if (users.length === 0) {
-    return res.status(404).json({
-      message: 'User not found',
-      data: null,
-      status: 'failed',
+    const privilegeId =
+      (await Privilege.findOne({ name: privilege })?._id) || null;
+
+    if (withPagination === "true") {
+      const totalCount = await User.countDocuments({
+        organizationId: mongoose.Types.ObjectId(id),
+      });
+
+      const users = await User.find({
+        organizationId: mongoose.Types.ObjectId(id),
+      })
+        .sort(options.sort)
+        .skip((options.page - 1) * options.limit)
+        .limit(options.limit)
+        .select(
+          "firstName lastName email phone gender role privileges organizationId isVerified"
+        )
+        .populate({ path: "privileges", select: "name" })
+        .populate({ path: "organizationId", select: "_id" });
+
+      const meta = {
+        totalCount,
+        page: options.page,
+        perPage: options.limit,
+      };
+
+      return res.status(200).json({
+        message: "Successfully fetched user",
+        data: {
+          users,
+          meta,
+        },
+      });
+    }
+
+    const users = await User.find({
+      organizationId: mongoose.Types.ObjectId(id),
+      privileges: privilegeId ? { $in: [privilege] } : { $exists: true },
+      isVerified: true,
+    })
+      .sort({ _id: -1 })
+      .select(
+        "firstName lastName email phone gender role privileges organizationId isVerified"
+      )
+      .populate({ path: "privileges", select: "name" });
+
+    if (users.length === 0) {
+      return res.status(404).json({
+        message: "User not found",
+        data: null,
+        status: "failed",
+      });
+    }
+
+    return res.status(200).json({
+      message: "Successfully fetched user",
+      data: users,
     });
-  }
-  
-  return res.status(200).json({
-    message: 'Successfully fetched user',
-    data: users,
-  });
-  
   } catch (error) {
     console.log(error);
     res.status(500).json({
@@ -222,50 +229,61 @@ const changePassword = async (req, res) => {
 
 const getAllUsers = async (req, res) => {
   try {
-    const { page, perPage, name } = req.query;
-const options = {
-  limit: perPage || PER_PAGE,
-  page: page || 1,
-  sort: { _id: -1 },
-};
+    const { page, perPage, search } = req.query;
 
-const matchStage = {};
-if (name) {
-  const [firstName, lastName, email] = name ? name.split(" ") : ["", ""];
-  matchStage.$or = [
-    { firstName: { $regex: new RegExp(firstName, "i") } },
-    { lastName: { $regex: new RegExp(lastName, "i") } },
-    { email: { $regex: new RegExp(email, "i") } },
-  ];
-}
+    const options = {
+      limit: perPage || PER_PAGE,
+      page: page || 1,
+      sort: { _id: -1 },
+    };
 
-const totalCount = await User.countDocuments(matchStage);
-const users = await User.find(matchStage)
-  .sort(options.sort)
-  .skip((options.page - 1) * options.limit)
-  .limit(options.limit)
-  .populate({
-    path: "organizationId",
-    select: "accountName",
-  })
-  .populate({
-    path: "privileges",
-    select: "name",
-  });
+    const matchStage = {};
+    if (search) {
+      const trimmedSearch = search.trim();
+      matchStage.$or = [
+        { firstName: { $regex: new RegExp(trimmedSearch, "i") } },
+        { lastName: { $regex: new RegExp(trimmedSearch, "i") } },
+        { email: { $regex: new RegExp(trimmedSearch, "i") } },
+        {
+          $expr: {
+            $regexMatch: {
+              input: { $concat: ["$firstName", " ", "$lastName"] },
+              regex: new RegExp(trimmedSearch, "i"),
+            },
+          },
+        },
+      ];
+    }
 
-if (totalCount == 0) {
-  return res.status(404).json({
-    message: "No user found with the provided name",
-    status: "failed",
-  });
-}
+    const totalCount = await User.countDocuments(matchStage);
+    const users = await User.find(matchStage)
+      .sort(options.sort)
+      .skip((options.page - 1) * options.limit)
+      .limit(options.limit)
+      .populate({
+        path: "organizationId",
+        select: "accountName",
+      })
+      .populate({
+        path: "privileges",
+        select: "name",
+      });
 
-return res.status(200).json({
-  message: "Successfully fetched users",
-  data: { users, meta: { total: totalCount, page: options.page, perPage: options.limit } },
-  status: "success",
-});
+    if (totalCount == 0) {
+      return res.status(404).json({
+        message: "No user found with the provided name",
+        status: "failed",
+      });
+    }
 
+    return res.status(200).json({
+      message: "Successfully fetched users",
+      data: {
+        users,
+        meta: { total: totalCount, page: options.page, perPage: options.limit },
+      },
+      status: "success",
+    });
   } catch (error) {
     res.status(500).json({
       message: error.message,
@@ -363,16 +381,16 @@ const createSecurityQuestions = async (req, res) => {
 
 const getAllAdmins = async (req, res) => {
   try {
-    const { page = 1, limit = 10, name = '' } = req.query;
+    const { page = 1, limit = 10, name = "" } = req.query;
 
     const filter = {};
     if (name) {
       filter.$or = [
-        { firstName: { $regex: name, $options: 'i' } },
-        { lastName: { $regex: name, $options: 'i' } },
+        { firstName: { $regex: name, $options: "i" } },
+        { lastName: { $regex: name, $options: "i" } },
       ];
     }
-    filter.role = 'admin';
+    filter.role = "admin";
 
     const count = await User.countDocuments(filter);
     const totalPages = Math.ceil(count / limit);
@@ -382,18 +400,18 @@ const getAllAdmins = async (req, res) => {
       .limit(parseInt(limit));
 
     return res.status(200).json({
-      message: 'Admins retrieved successfully',
+      message: "Admins retrieved successfully",
       data: fetchAdmins,
       totalPages,
       totalData: count,
       currentPage: page,
-      status: 'success',
+      status: "success",
     });
   } catch (error) {
     return res.status(500).json({
       message: error.message,
       data: null,
-      status: 'failed',
+      status: "failed",
     });
   }
 };
@@ -409,5 +427,5 @@ module.exports = {
   createSecurityQuestions,
   updateUserPriviledge,
   getUserProfileById,
-  getAllAdmins
+  getAllAdmins,
 };

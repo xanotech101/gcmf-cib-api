@@ -12,7 +12,7 @@ async function Verify_Account(req, res, next) {
         const excelDocs = ["xlsx", "xls"];
         const csvDocs = ["csv"];
 
-        if (!req.body.originatorAccountNumber){
+        if (!req.body.originatorAccountNumber) {
             return res.status(400).json({
                 message: "originator account is required!",
                 status: "failed",
@@ -61,26 +61,26 @@ async function Verify_Account(req, res, next) {
 
 
                 formattedData = transformedData.map((obj) => ({
-                    payerAccountNumber:req.body.originatorAccountNumber,
+                    payerAccountNumber: req.body.originatorAccountNumber,
                     amount: obj.AMOUNT,
                     bankName: obj.BANKNAME ? obj.BANKNAME.trim() : '',
-                    accountNumber: obj.ACCOUNTNUMBER ? obj.ACCOUNTNUMBER.trim() : '',
+                    accountNumber: obj.ACCOUNTNUMBER ? String(obj.ACCOUNTNUMBER).trim() : '',
                     banktype: obj.TYPE && obj.TYPE.trim() === 'GMFB' ? 'inter-bank' : 'intra-bank',
-                    accountType: obj.ACCOUNTTYPE ? obj.ACCOUNTTYPE.trim() : '',
-                    bankCode: obj.BANKCODE ? obj.BANKCODE.trim() : '',
+                    accountType: obj.ACCOUNTTYPE ? obj.ACCOUNTTYPE.trim().toLowerCase() : '',
+                    bankCode: obj.BANKCODE ? String(obj.BANKCODE).trim() : '',
                     narration: obj.NARRATION ? obj.NARRATION.trim() : '',
                 }));
 
             } else if (csvDocs.includes(fileExtension)) {
                 data = csvToJson.fieldDelimiter(',').getJsonFromCsv(file.path);
                 formattedData = formattedData.concat(data.map((obj) => ({
-                    payerAccountNumber:req.body.originatorAccountNumber,
+                    payerAccountNumber: req.body.originatorAccountNumber,
                     amount: obj.AMOUNT ? parseInt(obj.AMOUNT.trim()) : '',
                     bankName: obj.BANKNAME ? obj.BANKNAME.trim() : '',
-                    accountNumber: obj.ACCOUNTNUMBER ? obj.ACCOUNTNUMBER.trim() : '',
+                    accountNumber: obj.ACCOUNTNUMBER ? String(obj.ACCOUNTNUMBER).trim() : '',
                     banktype: obj.TYPE && obj.TYPE.trim() === 'GMFB' ? 'inter-bank' : 'intra-bank',
-                    accountType: obj.ACCOUNTTYPE ? obj.ACCOUNTTYPE.trim() : '',
-                    bankCode: obj.BANKCODE ? obj.BANKCODE.trim() : '',
+                    accountType: obj.ACCOUNTTYPE ? obj.ACCOUNTTYPE.trim().toLowerCase() : '',
+                    bankCode: obj.BANKCODE ? String(obj.BANKCODE).trim() : '',
                     narration: obj.NARRATION ? obj.NARRATION.trim() : '',
                 })));
             } else {
@@ -120,31 +120,31 @@ async function sendToGolang(data) {
     const batchSize = 30; // Number of elements to send in each batch
     const responses = []; // Array to store all the responses
     const filteredResponse = []
-  
+
     try {
-      for (let i = 0; i < data.length; i += batchSize) {
-        const batch = data.slice(i, i + batchSize);
-  
-        try {
-          const response = await axios.post('http://35.169.118.252:3003/api/verify_account', batch);
-          responses.push(response.data);
-          console.log(`Batch ${i + 1}-${i + batchSize} sent successfully. ${response.data}`);
-        } catch (error) {
-          console.error(`Error sending batch ${i + 1}-${i + batchSize}:`, error);
+        for (let i = 0; i < data.length; i += batchSize) {
+            const batch = data.slice(i, i + batchSize);
+
+            try {
+                const response = await axios.post('http://35.169.118.252:3003/api/verify_account', batch);
+                responses.push(response.data);
+                console.log(`Batch ${i + 1}-${i + batchSize} sent successfully. ${response.data}`);
+            } catch (error) {
+                console.error(`Error sending batch ${i + 1}-${i + batchSize}:`, error);
+            }
         }
-      }
-  
-      // All requests have been sent
-      if(responses.length > 0){
-        responses.map((item)=>{
-            filteredResponse.push(item.data)
-        })
-      }
-      
-      const mergedArray = [].concat(...filteredResponse)
-      emitter.emit('results', mergedArray);
+
+        // All requests have been sent
+        if (responses.length > 0) {
+            responses.map((item) => {
+                filteredResponse.push(item.data)
+            })
+        }
+
+        const mergedArray = [].concat(...filteredResponse)
+        emitter.emit('results', mergedArray);
     } catch (error) {
-      console.error('Error sending data:', error);
+        console.error('Error sending data:', error);
     }
-  }
+}
 module.exports = { Verify_Account };
