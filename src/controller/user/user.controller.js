@@ -3,6 +3,7 @@ const bcrypt = require("bcrypt");
 const { PER_PAGE } = require("../../utils/constants");
 const mongoose = require("mongoose");
 const Privilege = require("../../model/privilege.model");
+const Account = require("../../model/account")
 
 const getOrganizationUsers = async (req, res) => {
   //search first name lastname email
