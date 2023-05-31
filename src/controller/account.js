@@ -398,6 +398,47 @@ const getAllAccountsByLabel = async (req, res) => {
     });
   }
 };
+
+const DeleteAccount = async (req, res) => {
+  try {
+
+    const findAccount = await userModel.findOne({ _id: req.params.id });
+
+    if (!findAccount) {
+      return res.status(400).send({
+        success: false,
+        message: 'This account does not exist'
+      });
+    }
+
+    const deleteUser = await userModel.deleteOne({ _id: req.params.id });
+
+    if (deleteUser.deletedCount < 1) {
+      return res.status(500).send({
+        success: false,
+        message: 'something went wrong error deleting user'
+      })
+    }
+    const checkForAdmin = await Account.find({ adminID: req.params.id });
+    if (checkForAdmin.length > 0) {
+      await Account.updateMany(
+        { adminID: req.params.id },
+        { $unset: { adminID: "" } }
+      );
+    }
+    return res.status(200).send({
+      success: true,
+      message: 'user successfully deleted'
+    })
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send({
+      success: false,
+      messsage: error.message,
+    });
+  }
+}
+
 module.exports = {
   getAllAccount,
   registerAccount,
@@ -405,4 +446,5 @@ module.exports = {
   getAccount,
   bulkOnboard,
   getAllAccountsByLabel,
+  DeleteAccount
 };
