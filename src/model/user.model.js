@@ -27,10 +27,10 @@ const userSchema = new mongoose.Schema(
     phone: String,
     gender: String,
     organizationId: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "Account",
-        }
-      ,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Account",
+    }
+    ,
     imageUrl: String,
     privileges: [
       {
@@ -43,6 +43,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
       enum: ["system-admin", "super-admin", "admin", "user"],
+    },
+    disabled:{
+      type:Boolean,
+      default: false
     },
     verificationToken: String,
     is2FAEnabled: {
@@ -58,11 +62,19 @@ const userSchema = new mongoose.Schema(
         answer: String,
       }
     ],
-    createdAt: { type: String, default: toISOLocal(new Date()) },
-    updatedAt: { type: String, default: toISOLocal(new Date()) },
+    createdAt: { type: String },
+    updatedAt: { type: String },
   }
 
 );
+
+// Set the createdAt and updatedAt values before saving the document
+userSchema.pre("save", function (next) {
+  const currentDate = toISOLocal();
+  this.createdAt = currentDate;
+  this.updatedAt = currentDate;
+  next();
+})
 
 userSchema.methods.generateAuthToken = async function () {
   const privileges =

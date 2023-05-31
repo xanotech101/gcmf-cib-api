@@ -73,7 +73,8 @@ const getDateAndTime = () => {
   return { date, time };
 };
 
-function toISOLocal(d) {
+function toISOLocal() {
+  var d = new Date()
   var z = (n) => ("0" + n).slice(-2);
   var zz = (n) => ("00" + n).slice(-3);
   var off = d.getTimezoneOffset();

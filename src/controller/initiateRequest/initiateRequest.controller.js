@@ -34,9 +34,7 @@ const initiateRequest = async (req, res) => {
       beneficiaryPhoneNumber: req.body.beneficiaryPhoneNumber,
       organizationId: mine.organizationId.toString(),
       transactionReference: mongoose.Types.ObjectId().toString().substr(0, 12),
-      type: req.body.type,
-      createdAt: toISOLocal(new Date()),
-      updatedAt: toISOLocal(new Date())
+      type: req.body.type
     });
 
     const mandate = await Mandate.findOne({
@@ -175,7 +173,7 @@ const getAllAssignedRequests = async (req, res) => {
   const options = {
     page: page || 1,
     limit: perPage || PER_PAGE,
-    sort: { createdAt: -1 },
+    sort: { _id: -1 },
   };
 
   const query = {
@@ -843,7 +841,7 @@ const getAllTransferRequests = async (req, res) => {
   const options = {
     page: page || 1,
     limit: perPage || PER_PAGE,
-    sort: { createdAt: -1 },
+    sort: { _id: -1 },
   };
 
   const matchStage = {};

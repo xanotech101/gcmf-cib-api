@@ -9,7 +9,7 @@ const getAllAuditTrail = async (req, res) => {
   const options = {
     page: page || 1,
     limit: perPage || PER_PAGE,
-    sort: { createdAt: -1 },
+    sort: { _id: -1 },
   };
 
   try {
@@ -70,7 +70,7 @@ const getOrganizationAuditTrail = async (req, res) => {
   const options = {
     page: page || 1,
     limit: perPage || PER_PAGE,
-    sort: { createdAt: -1 },
+    sort: { _id: -1 },
   };
 
   try {
@@ -148,7 +148,7 @@ const getAuditTrailForSingleUser = async(req, res) => {
   const options = {
     page: page || 1,
     limit: perPage || PER_PAGE,
-    sort: { createdAt: -1 },
+    sort: { _id: -1 },
   };
 
   try {
