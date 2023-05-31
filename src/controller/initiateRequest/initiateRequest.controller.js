@@ -173,7 +173,7 @@ const getAllAssignedRequests = async (req, res) => {
   const options = {
     page: page || 1,
     limit: perPage || PER_PAGE,
-    sort: { createdAt: -1 },
+    sort: { _id: -1 },
   };
 
   const query = {
@@ -841,7 +841,7 @@ const getAllTransferRequests = async (req, res) => {
   const options = {
     page: page || 1,
     limit: perPage || PER_PAGE,
-    sort: { createdAt: -1 },
+    sort: { _id: -1 },
   };
 
   const matchStage = {};

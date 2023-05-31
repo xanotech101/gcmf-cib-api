@@ -382,6 +382,7 @@ const getAllAccountsByLabel = async (req, res) => {
     const accounts = await Account.find({ organizationLabel })
       .skip(skip)
       .limit(PAGE_SIZE)
+      .sort({_id: -1})
       .populate("adminID")
       .populate("organizationLabel");
 
