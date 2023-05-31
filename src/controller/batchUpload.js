@@ -28,14 +28,10 @@ const VerifyBatchUpload = async (req, res) => {
     const batchId = uuid.v4().substring(0, 8);
     // Listen for the results from Kafka using the event emitter
     emitter.once('results', async (results) => {
-      console.log(results)
-      return 
-
       for (const item of results) {
         if (item.status === 'success') {
           
           counter++; // Increment the counter for the next iteration
-
 
           const request = new InitiateRequest({
             NIPSessionID: item.data.SessionID,
