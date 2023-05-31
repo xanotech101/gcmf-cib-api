@@ -21,7 +21,7 @@ const authToken = process.env.AUTHTOKEN;
 // Verify batchupload from bankOne
 const VerifyBatchUpload = async (req, res) => {
   try {
-    let counter = 1; // Initialize a unique counter
+    let counter = 0; // Initialize a unique counter
     const unresolvedMandates = [];
     const unresolvedAccount = [];
     const mine = await User.findById(req.user._id);
@@ -31,12 +31,9 @@ const VerifyBatchUpload = async (req, res) => {
 
       for (const item of results) {
         if (item.status === 'success') {
-          const timestamp = Date.now().toString(); 
-          const paddedCounter = counter.toString().padStart(11 - timestamp.length, '0'); 
-          const transactionReference = `${timestamp}${paddedCounter}`; 
           
           counter++; // Increment the counter for the next iteration
-          
+
 
           const request = new InitiateRequest({
             NIPSessionID: item.data.SessionID,
@@ -51,7 +48,7 @@ const VerifyBatchUpload = async (req, res) => {
             beneficiaryBankName: item.bankName,
             beneficiaryKYC: item.data.KYC,
             organizationId: mine.organizationId.toString(),
-            transactionReference: transactionReference,
+            transactionReference: generateRandomCode(),
             type: item.bankType,
             batchId: batchId
           });
@@ -137,5 +134,14 @@ const VerifyBatchUpload = async (req, res) => {
   }
 };
 
+function generateRandomCode() {
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let code = '';
+  for (let i = 0; i < 12; i++) {
+    const randomIndex = Math.floor(Math.random() * characters.length);
+    code += characters[randomIndex];
+  }
+  return code;
+}
 
 module.exports = { VerifyBatchUpload };
