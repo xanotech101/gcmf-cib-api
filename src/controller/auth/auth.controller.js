@@ -7,6 +7,7 @@ const { getDateAndTime, toISOLocal } = require("../../utils/utils");
 const auditTrailService = require("../../services/auditTrail.service");
 const { update } = require("lodash");
 
+
 const preLogin = async (req, res) => {
   const { email, password } = req.body;
   try {
@@ -34,6 +35,14 @@ const preLogin = async (req, res) => {
       return res.status(400).send({
         data: null,
         message: "Invalid email or password",
+        status: "failed",
+      });
+    }
+
+    if(user.disabled === true){
+      return res.status(400).send({
+        data: null,
+        message: "Sorry your account has been disabled and you can't login, if you think this is a mistake contact the administrator thank you",
         status: "failed",
       });
     }

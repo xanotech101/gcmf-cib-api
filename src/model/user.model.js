@@ -44,6 +44,10 @@ const userSchema = new mongoose.Schema(
       required: true,
       enum: ["system-admin", "super-admin", "admin", "user"],
     },
+    disabled:{
+      type:Boolean,
+      default: false
+    },
     verificationToken: String,
     is2FAEnabled: {
       type: Boolean,
