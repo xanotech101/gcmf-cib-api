@@ -32,7 +32,6 @@ router.get("/all_accounts/:id", allUsersAuth, getAccount);
 
 //onboard multiple account
 router.post("/bulkOnboard", superUserAuth, upload.array("files"), bulkOnboard)
-router.delete("/deleteAccount/:id", superUserAuth, DeleteAccount)
 
 
 module.exports = router;
