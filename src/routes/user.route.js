@@ -11,7 +11,8 @@ const {
   updateUserPriviledge,
   getUserProfileById,
   getAllAdmins,
-  DeleteAccount
+  disableAccount,
+  enableAccount
 } = require("../controller/user/user.controller");
 const {
   adminAuth,
@@ -37,9 +38,9 @@ router.get("/alladmins", superUserAuth, getAllAdmins);
 
 router.delete("/delete_user", superUserAuth, deleteAnyUser);
 router.delete("/delete_nonadmin", adminAuth, deleteNonAdminUsers);
+router.patch("/disable_user_account/:userid", superUserAuth, disableAccount)
+router.patch("/enable_user_account/:userid", superUserAuth, enableAccount)
 // router.post("/priviledges", superUserAuth, createPriviledges);
-
-router.delete("/deleteAccount/:id",superUserAuth,DeleteAccount )
 module.exports = router;
 
 deleteNonAdminUsers;
