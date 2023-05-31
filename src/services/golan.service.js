@@ -78,7 +78,7 @@ async function Verify_Account(req, res, next) {
                     amount: obj.AMOUNT ? parseInt(obj.AMOUNT.trim()) : '',
                     bankName: obj.BANKNAME ? obj.BANKNAME.trim() : '',
                     accountNumber: obj.ACCOUNTNUMBER ? String(obj.ACCOUNTNUMBER).trim() : '',
-                    banktype: obj.TYPE && obj.TYPE.trim() === 'GMFB' ? 'inter-bank' : 'intra-bank',
+                    banktype: obj.TYPE && obj.TYPE.trim() === 'GMFB' ? 'intra-bank' : 'inter-bank',
                     accountType: obj.ACCOUNTTYPE ? obj.ACCOUNTTYPE.trim().toLowerCase() : '',
                     bankCode: obj.BANKCODE ? String(obj.BANKCODE).trim() : '',
                     narration: obj.NARRATION ? obj.NARRATION.trim() : '',
@@ -126,7 +126,7 @@ async function sendToGolang(data) {
             const batch = data.slice(i, i + batchSize);
 
             try {
-                const response = await axios.post('http://35.169.118.252:3003/api/verify_account', batch);
+                const response = await axios.post('http://localhost:3003/api/verify_account', batch);
                 responses.push(response.data);
                 console.log(`Batch ${i + 1}-${i + batchSize} sent successfully. ${response.data}`);
             } catch (error) {
@@ -148,3 +148,5 @@ async function sendToGolang(data) {
     }
 }
 module.exports = { Verify_Account };
+
+// http://35.169.118.252
