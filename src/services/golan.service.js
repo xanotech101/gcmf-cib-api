@@ -65,7 +65,7 @@ async function Verify_Account(req, res, next) {
                     amount: obj.AMOUNT,
                     bankName: obj.BANKNAME ? obj.BANKNAME.trim() : '',
                     accountNumber: obj.ACCOUNTNUMBER ? String(obj.ACCOUNTNUMBER).trim() : '',
-                    banktype: obj.TYPE && obj.TYPE.trim() === 'GMFB' ? 'inter-bank' : 'intra-bank',
+                    banktype: obj.TYPE && obj.TYPE.trim() === 'GMFB' ? 'intra-bank' : 'inter-bank',
                     accountType: obj.ACCOUNTTYPE ? obj.ACCOUNTTYPE.trim().toLowerCase() : '',
                     bankCode: obj.BANKCODE ? String(obj.BANKCODE).trim() : '',
                     narration: obj.NARRATION ? obj.NARRATION.trim() : '',
