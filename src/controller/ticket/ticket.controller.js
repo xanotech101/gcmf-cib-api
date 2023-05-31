@@ -161,9 +161,7 @@ const createTicket = async (req, res) => {
       topic: req.body.topic,
       message: req.body.message,
       meta: req.body.meta,
-      organization: mongoose.Types.ObjectId(req.user.organizationId),
-      createdAt: toISOLocal(new Date()),
-      updatedAt: toISOLocal(new Date())
+      organization: mongoose.Types.ObjectId(req.user.organizationId)
     });
 
 

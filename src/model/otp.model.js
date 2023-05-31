@@ -13,9 +13,17 @@ const otpSchema = new mongoose.Schema(
     },
     context: String,
     otp: String,
-    createdAt: { type: String, default: toISOLocal(new Date()) },
-  updatedAt: { type: String, default: toISOLocal(new Date()) },
+    createdAt: { type: String },
+    updatedAt: { type: String },
   }
 );
+
+// Set the createdAt and updatedAt values before saving the document
+otpSchema.pre("save", function (next) {
+  const currentDate = toISOLocal();
+  this.createdAt = currentDate;
+  this.updatedAt = currentDate;
+  next();
+})
 
 module.exports = mongoose.model("Otp", otpSchema);
