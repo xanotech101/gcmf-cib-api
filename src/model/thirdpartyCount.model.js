@@ -9,11 +9,18 @@ const thirdPartyCount = new mongoose.Schema({
     ref:'thirdparty'
   },
   requestType:String,
-  createdAt: { type: String, default: toISOLocal(new Date()) },
-  updatedAt: { type: String, default: toISOLocal(new Date()) },
+  createdAt: { type: String },
+  updatedAt: { type: String },
 }
 );
 
+// Set the createdAt and updatedAt values before saving the document
+thirdPartyCount.pre("save", function (next) {
+  const currentDate = toISOLocal();
+  this.createdAt = currentDate;
+  this.updatedAt = currentDate;
+  next();
+})
 
 const thirdPartyRequestCOuntModel = mongoose.model('thirdpartyRequest_count', thirdPartyCount)
 module.exports = thirdPartyRequestCOuntModel

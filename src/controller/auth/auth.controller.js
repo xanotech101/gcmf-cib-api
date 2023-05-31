@@ -134,8 +134,6 @@ const login = async (req, res) => {
       type: "authentication",
       message: `${user.firstName} logged in on ${date} by ${time}`,
       organization: user.organizationId,
-      createdAt: toISOLocal(new Date()),
-      updatedAt: toISOLocal(new Date())
     });
 
     res.json({
