@@ -3,8 +3,9 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const secretQuestionService = require("../../services/secretQuestion.service");
 const { sendEmail } = require("../../utils/emailService");
-const { getDateAndTime } = require("../../utils/utils");
+const { getDateAndTime, toISOLocal } = require("../../utils/utils");
 const auditTrailService = require("../../services/auditTrail.service");
+const { update } = require("lodash");
 
 
 const preLogin = async (req, res) => {
@@ -133,6 +134,8 @@ const login = async (req, res) => {
       type: "authentication",
       message: `${user.firstName} logged in on ${date} by ${time}`,
       organization: user.organizationId,
+      createdAt: toISOLocal(new Date()),
+      updatedAt: toISOLocal(new Date())
     });
 
     res.json({
