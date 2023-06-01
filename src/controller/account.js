@@ -183,6 +183,214 @@ const getAccount = async (req, res) => {
 };
 
 //onboard multiple accounts
+// const bulkOnboard = async (req, res) => {
+//   try {
+//     const excelDocs = ["xlsx", "xls"];
+//     const csvDocs = ["csv"];
+
+//     if (!req.files || Object.keys(req.files).length === 0) {
+//       return res.status(400).json({
+//         message: "No files uploaded. Please upload at least one file",
+//         status: "failed",
+//       });
+//     }
+
+//     let formattedData = [];
+
+//     for (let i = 0; i < req.files.length; i++) {
+//       let file = req.files[i];
+//       let fileExtension = file.originalname.split(".")[1];
+//       let data;
+
+//       if (excelDocs.includes(fileExtension)) {
+//         data = excelToJson({
+//           sourceFile: file.path,
+//           header: {
+//             rows: 1,
+//           },
+//           columnToKey: {
+//             "*": "{{columnHeader}}",
+//           },
+//         });
+
+//         let result;
+//         for (let i in data) {
+//           result = i;
+//           break;
+//         }
+//         formattedData = formattedData.concat(data[result]);
+//       } else if (csvDocs.includes(fileExtension)) {
+//         data = csvToJson.fieldDelimiter(",").getJsonFromCsv(file.path);
+//         formattedData = formattedData.concat(data);
+//       } else {
+//         return res.status(400).json({
+//           message: "Invalid file type. Please upload a csv or excel file",
+//           status: "failed",
+//         });
+//       }
+
+//       fs.unlinkSync(file.path);
+//     }
+
+//     // Convert account data and add admin ID
+//     const accounts = formattedData.map((obj) => ({
+//       firstName: obj.ADMIN_FIRSTNAME ? obj.ADMIN_FIRSTNAME.trim() : "",
+//       lastName: obj.ADMIN_LASTNAME ? obj.ADMIN_LASTNAME.trim() : "",
+//       email: obj.ADMIN_EMAIL ? obj.ADMIN_EMAIL.trim() : "",
+//       phone: obj.ADMIN_PHONE_NUMBER ? obj.ADMIN_PHONE_NUMBER.trim() : "",
+//       gender: obj.GENDER ? obj.GENDER.trim() : "",
+//       accountNumber: obj.ACCOUNT_NUMBER ? obj.ACCOUNT_NUMBER.trim() : "",
+//       accountName: obj.ACCOUNT_NAME ? obj.ACCOUNT_NAME.trim() : "",
+//       accountemail: obj.ACCOUNT_EMAIL ? obj.ACCOUNT_EMAIL.trim() : "",
+//     }));
+
+//     // Perform account creation
+//     const createdAccounts = [];
+//     const invalidAccount = [];
+//     const duplicateUsers = [];
+//     const duplicateAccounts = [];
+
+//     for (const account of accounts) {
+//       const input = {
+//         admin: {
+//           firstName: account.firstName,
+//           lastName: account.lastName,
+//           email: account.email,
+//           phone: account.phone,
+//           gender: account.gender,
+//         },
+//         accountDetails: {
+//           accountNumber: [account.accountNumber], // Store accountNumber as an array
+//           accountName: account.accountName,
+//           customerID: "",
+//           email: account.accountemail,
+//         },
+//       };
+
+//       // Check if any required fields are missing
+//       const missingFields = Object.entries(input.admin).filter(([key, value]) => !value).map(([key]) => key);
+
+//       if (missingFields.length > 0) {
+//         invalidAccount.push({
+//           message: "Missing fields in admin",
+//           account: input.admin,
+//           missingFields: missingFields,
+//         });
+//         continue; // Skip processing this account
+//       }
+
+//       const missingAccountFields = Object.entries(input.accountDetails).filter(([key, value]) => !value).map(([key]) => key);
+
+//       if (missingAccountFields.length > 0) {
+//         invalidAccount.push({
+//           message: "Missing fields in accountDetails",
+//           account: input.accountDetails,
+//           missingFields: missingAccountFields,
+//         });
+//         continue; // Skip processing this account
+//       }
+
+//       const checkAccountNum =
+//         await bankOneService.BulkOnboardingaccountByAccountNo(
+//           input.accountDetails.accountNumber,
+//           authToken
+//         );
+
+//       if (!checkAccountNum) {
+//         invalidAccount.push({
+//           message: "unable to resolve this account",
+//           account: input.accountDetails,
+//         });
+//       } else {
+//         const customerID = checkAccountNum.customerID; // Extract customerID from the response
+
+//         input.accountDetails.customerID = customerID;
+
+//         const checkAdmin = await User.findOne({ email: input.admin.email });
+
+//         if (checkAdmin) {
+//           duplicateUsers.push({
+//             message: "this user already exist",
+//             account: input.admin,
+//           });
+//         } else {
+//           let role = "admin";
+
+//           const privilege = await Privilege.findOne({ name: "admin" });
+
+//           const admin = await User.create({
+//             ...input.admin,
+//             token: "",
+//             role,
+//             privileges: [privilege._id],
+//           });
+
+//           const checkAccount = await Account.findOne({
+//             accountNumber: { $in: input.accountDetails.accountNumber },
+//           });
+
+//           if (checkAccount) {
+//             duplicateAccounts.push({
+//               message: "this account nummber already exist",
+//               account: input.accountDetails,
+//             });
+//           } else {
+//             const token = jwt.sign(
+//               { accountDetails: account.accountNumber },
+//               process.env.EMAIL_SECRET,
+//               {
+//                 expiresIn: "10h",
+//               }
+//             );
+
+//             const result = await Account.create({
+//               ...input.accountDetails,
+//               adminId: admin._id,
+//               accountToken: token,
+//               adminID: admin._id,
+//               organizationLabel: req.body.organizationLabel,
+//               customerID: input.accountDetails.customerID,
+//             });
+
+//             admin.organizationId = result._id;
+
+//             await admin.save();
+
+//             const accountEmail = input.accountDetails.email;
+//             const subject = "Account Verification";
+//             const messageData = {
+//               firstName: admin.firstName,
+//               url: `${process.env.FRONTEND_URL}/auth/account/verify-account/${token}`,
+//               message: "click the link to verify your account",
+//               year: new Date().getUTCFullYear(),
+//             };
+
+//             sendEmail(accountEmail, subject, "verify-account", messageData);
+
+//             createdAccounts.push(result);
+//           }
+//         }
+//       }
+//     }
+//     // Return the created accounts
+//     const errors = [].concat(invalidAccount, duplicateUsers, duplicateAccounts);
+
+//     return res.status(201).json({
+//       message: "Accounts created successfully",
+//       status: "Success",
+//       accounts: createdAccounts,
+//       invalidAccounts: invalidAccount,
+//       duplicateUsers: duplicateUsers,
+//       duplicateAccounts: duplicateAccounts,
+//     });
+//   } catch (error) {
+//     console.log(error);
+//     return res.status(500).send({
+//       success: false,
+//       messsage: error,
+//     });
+//   }
+// };
 const bulkOnboard = async (req, res) => {
   try {
     const excelDocs = ["xlsx", "xls"];
@@ -267,88 +475,103 @@ const bulkOnboard = async (req, res) => {
         },
       };
 
-      const checkAccountNum =
-        await bankOneService.BulkOnboardingaccountByAccountNo(
-          input.accountDetails.accountNumber,
-          authToken
-        );
+      // Check if any required fields are missing
+      const missingFields = Object.entries(input.admin).filter(([key, value]) => !value).map(([key]) => key);
+
+      if (missingFields.length > 0) {
+        invalidAccount.push({
+          message: "Missing fields in admin",
+          account: input.admin,
+          missingFields: missingFields,
+        });
+        continue; // Skip processing this account
+      }
+
+      // Check if any required fields are missing for the account details
+      const missingAccountFields = Object.entries(input.accountDetails).filter(([key, value]) => !value && key !== 'customerID').map(([key]) => key);
+
+      if (missingAccountFields.length > 0) {
+        invalidAccount.push({
+          message: "Missing fields in accountDetails",
+          account: input.accountDetails,
+          missingFields: missingAccountFields,
+        });
+        continue; // Skip processing this account
+      }
+
+      const checkAccountNum = await bankOneService.BulkOnboardingaccountByAccountNo(input.accountDetails.accountNumber, authToken);
 
       if (!checkAccountNum) {
         invalidAccount.push({
-          message: "unable to resolve this account",
+          message: "Unable to resolve this account",
           account: input.accountDetails,
         });
-      } else {
-        const customerID = checkAccountNum.customerID; // Extract customerID from the response
-
-        input.accountDetails.customerID = customerID;
-
-        const checkAdmin = await User.findOne({ email: input.admin.email });
-
-        if (checkAdmin) {
-          duplicateUsers.push({
-            message: "this user already exist",
-            account: input.admin,
-          });
-        } else {
-          let role = "admin";
-
-          const privilege = await Privilege.findOne({ name: "admin" });
-
-          const admin = await User.create({
-            ...input.admin,
-            token: "",
-            role,
-            privileges: [privilege._id],
-          });
-
-          const checkAccount = await Account.findOne({
-            accountNumber: { $in: input.accountDetails.accountNumber },
-          });
-
-          if (checkAccount) {
-            duplicateAccounts.push({
-              message: "this account nummber already exist",
-              account: input.accountDetails,
-            });
-          } else {
-            const token = jwt.sign(
-              { accountDetails: account.accountNumber },
-              process.env.EMAIL_SECRET,
-              {
-                expiresIn: "10h",
-              }
-            );
-
-            const result = await Account.create({
-              ...input.accountDetails,
-              adminId: admin._id,
-              accountToken: token,
-              adminID: admin._id,
-              organizationLabel: req.body.organizationLabel,
-              customerID: input.accountDetails.customerID,
-            });
-
-            admin.organizationId = result._id;
-
-            await admin.save();
-
-            const accountEmail = input.accountDetails.email;
-            const subject = "Account Verification";
-            const messageData = {
-              firstName: admin.firstName,
-              url: `${process.env.FRONTEND_URL}/auth/account/verify-account/${token}`,
-              message: "click the link to verify your account",
-              year: new Date().getUTCFullYear(),
-            };
-
-            sendEmail(accountEmail, subject, "verify-account", messageData);
-
-            createdAccounts.push(result);
-          }
-        }
+        continue; // Skip creating this account and admin
       }
+
+      const customerID = checkAccountNum.customerID; // Extract customerID from the response
+      input.accountDetails.customerID = customerID;
+
+      const checkAdmin = await User.findOne({ email: input.admin.email });
+
+      if (checkAdmin) {
+        duplicateUsers.push({
+          message: "This user already exists",
+          account: input.admin,
+        });
+        continue; // Skip creating this account and admin
+      }
+
+      const privilege = await Privilege.findOne({ name: "admin" });
+
+      const admin = await User.create({
+        ...input.admin,
+        token: "",
+        role: "admin",
+        privileges: [privilege._id],
+      });
+
+      const checkAccount = await Account.findOne({ accountNumber: { $in: input.accountDetails.accountNumber } });
+
+      if (checkAccount) {
+        await User.findByIdAndDelete(admin._id); // Delete the created admin
+        duplicateAccounts.push({
+          message: "This account number already exists",
+          account: input.accountDetails,
+        });
+        continue; // Skip creating this account and admin
+      }
+
+      const token = jwt.sign({ accountDetails: account.accountNumber }, process.env.EMAIL_SECRET, {
+        expiresIn: "10h",
+      });
+
+      const result = await Account.create({
+        ...input.accountDetails,
+        adminId: admin._id,
+        accountToken: token,
+        adminID: admin._id,
+        organizationLabel: req.body.organizationLabel,
+        customerID: input.accountDetails.customerID,
+      });
+
+      admin.organizationId = result._id;
+      await admin.save();
+
+      const accountEmail = input.accountDetails.email;
+      const subject = "Account Verification";
+      const messageData = {
+        firstName: admin.firstName,
+        url: `${process.env.FRONTEND_URL}/auth/account/verify-account/${token}`,
+        message: "Click the link to verify your account",
+        year: new Date().getUTCFullYear(),
+      };
+
+      sendEmail(accountEmail, subject, "verify-account", messageData);
+
+      createdAccounts.push(result);
     }
+
     // Return the created accounts
     const errors = [].concat(invalidAccount, duplicateUsers, duplicateAccounts);
 
@@ -364,10 +587,11 @@ const bulkOnboard = async (req, res) => {
     console.log(error);
     return res.status(500).send({
       success: false,
-      messsage: error,
+      message: error,
     });
   }
 };
+
 
 const getAllAccountsByLabel = async (req, res) => {
   try {
@@ -382,7 +606,7 @@ const getAllAccountsByLabel = async (req, res) => {
     const accounts = await Account.find({ organizationLabel })
       .skip(skip)
       .limit(PAGE_SIZE)
-      .sort({_id: -1})
+      .sort({ _id: -1 })
       .populate("adminID")
       .populate("organizationLabel");
 
