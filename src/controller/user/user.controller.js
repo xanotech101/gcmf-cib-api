@@ -9,6 +9,7 @@ const getOrganizationUsers = async (req, res) => {
   //search first name lastname email
   try {
     const { perPage, page } = req.query;
+    const { organizationId } = req.user;
 
     const id = req.query?.branchId ?? organizationId;
 
