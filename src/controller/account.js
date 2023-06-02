@@ -370,7 +370,7 @@ const bulkOnboard = async (req, res) => {
       }
 
       // Check if any required fields are missing for the account details
-      const missingAccountFields = Object.entries(input.accountDetails).filter(([key, value]) => !value && key !== 'customerID').map(([key]) => key);
+      const missingAccountFields = Object.entries(input.accountDetails).filter(([key, value]) => !value && key !== 'customerID' && key !== 'accountName').map(([key]) => key);
 
       if (missingAccountFields.length > 0) {
         invalidAccount.push({
@@ -391,8 +391,10 @@ const bulkOnboard = async (req, res) => {
         continue; // Skip creating this account and admin
       }
 
-      const customerID = checkAccountNum.customerID; // Extract customerID from the response
-      input.accountDetails.customerID = customerID;
+      
+      input.accountDetails.customerID = checkAccountNum.customerID;
+      
+      input.accountDetails.accountName = input.accountDetails.accountName === ""?`${checkAccountNum.LastName} ${checkAccountNum.OtherNames}`:input.accountDetails.accountName 
 
       const checkAdmin = await User.findOne({ email: input.admin.email });
 
