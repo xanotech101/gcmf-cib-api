@@ -110,59 +110,25 @@ const registerMandate = async (req, res) => {
 //@access   Public
 const updateMandate = async (req, res) => {
   try {
+    const { mandateId } = req.params;
+    const { name } = req.body;
 
-    const updateMandate = (mandate) => (payload) =>
-      mandate.validate(payload, { abortEarly: false });
-
-
-    const { error } = updateMandate(req.body)
-    // validateUpdateMandateSchema(req.body);
-    if (error) return res.status(400).send(error.details[0].message);
-
-    const mandate = await Mandate.findOne({ name: req.body.name });
-
-    let amount = await Mandate.find({}).select("minAmount maxAmount name");
-
-    let mandateCheckFailed;
-
-    let overlap = {};
-
-    amount.map((item) => {
-      if (
-        item.name !== req.body.name &&
-        ((item.minAmount <= req.body.minAmount &&
-          item.maxAmount >= req.body.minAmount) ||
-          (item.minAmount <= req.body.maxAmount &&
-            item.maxAmount >= req.body.maxAmount))
-      ) {
-
-        mandateCheckFailed = true;
-        overlap.minAmount = item.minAmount;
-        overlap.maxAmount = item.maxAmount;
-        overlap.name = item.name;
-      }
-    });
-
-    if (mandateCheckFailed)
-      return res.status(400).json({
-        message:
-          `Mandate amount is overlapping an already registered mandate which is ${overlap.name} with minimum amount of ${overlap.minAmount} and maximum amount of ${overlap.maxAmount}`
-      });
-
-    mandate.name = req.body.name;
-    mandate.minAmount = req.body.minAmount;
-    mandate.maxAmount = req.body.maxAmount;
-    mandate.authorisers = req.body.authorisers;
-    mandate.verifier = req.body.verifier ?? mandate.verifier
-    mandate.numberOfAuthorisers = req.body.authorisers?.length ?? mandate.numberOfAuthorisers
-
-    if (!mandate)
+    const existingMandate = await Mandate.findById(mandateId);
+    if (!existingMandate) {
       return res.status(400).json({ message: "This mandate doesn't exist" });
+    }
 
-    const result = await mandate.save();
+    const mandateWithSameName = await Mandate.findOne({ name });
+    if (mandateWithSameName && mandateWithSameName._id.toString() !== mandateId) {
+      return res.status(400).json({ message: "Mandate name already exists" });
+    }
+
+    existingMandate.name = name;
+
+    const result = await existingMandate.save();
     return res.status(200).json({
       status: "success",
-      message: "Mandate updated successfully",
+      message: "Mandate name updated successfully",
       details: result,
     });
   } catch (error) {
