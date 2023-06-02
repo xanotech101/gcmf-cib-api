@@ -3,6 +3,7 @@ const { validateUpdateMandateSchema } = require("../../utils/utils");
 const { PER_PAGE } = require("../../utils/constants");
 const User = require("../../model/user.model");
 const Joi = require("joi");
+const InitiateRequest = require("../../model/initiateRequest.model")
 
 //@desc     register a mandate
 //@route    POST /mandate/register
@@ -252,6 +253,16 @@ const deleteMandate = async(req, res) =>{
       })
     }
 
+    //check if mandate is tied to a transfer request
+    const checkTransfer = await InitiateRequest.find({mandate:req.params.mandateId})
+
+    if(checkTransfer.length > 0){
+      return res.status(400).send({
+        success: false,
+        message:'can\'t delete this madate, this mandate is tied to one or more transfers'
+      })
+    }
+    
     const deleteMandate = await Mandate.deleteOne({_id:req.params.mandateId})
     if(deleteMandate.deletedCount > 0){
       return res.status(200).send({
