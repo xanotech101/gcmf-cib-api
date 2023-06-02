@@ -8,7 +8,68 @@ let csvToJson = require("convert-csv-to-json");
 const fs = require("fs");
 const excelToJson = require("convert-excel-to-json");
 const bankOneService = require("../services/bankOne.service");
+const { default: mongoose } = require("mongoose");
 const authToken = process.env.AUTHTOKEN;
+
+// const registerAccount = async (req, res) => {
+//   try {
+//     const input = _.pick(req.body, ["admin", "accountDetails"]);
+
+//     let role = "admin";
+
+//     const privilege = await Privilege.findOne({ name: "admin" });
+//     const admin = await User.create({
+//       ...input.admin,
+//       token: "",
+//       role,
+//       privileges: [privilege._id],
+//     });
+
+//     const token = jwt.sign(
+//       { accountDetails: input.accountDetails.accountNumber },
+//       process.env.EMAIL_SECRET,
+//       {
+//         expiresIn: "10h",
+//       }
+//     );
+
+//     // create account
+//     const result = await Account.create({
+//       ...input.accountDetails,
+//       adminId: admin._id,
+//       accountToken: token,
+//       adminID: admin._id,
+//       organizationLabel: input.accountDetails.organizationLabel,
+//       customerID: input.accountDetails.customerID,
+//     });
+
+//     // update admin organization id
+//     admin.organizationId = result._id;
+//     await admin.save();
+
+//     const accountEmail = input.accountDetails.email;
+//     const subject = "Account Verification";
+//     const messageData = {
+//       firstName: admin.firstName,
+//       url: `${process.env.FRONTEND_URL}/auth/account/verify-account/${token}`,
+//       message: "click the link to verify your account",
+//       year: new Date().getUTCFullYear(),
+//     };
+
+//     await sendEmail(accountEmail, subject, "verify-account", messageData);
+
+//     return res.status(201).json({
+//       status: "Success",
+//       result,
+//     });
+//   } catch (error) {
+//     console.log(error);
+//     return res.status(500).json({
+//       status: "Failed",
+//       Message: error.message ?? "Unable to create an account",
+//     });
+//   }
+// };
 
 const registerAccount = async (req, res) => {
   try {
@@ -17,6 +78,33 @@ const registerAccount = async (req, res) => {
     let role = "admin";
 
     const privilege = await Privilege.findOne({ name: "admin" });
+
+    // Check if admin already exists
+    const checkAdmin = await User.findOne({ email: input.admin.email });
+
+    if (checkAdmin) {
+           return res.status(400).json({
+        status: "Failed",
+        message: "Admin already exists",
+      });
+    }
+
+    // Check if account already exists
+    // Check if any account number already exists
+    const duplicateAccounts = await Account.find({
+      accountNumber: { $in: input.accountDetails.accountNumber },
+    });
+
+    if (duplicateAccounts.length > 0) {
+
+      return res.status(400).json({
+        status: "Failed",
+        message: "Duplicate account number(s) found",
+        duplicateAccounts,
+      });
+    }
+
+
     const admin = await User.create({
       ...input.admin,
       token: "",
@@ -63,12 +151,14 @@ const registerAccount = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
+
     return res.status(500).json({
       status: "Failed",
-      Message: error.message ?? "Unable to create an account",
+      message: error.message || "Unable to create an account",
     });
   }
 };
+
 
 const verifyAccount = async (req, res) => {
   try {
@@ -267,88 +357,105 @@ const bulkOnboard = async (req, res) => {
         },
       };
 
-      const checkAccountNum =
-        await bankOneService.BulkOnboardingaccountByAccountNo(
-          input.accountDetails.accountNumber,
-          authToken
-        );
+      // Check if any required fields are missing
+      const missingFields = Object.entries(input.admin).filter(([key, value]) => !value).map(([key]) => key);
+
+      if (missingFields.length > 0) {
+        invalidAccount.push({
+          message: "Missing fields in admin",
+          account: input.admin,
+          missingFields: missingFields,
+        });
+        continue; // Skip processing this account
+      }
+
+      // Check if any required fields are missing for the account details
+      const missingAccountFields = Object.entries(input.accountDetails).filter(([key, value]) => !value && key !== 'customerID' && key !== 'accountName').map(([key]) => key);
+
+      if (missingAccountFields.length > 0) {
+        invalidAccount.push({
+          message: "Missing fields in accountDetails",
+          account: input.accountDetails,
+          missingFields: missingAccountFields,
+        });
+        continue; // Skip processing this account
+      }
+
+      const checkAccountNum = await bankOneService.BulkOnboardingaccountByAccountNo(input.accountDetails.accountNumber, authToken);
 
       if (!checkAccountNum) {
         invalidAccount.push({
-          message: "unable to resolve this account",
+          message: "Unable to resolve this account",
           account: input.accountDetails,
         });
-      } else {
-        const customerID = checkAccountNum.customerID; // Extract customerID from the response
-
-        input.accountDetails.customerID = customerID;
-
-        const checkAdmin = await User.findOne({ email: input.admin.email });
-
-        if (checkAdmin) {
-          duplicateUsers.push({
-            message: "this user already exist",
-            account: input.admin,
-          });
-        } else {
-          let role = "admin";
-
-          const privilege = await Privilege.findOne({ name: "admin" });
-
-          const admin = await User.create({
-            ...input.admin,
-            token: "",
-            role,
-            privileges: [privilege._id],
-          });
-
-          const checkAccount = await Account.findOne({
-            accountNumber: { $in: input.accountDetails.accountNumber },
-          });
-
-          if (checkAccount) {
-            duplicateAccounts.push({
-              message: "this account nummber already exist",
-              account: input.accountDetails,
-            });
-          } else {
-            const token = jwt.sign(
-              { accountDetails: account.accountNumber },
-              process.env.EMAIL_SECRET,
-              {
-                expiresIn: "10h",
-              }
-            );
-
-            const result = await Account.create({
-              ...input.accountDetails,
-              adminId: admin._id,
-              accountToken: token,
-              adminID: admin._id,
-              organizationLabel: req.body.organizationLabel,
-              customerID: input.accountDetails.customerID,
-            });
-
-            admin.organizationId = result._id;
-
-            await admin.save();
-
-            const accountEmail = input.accountDetails.email;
-            const subject = "Account Verification";
-            const messageData = {
-              firstName: admin.firstName,
-              url: `${process.env.FRONTEND_URL}/auth/account/verify-account/${token}`,
-              message: "click the link to verify your account",
-              year: new Date().getUTCFullYear(),
-            };
-
-            sendEmail(accountEmail, subject, "verify-account", messageData);
-
-            createdAccounts.push(result);
-          }
-        }
+        continue; // Skip creating this account and admin
       }
+
+      
+      input.accountDetails.customerID = checkAccountNum.customerID;
+      
+      input.accountDetails.accountName = input.accountDetails.accountName === ""?`${checkAccountNum.LastName} ${checkAccountNum.OtherNames}`:input.accountDetails.accountName 
+
+      const checkAdmin = await User.findOne({ email: input.admin.email });
+
+      if (checkAdmin) {
+        duplicateUsers.push({
+          message: "This user already exists",
+          account: input.admin,
+        });
+        continue; // Skip creating this account and admin
+      }
+
+      const privilege = await Privilege.findOne({ name: "admin" });
+
+      const admin = await User.create({
+        ...input.admin,
+        token: "",
+        role: "admin",
+        privileges: [privilege._id],
+      });
+
+      const checkAccount = await Account.findOne({ accountNumber: { $in: input.accountDetails.accountNumber } });
+
+      if (checkAccount) {
+        await User.findByIdAndDelete(admin._id); // Delete the created admin
+        duplicateAccounts.push({
+          message: "This account number already exists",
+          account: input.accountDetails,
+        });
+        continue; // Skip creating this account and admin
+      }
+
+      const token = jwt.sign({ accountDetails: account.accountNumber }, process.env.EMAIL_SECRET, {
+        expiresIn: "10h",
+      });
+
+      const result = await Account.create({
+        ...input.accountDetails,
+        adminId: admin._id,
+        accountToken: token,
+        adminID: admin._id,
+        organizationLabel: req.body.organizationLabel,
+        customerID: input.accountDetails.customerID,
+      });
+
+      admin.organizationId = result._id;
+      await admin.save();
+
+      const accountEmail = input.accountDetails.email;
+      const subject = "Account Verification";
+      const messageData = {
+        firstName: admin.firstName,
+        url: `${process.env.FRONTEND_URL}/auth/account/verify-account/${token}`,
+        message: "Click the link to verify your account",
+        year: new Date().getUTCFullYear(),
+      };
+
+      sendEmail(accountEmail, subject, "verify-account", messageData);
+
+      createdAccounts.push(result);
     }
+
     // Return the created accounts
     const errors = [].concat(invalidAccount, duplicateUsers, duplicateAccounts);
 
@@ -364,10 +471,11 @@ const bulkOnboard = async (req, res) => {
     console.log(error);
     return res.status(500).send({
       success: false,
-      messsage: error,
+      message: error,
     });
   }
 };
+
 
 const getAllAccountsByLabel = async (req, res) => {
   try {
@@ -382,7 +490,7 @@ const getAllAccountsByLabel = async (req, res) => {
     const accounts = await Account.find({ organizationLabel })
       .skip(skip)
       .limit(PAGE_SIZE)
-      .sort({_id: -1})
+      .sort({ _id: -1 })
       .populate("adminID")
       .populate("organizationLabel");
 
