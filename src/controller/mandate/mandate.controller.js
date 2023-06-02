@@ -138,8 +138,9 @@ const updateMandate = async (req, res) => {
   }
 };
 
+
 const getAllMandates = async (req, res) => {
-  const { perPage, page } = req.query;
+  const { perPage, page, search } = req.query;
 
   const options = {
     page: page || 1,
@@ -148,75 +149,40 @@ const getAllMandates = async (req, res) => {
   };
 
   try {
-    const mine = await User.findById(req.user._id)
+    const mine = await User.findById(req.user._id);
     const organizationId = mine.organizationId.toString();
-    const mandates = await Mandate.aggregate([
-      {
-        $match: {
-          organizationId,
-        },
-      },
-      {
-        $lookup: {
-          from: "users",
-          localField: "authorisers",
-          foreignField: "_id",
-          as: "authorisers",
-        },
-      },
-      {
-        $lookup: {
-          from: "users",
-          localField: "verifier",
-          foreignField: "_id",
-          as: "verifier",
-        },
-      },
-      {
-        $unwind: "$verifier",
-      },
-      {
-        $facet: {
-          data: [
-            {
-              $sort: { ...options.sort },
-            },
-            {
-              $skip: options.limit * (options.page - 1),
-            },
-            {
-              $limit: options.limit * 1,
-            },
-          ],
-          meta: [
-            {
-              $count: "total",
-            },
-            {
-              $addFields: {
-                page: options.page,
-                perPage: options.limit,
-              },
-            },
-          ],
-        },
-      },
-    ]);
 
-    // const mandate = await Mandate.find().populate(["authorisers"]);
+    const filter = { organizationId };
+    if (search) {
+      filter.name = { $regex: search, $options: "i" }; // Case-insensitive regex matching mandate name
+    }
+
+    const totalMandates = await Mandate.countDocuments(filter);
+
+    const mandates = await Mandate.find(filter)
+      .sort(options.sort)
+      .skip(options.limit * (options.page - 1))
+      .limit(options.limit)
+      .populate("authorisers")
+      .populate("verifier");
+
     return res.status(200).json({
       message: "Request Successful",
       data: {
-        mandates: mandates[0].data,
-        meta: mandates[0].meta[0],
+        mandates,
+        meta: {
+          total: totalMandates,
+          page: options.page,
+          perPage: options.limit,
+        },
       },
     });
-
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: error.message });
   }
 };
+
 
 const getSingleMandate = async (req, res) => {
   const id = req.params.id;
