@@ -84,10 +84,10 @@ async function getGcAnalytics(req, res) {
                 message: 'No organization with that label'
             });
         }
-        
-        const requestedYear = req.query.date; 
+
+        const requestedYear = req.query.date;
         const requestedRequestType = req.query.requesttype;
-        
+
         const analytics = await Account.aggregate([
             {
                 $match: {
@@ -107,22 +107,62 @@ async function getGcAnalytics(req, res) {
                 }
             }
         ]);
-        
+
         const formattedAnalytics = analytics.map((item) => ({
             year: item._id.year,
             month: getMonthName(item._id.month),
             numberOfRequests: item.numberOfRequests,
             accounts: item.accounts
         }));
-        
+
         res.json({
             success: true,
             analytics: formattedAnalytics
         });
-        
+
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: error.message });
     }
 }
-module.exports = { getAllusersTiedToGCAccount, getAllusersTiedToAnAccount, getGcAnalytics }
+
+const dashBoardAnalytics = async (req, res) => {
+    //Get all gc accounts
+    const requestlabel = await organization.findOne({ label: 'Grooming Centre' })
+    if (!requestlabel) {
+        return res.status(400).send({
+            success: false,
+            message: 'no organization with that label'
+        })
+    }
+    //get all accounts tied to the gc organization lable
+    const totalAccounts = await Account.countDocuments({
+        organizationLabel: requestlabel._id
+    })
+
+
+    // get all users tied to gc accounts
+    //get all accounts tied to the gc organization lable
+    const request_accounts = await Account.find({
+        organizationLabel: requestlabel._id
+    })
+
+    const AllUsers = [];
+    if (request_accounts.length > 0) {
+        for (const account of request_accounts) {
+            const users = await userModel.find({ organizationId: account._id });
+            AllUsers.push(...users);
+        }
+    }
+    const totatlUsers = AllUsers.length
+
+    return res.status(200).json({
+        data: {
+            totalAccounts,
+            totatlUsers
+        },
+        status: "success",
+    });
+};
+
+module.exports = { getAllusersTiedToGCAccount, getAllusersTiedToAnAccount, getGcAnalytics, dashBoardAnalytics }
