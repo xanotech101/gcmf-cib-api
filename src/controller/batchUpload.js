@@ -26,8 +26,9 @@ const VerifyBatchUpload = async (req, res) => {
     const unresolvedAccount = [];
     const mine = await User.findById(req.user._id);
     const batchId = uuid.v4().substring(0, 8);
-    // Listen for the results from Kafka using the event emitter
     emitter.once('results', async (results) => {
+      console.log(results)
+      return
       for (const item of results) {
         if (item.status === 'success') {
           
