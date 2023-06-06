@@ -160,7 +160,6 @@ function authoriserAuth(req, res, next) {
 }
 
 function allUsersAuth(req, res, next) {
-  console.log("This worked");
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(" ")[1];
   try {

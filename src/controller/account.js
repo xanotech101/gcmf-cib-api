@@ -231,30 +231,44 @@ const verifyAccount = async (req, res) => {
 // get all account
 const getAllAccount = async (req, res) => {
   try {
-    const name = req.query.name;
-    if (name) {
-      const allAccount = await Account.find({
-        accountName: { $regex: name, $options: "i" },
-      }).populate("adminID");
+    const page = parseInt(req.query.page) || 1;
+    const perPage = parseInt(req.query.perPage) || 10;
 
-      return res.status(200).json({
-        status: "Success",
-        data: allAccount,
-      });
+    const name = req.query.name;
+    let query = {};
+
+    if (name) {
+      query = {
+        accountName: { $regex: name, $options: "i" },
+      };
     }
-    const allAccount = await Account.find().populate("adminID");
+
+    const totalCount = await Account.countDocuments(query);
+    const totalPages = Math.ceil(totalCount / perPage);
+
+    const allAccount = await Account.find(query)
+      .skip((page - 1) * perPage)
+      .limit(perPage)
+      .populate("adminID");
 
     return res.status(200).json({
       status: "Success",
-      data: allAccount,
+      data: {
+        currentPage: page,
+        perPage,
+        totalCount,
+        totalPages,
+        accounts: allAccount,
+      },
     });
   } catch (error) {
     res.status(500).send({
       status: "Failed",
-      message: "Unable to get all account",
+      message: "Unable to get all accounts",
     });
   }
 };
+
 
 const getAccount = async (req, res) => {
   try {

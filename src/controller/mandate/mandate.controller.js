@@ -9,6 +9,7 @@ const Joi = require("joi");
 //@access   Public
 const registerMandate = async (req, res) => {
   try {
+    
     const { organizationId } = req.user;
     const mandateExists = await Mandate.findOne({ name: req.body.name, organizationId: organizationId });
     if (mandateExists) {
@@ -54,12 +55,12 @@ const registerMandate = async (req, res) => {
         name: req.body.name,
         minAmount: req.body.minAmount,
         maxAmount: req.body.maxAmount,
-        authorisers: req.body.authorisers,
+        authoriser: req.body.authoriser,
         organizationId: mine.organizationId.toString(),
-        verifier: req.body.verifier,
+        verifiers: req.body.verifiers,
       });
 
-      mandate.numberOfAuthorisers = mandate.authorisers.length;
+      mandate.numberOfVerifiers = mandate.verifiers.length;
 
       const result = await mandate.save();
 
@@ -83,12 +84,12 @@ const registerMandate = async (req, res) => {
         name: req.body.name,
         minAmount: req.body.minAmount,
         maxAmount: req.body.maxAmount,
-        authorisers: req.body.authorisers,
+        authoriser: req.body.authoriser,
         organizationId: mine.organizationId.toString(),
-        verifier: req.body.verifier,
+        verifiers: req.body.verifiers,
       });
 
-      mandate.numberOfAuthorisers = mandate.authorisers.length;
+      mandate.numberOfverifier = mandate.verifiers.length;
 
       const result = await mandate.save();
 
@@ -152,9 +153,9 @@ const updateMandate = async (req, res) => {
     mandate.name = req.body.name;
     mandate.minAmount = req.body.minAmount;
     mandate.maxAmount = req.body.maxAmount;
-    mandate.authorisers = req.body.authorisers;
-    mandate.verifier = req.body.verifier ?? mandate.verifier
-    mandate.numberOfAuthorisers = req.body.authorisers?.length ?? mandate.numberOfAuthorisers
+    mandate.verifiers = req.body.verifiers;
+    mandate.authoriser = req.body.authoriser ?? mandate.authoriser
+    mandate.numberOfverifier = req.body.verifiers?.length ?? mandate.numberOfverifier
 
     if (!mandate)
       return res.status(400).json({ message: "This mandate doesn't exist" });
@@ -172,13 +173,17 @@ const updateMandate = async (req, res) => {
 };
 
 const getAllMandates = async (req, res) => {
-  const { perPage, page } = req.query;
+  const { perPage, page, name } = req.query;
 
   const options = {
     page: page || 1,
     limit: perPage || PER_PAGE,
     sort: { _id: -1 },
   };
+
+  if(name){
+    options.filter = {name: { $regex: name, $options: "i" }}
+  }
 
   try {
     const mine = await User.findById(req.user._id)
@@ -187,26 +192,27 @@ const getAllMandates = async (req, res) => {
       {
         $match: {
           organizationId,
+          ...(name && { name: { $regex: name?.trim(), $options: "i" } }),
         },
       },
       {
         $lookup: {
           from: "users",
-          localField: "authorisers",
+          localField: "verifiers",
           foreignField: "_id",
-          as: "authorisers",
+          as: "verifiers",
         },
       },
       {
         $lookup: {
           from: "users",
-          localField: "verifier",
+          localField: "authoriser",
           foreignField: "_id",
-          as: "verifier",
+          as: "authoriser",
         },
       },
       {
-        $unwind: "$verifier",
+        $unwind: "$authoriser",
       },
       {
         $facet: {
@@ -236,7 +242,6 @@ const getAllMandates = async (req, res) => {
       },
     ]);
 
-    // const mandate = await Mandate.find().populate(["authorisers"]);
     return res.status(200).json({
       message: "Request Successful",
       data: {
@@ -256,11 +261,11 @@ const getSingleMandate = async (req, res) => {
   try {
     const mandate = await Mandate.findById(id.toString()).populate([
       {
-        path: "authorisers",
+        path: "authoriser",
         select: "firstName lastName",
       },
       {
-        path: "verifier",
+        path: "verifiers",
         select: "firstName lastName"
       }
     ])

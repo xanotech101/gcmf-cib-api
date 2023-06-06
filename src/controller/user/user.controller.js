@@ -6,9 +6,8 @@ const Privilege = require("../../model/privilege.model");
 const Account = require("../../model/account")
 
 const getOrganizationUsers = async (req, res) => {
-  //search first name lastname email
   try {
-    const { perPage, page } = req.query;
+    const { perPage, page, search } = req.query;
     const { organizationId } = req.user;
 
     const id = req.query?.branchId ?? organizationId;
@@ -24,19 +23,36 @@ const getOrganizationUsers = async (req, res) => {
     const privilegeId =
       (await Privilege.findOne({ name: privilege })?._id) || null;
 
-    if (withPagination === "true") {
-      const totalCount = await User.countDocuments({
-        organizationId: mongoose.Types.ObjectId(id),
-      });
+    const filter = {
+      organizationId: mongoose.Types.ObjectId(id),
+    };
 
-      const users = await User.find({
-        organizationId: mongoose.Types.ObjectId(id),
-      })
+    if (search) {
+      const trimmedSearch = search.trim();
+      filter.$or = [
+        { firstName: { $regex: new RegExp(trimmedSearch, "i") } },
+        { lastName: { $regex: new RegExp(trimmedSearch, "i") } },
+        { email: { $regex: new RegExp(trimmedSearch, "i") } },
+        {
+          $expr: {
+            $regexMatch: {
+              input: { $concat: ["$firstName", " ", "$lastName"] },
+              regex: new RegExp(trimmedSearch, "i"),
+            },
+          },
+        },
+      ];
+    }
+
+    if (withPagination === "true") {
+      const totalCount = await User.countDocuments(filter);
+
+      const users = await User.find(filter)
         .sort(options.sort)
         .skip((options.page - 1) * options.limit)
         .limit(options.limit)
         .select(
-          "firstName lastName email phone gender role privileges organizationId isVerified"
+          "firstName lastName email phone gender role privileges organizationId isVerified disabled"
         )
         .populate({ path: "privileges", select: "name" })
         .populate({ path: "organizationId", select: "_id" });
@@ -56,11 +72,7 @@ const getOrganizationUsers = async (req, res) => {
       });
     }
 
-    const users = await User.find({
-      organizationId: mongoose.Types.ObjectId(id),
-      privileges: privilegeId ? { $in: [privilege] } : { $exists: true },
-      isVerified: true,
-    })
+    const users = await User.find(filter)
       .sort({ _id: -1 })
       .select(
         "firstName lastName email phone gender role privileges organizationId isVerified"

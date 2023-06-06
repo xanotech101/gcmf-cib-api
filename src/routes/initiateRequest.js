@@ -18,11 +18,11 @@ const {
   getAllRequestPerOrganization,
   getAllInitiatorRequests,
   getRequestById,
-  verifierApproveRequest,  
-  verifierDeclineRequest,
+  authoriserApproveRequest,
+  authoriserDeclineRequest,
   getAllTransferRequests,
   approveBulkRequest,
-  verifierBulkaprove
+  authoriserBulkaprove
 } = require("../controller/initiateRequest/initiateRequest.controller");
 const {batchUpload, VerifyBatchUpload} = require("../controller/batchUpload");
 const { Verify_Account } = require("../services/golan.service");
@@ -44,10 +44,10 @@ router.get("/all", allUsersAuth, getAllRequestPerOrganization);
 router.get("/:id", allUsersAuth, getRequestById);
 
 // update request
-router.put("/authoriser/approve/:id", authoriserAuth, approveRequest);
-router.put("/authoriser/decline/:id", authoriserAuth, declineRequest);
-router.put("/verifier/decline/:id", verifierAuth,  verifierDeclineRequest);
-router.put("/verifier/approve/:id", verifierAuth, verifierApproveRequest);
+router.put("/verifier/approve/:id", verifierAuth, approveRequest);
+router.put("/verifier/decline/:id", verifierAuth, declineRequest);
+router.put("/authoriser/decline/:id", authoriserAuth,  authoriserDeclineRequest);
+router.put("/authoriser/approve/:id", authoriserAuth, authoriserApproveRequest);
 
 // bulk upload request
 
@@ -59,8 +59,8 @@ router.get("/backoffice/transfer-requests/all", allUsersAuth, getAllTransferRequ
 
 // batch/bulk upload
 router.post("/verify_batchUpload", initiatorAuth, upload.array("files"), Verify_Account, VerifyBatchUpload);
-router.post("/bulk/authoriser/approve", authoriserAuth, approveBulkRequest);
-router.post("/bulk/verifier/approve", verifierAuth, verifierBulkaprove);
+router.post("/bulk/verifier/approve", verifierAuth, approveBulkRequest);
+router.post("/bulk/authoriser/approve", authoriserAuth, authoriserBulkaprove);
 
 
 module.exports = router;
