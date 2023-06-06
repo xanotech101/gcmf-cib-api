@@ -52,7 +52,7 @@ const getOrganizationUsers = async (req, res) => {
         .skip((options.page - 1) * options.limit)
         .limit(options.limit)
         .select(
-          "firstName lastName email phone gender role privileges organizationId isVerified"
+          "firstName lastName email phone gender role privileges organizationId isVerified disabled"
         )
         .populate({ path: "privileges", select: "name" })
         .populate({ path: "organizationId", select: "_id" });
