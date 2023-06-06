@@ -25,12 +25,24 @@ const getOrganizationUsers = async (req, res) => {
 
     const filter = {
       organizationId: mongoose.Types.ObjectId(id),
-      $or: [
-        { firstName: { $regex: search, $options: "i" } },
-        { lastName: { $regex: search, $options: "i" } },
-        { email: { $regex: search, $options: "i" } },
-      ],
     };
+
+    if (search) {
+      const trimmedSearch = search.trim();
+      filter.$or = [
+        { firstName: { $regex: new RegExp(trimmedSearch, "i") } },
+        { lastName: { $regex: new RegExp(trimmedSearch, "i") } },
+        { email: { $regex: new RegExp(trimmedSearch, "i") } },
+        {
+          $expr: {
+            $regexMatch: {
+              input: { $concat: ["$firstName", " ", "$lastName"] },
+              regex: new RegExp(trimmedSearch, "i"),
+            },
+          },
+        },
+      ];
+    }
 
     if (withPagination === "true") {
       const totalCount = await User.countDocuments(filter);

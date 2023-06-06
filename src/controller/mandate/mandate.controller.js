@@ -173,13 +173,17 @@ const updateMandate = async (req, res) => {
 };
 
 const getAllMandates = async (req, res) => {
-  const { perPage, page } = req.query;
+  const { perPage, page, name } = req.query;
 
   const options = {
     page: page || 1,
     limit: perPage || PER_PAGE,
     sort: { _id: -1 },
   };
+
+  if(name){
+    options.filter = {name: { $regex: name, $options: "i" }}
+  }
 
   try {
     const mine = await User.findById(req.user._id)
@@ -188,6 +192,7 @@ const getAllMandates = async (req, res) => {
       {
         $match: {
           organizationId,
+          ...(name && { name: { $regex: name?.trim(), $options: "i" } }),
         },
       },
       {
@@ -237,7 +242,6 @@ const getAllMandates = async (req, res) => {
       },
     ]);
 
-    // const mandate = await Mandate.find().populate(["authorisers"]);
     return res.status(200).json({
       message: "Request Successful",
       data: {
