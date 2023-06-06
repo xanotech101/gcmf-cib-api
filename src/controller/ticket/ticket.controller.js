@@ -42,8 +42,6 @@ const getAllTickets = async (req, res) => {
       });
     }
 
-    console.log("Tickets:", tickets);
-
     res.status(200).json({
       message: "Successfully fetched admin requests",
       data: {

@@ -9,14 +9,14 @@ const mandateSchema = new mongoose.Schema(
     minAmount: Number,
     maxAmount: Number,
     organizationId: String,
-    authorisers: [
+    verifiers: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
       },
     ],
-    numberOfAuthorisers: Number,
-    verifier:
+    numberOfVerifiers: Number,
+    authoriser:
     {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
