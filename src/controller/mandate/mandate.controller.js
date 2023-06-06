@@ -60,7 +60,7 @@ const registerMandate = async (req, res) => {
         verifiers: req.body.verifiers,
       });
 
-      mandate.numberOfverifier = mandate.verifiers.length;
+      mandate.numberOfVerifiers = mandate.verifiers.length;
 
       const result = await mandate.save();
 

@@ -33,7 +33,7 @@ const initiateRequestSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectID,
       ref: "Account",
     },
-    numberOfverifiers: Number,
+    numberOfVerifiers: Number,
     transferStatus: {
       type: String,
       enum: ["disburse pending", "pending", "successful", "failed"],

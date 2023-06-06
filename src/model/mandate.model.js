@@ -15,7 +15,7 @@ const mandateSchema = new mongoose.Schema(
         ref: "User",
       },
     ],
-    numberOfverifier: Number,
+    numberOfVerifiers: Number,
     authoriser:
     {
       type: mongoose.Schema.Types.ObjectId,

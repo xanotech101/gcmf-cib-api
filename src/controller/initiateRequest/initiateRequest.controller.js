@@ -445,7 +445,7 @@ const declineRequest = async (req, res) => {
     request.status = "in progress";
 
     if (
-      request.verifiersAction.length === request.mandate.numberOfverifiers
+      request.verifiersAction.length === request.mandate.numberOfVerifiers
     ) {
       await notificationService.createNotifications([
         {
@@ -567,7 +567,7 @@ const approveRequest = async (req, res) => {
     request.status = "in progress";
 
     if (
-      request.verifiersAction.length == request.mandate.numberOfverifiers
+      request.verifiersAction.length == request.mandate.numberOfVerifiers
     ) {
       await notificationService.createNotifications([
         {
@@ -628,7 +628,7 @@ const approveRequest = async (req, res) => {
   }
 };
 
-const authoriserApproveRequest = async (req, res) => {authoriser
+const authoriserApproveRequest = async (req, res) => {
   const mine = await User.findById(req.user._id);
   const organization = await Account.findById(mine.organizationId);
   try {
@@ -1027,7 +1027,7 @@ const approveBulkRequest = async (req, res) => {
 
         if (
           request.verifiersAction.length ==
-          request.mandate.numberOfverifiers
+          request.mandate.numberOfVerifiers
         ) {
           // send notification to authoriser
           notificationMessages.push({
