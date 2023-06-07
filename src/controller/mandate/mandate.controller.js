@@ -164,8 +164,8 @@ const getAllMandates = async (req, res) => {
       .sort(options.sort)
       .skip(options.limit * (options.page - 1))
       .limit(options.limit)
-      .populate("authorisers")
-      .populate("verifier");
+      .populate("authoriser")
+      .populate("verifiers");
 
     return res.status(200).json({
       message: "Request Successful",
