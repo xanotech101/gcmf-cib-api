@@ -27,6 +27,8 @@ const VerifyBatchUpload = async (req, res) => {
     const batchId = uuid.v4().substring(0, 8);
     emitter.once('results', async (results) => {
 
+      // console.log(results.length)
+
       for (const item of results) {
         if (item.status === 'success') {
           switch (item.bankType) {
@@ -55,7 +57,7 @@ const VerifyBatchUpload = async (req, res) => {
                   minAmount: { $lte: request.amount },
                   maxAmount: { $gte: request.amount },
                 }).populate({
-                  path: "authorisers",
+                  path: "authoriser",
                   select: "firstName lastName email phone",
                 });
 
@@ -75,7 +77,7 @@ const VerifyBatchUpload = async (req, res) => {
                 const result = await request.save();
                 const notificationsToCreate = [];
 
-                for (const authoriser of mandate.authorisers) {
+                for (const authoriser of mandate.authoriser) {
                   const notification = {
                     title: "Transaction request Initiated",
                     transaction: result._id,
@@ -143,7 +145,7 @@ const VerifyBatchUpload = async (req, res) => {
                   minAmount: { $lte: request.amount },
                   maxAmount: { $gte: request.amount },
                 }).populate({
-                  path: "authorisers",
+                  path: "verifiers",
                   select: "firstName lastName email phone",
                 });
 
@@ -163,11 +165,11 @@ const VerifyBatchUpload = async (req, res) => {
                 const result = await request.save();
                 const notificationsToCreate = [];
 
-                for (const authoriser of mandate.authorisers) {
+                for (const verifier of mandate.verifiers) {
                   const notification = {
                     title: "Transaction request Initiated",
                     transaction: result._id,
-                    user: authoriser._id,
+                    user: verifier._id,
                     message:
                       "A transaction request was initiated and is awaiting your approval",
                   };
@@ -179,14 +181,14 @@ const VerifyBatchUpload = async (req, res) => {
 
 
                   const message = {
-                    firstName: authoriser.firstName,
-                    message: `The below request was initiated for your authorization.
+                    firstName: verifier.firstName,
+                    message: `The below request was initiated for your verificationc.
               TransactionID: ${result._id}    Amount: ${result.amount}  Kindly login to your account to review
              `,
                     year: new Date().getFullYear()
                   }
 
-                  await sendEmail(authoriser.email, subject, 'transfer-request', message);
+                  await sendEmail(verifier.email, subject, 'transfer-request', message);
                 }
 
                 // send out notifications
@@ -215,6 +217,8 @@ const VerifyBatchUpload = async (req, res) => {
         }
       }
 
+      // console.log('UR',unresolvedAccount.length)
+      // console.log('M',unresolvedMandates.length)
       return res.status(200).json({
         message: "Transactions initiated successfully",
         status: "success",
