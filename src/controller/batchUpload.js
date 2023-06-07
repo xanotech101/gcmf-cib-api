@@ -145,7 +145,7 @@ const VerifyBatchUpload = async (req, res) => {
                   minAmount: { $lte: request.amount },
                   maxAmount: { $gte: request.amount },
                 }).populate({
-                  path: "authoriser",
+                  path: "verifiers",
                   select: "firstName lastName email phone",
                 });
 
@@ -165,11 +165,11 @@ const VerifyBatchUpload = async (req, res) => {
                 const result = await request.save();
                 const notificationsToCreate = [];
 
-                for (const authoriser of mandate.authoriser) {
+                for (const verifier of mandate.verifiers) {
                   const notification = {
                     title: "Transaction request Initiated",
                     transaction: result._id,
-                    user: authoriser._id,
+                    user: verifier._id,
                     message:
                       "A transaction request was initiated and is awaiting your approval",
                   };
@@ -181,14 +181,14 @@ const VerifyBatchUpload = async (req, res) => {
 
 
                   const message = {
-                    firstName: authoriser.firstName,
-                    message: `The below request was initiated for your authorization.
+                    firstName: verifier.firstName,
+                    message: `The below request was initiated for your verificationc.
               TransactionID: ${result._id}    Amount: ${result.amount}  Kindly login to your account to review
              `,
                     year: new Date().getFullYear()
                   }
 
-                  await sendEmail(authoriser.email, subject, 'transfer-request', message);
+                  await sendEmail(verifier.email, subject, 'transfer-request', message);
                 }
 
                 // send out notifications
