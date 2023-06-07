@@ -75,9 +75,9 @@ const initiateRequest = async (req, res) => {
 
       const message = {
         firstName: verifier.firstName,
-        message: `Dear ${verifier.firstName}. The below request was initiated for your verification.
-          TransactionID: ${result._id} Amount: ${result.amount}
-          `,
+        message: 'The below request was initiated for your verification. Kindly login to your account to review',
+        amount: result.amount,
+        reference: result.transactionReference,
         year: new Date().getFullYear(),
       };
 
@@ -294,7 +294,7 @@ const getAllRequestPerOrganization = async (req, res) => {
 
     const skipCount = (options.page - 1) * options.limit;
     const requests = await InitiateRequest.find(query)
-      .sort({ amount: -1 })
+      .sort({ _id: -1 })
       .skip(skipCount)
       .limit(options.limit)
       .populate("mandate");
@@ -433,13 +433,7 @@ const declineRequest = async (req, res) => {
         title: "Transaction Request Declined",
         message: `A verifier has declined your transaction request for ${request.customerName}`,
         message: `A verifier has declined your transaction request for ${request.customerName}`,
-      },
-      // {
-      //   transaction: request._id,
-      //   user: request.verifier,
-      //   title: "Transaction Request Declined",
-      //   message: `An authoriser declined transaction request for ${request.customerName}`,
-      // },
+      }
     ]);
 
     request.status = "in progress";
@@ -456,7 +450,24 @@ const declineRequest = async (req, res) => {
         },
       ]);
 
-      request.status = "awaiting verification";
+      request.status = "awaiting authorization";
+
+       //send mail to authoriser
+       const authoriserInfo = await User.findById(request.mandate.authoriser).select(
+        "email firstName _id"
+      );
+
+      const subject = "Authorization Required";
+
+      const message = {
+        firstName: authoriserInfo.firstName,
+        amount: request.amount,
+        reference: request.transactionReference,
+        message: 'The below request requires your authorization. Kindly login to your account to review',
+        year: new Date().getFullYear(),
+      };
+
+      await sendEmail(authoriserInfo.email, subject, "transfer-request", message);
     }
 
     // create audit trail
@@ -588,9 +599,9 @@ const approveRequest = async (req, res) => {
 
       const message = {
         firstName: authoriserInfo.firstName,
-        message: `Dear ${authoriserInfo.firstName}. The below request was initiated for your authorization.
-            TransactionID: ${request._id} Amount: ${request.amount}
-            `,
+        amount: request.amount,
+        reference: request.transactionReference,
+        message: 'The below request requires your authorization. Kindly login to your account to review',
         year: new Date().getFullYear(),
       };
 
@@ -1046,9 +1057,9 @@ const approveBulkRequest = async (req, res) => {
           if (authoriserInfo) {
             const message = {
               firstName: authoriserInfo.firstName,
-              message: `Dear ${authoriserInfo.firstName}. The below request was initiated for your verification.
-              TransactionID: ${request._id} Amount: ${request.amount}
-              `,
+              message: 'The below request requires your authorization. Kindly login to your account to review',
+              amount: request.amount,
+              reference: request.transactionReference,
               year: new Date().getFullYear(),
             };
 
@@ -1082,7 +1093,6 @@ const approveBulkRequest = async (req, res) => {
 
     // create audit trail message
     if (auditMessages.length > 0) {
-      const user = await User.findById(req.user._id);
       let dt = new Date(new Date().getTime() + 60 * 60 * 1000 * 3);
       let auditTrailMessage = {
         date: dt,
@@ -1110,12 +1120,14 @@ const approveBulkRequest = async (req, res) => {
       const authoriserInfo = await User.findById(
         notificationMessages[0].user
       ).select("email firstName _id");
+
       const message = {
         firstName: authoriserInfo.firstName,
-        message: `Dear ${authoriserInfo.firstName}. The below request was initiated for your authorization.
-          TransactionID: ${notificationMessages[0].transaction} `,
+        message: 'The below request requires your authorization. Kindly login to your account to review',
+        reference: notificationMessages[0].transaction,
         year: new Date().getFullYear(),
       };
+      
       await sendEmail(
         authoriserInfo.email,
         notificationMessages[0].title,
