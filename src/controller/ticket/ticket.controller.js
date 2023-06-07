@@ -7,7 +7,7 @@ const { insertMany } = require("../../model/account");
 const { toISOLocal } = require("../../utils/utils");
 
 const getAllTickets = async (req, res) => {
-  const { perPage, page } = req.query;
+  const { perPage, page, topic } = req.query;
   const options = {
     page: page || 1,
     limit: perPage || PER_PAGE,
@@ -15,14 +15,20 @@ const getAllTickets = async (req, res) => {
   };
 
   try {
-    const tickets = await Ticket.find()
+    let filter = {};
+
+    if (topic) {
+      filter = { topic: { $regex: topic, $options: "i" } };
+    }
+
+    const tickets = await Ticket.find(filter)
       .populate({
-        path: 'createdBy',
-        model: 'User',
+        path: "createdBy",
+        model: "User",
       })
       .populate({
-        path: 'organization',
-        model: 'Account',
+        path: "organization",
+        model: "Account",
       })
       .skip(options.limit * (options.page - 1))
       .limit(options.limit)
@@ -35,8 +41,6 @@ const getAllTickets = async (req, res) => {
         status: "error",
       });
     }
-
-    console.log("Tickets:", tickets);
 
     res.status(200).json({
       message: "Successfully fetched admin requests",
@@ -59,7 +63,7 @@ const getAllTickets = async (req, res) => {
 };
 
 const getMyOrganizationTickets = async (req, res) => {
-  const { perPage, page } = req.query;
+  const { perPage, page, topic } = req.query;
 
   const options = {
     page: page || 1,
@@ -68,56 +72,34 @@ const getMyOrganizationTickets = async (req, res) => {
   };
 
   try {
-    const tickets = await Ticket.aggregate([
-      {
-        $match: {
-          organization: mongoose.Types.ObjectId(req.user.organizationId),
-        },
-      },
-      {
-        $lookup: {
-          from: "users",
-          localField: "createdBy",
-          foreignField: "_id",
-          as: "createdBy",
-        },
-      },
-      {
-        $unwind: "$createdBy",
-      },
-      {
-        $facet: {
-          data: [
-            {
-              $sort: { ...options.sort },
-            },
-            {
-              $skip: options.limit * (options.page - 1),
-            },
-            {
-              $limit: options.limit * 1,
-            },
-          ],
-          meta: [
-            {
-              $count: "total",
-            },
-            {
-              $addFields: {
-                page: options.page,
-                perPage: options.limit,
-              },
-            },
-          ],
-        },
-      },
-    ]);
+    const matchCriteria = {
+      organization: mongoose.Types.ObjectId(req.user.organizationId),
+    };
+
+    if (topic) {
+      matchCriteria.topic = { $regex: topic, $options: "i" };
+    }
+
+    const totalCount = await Ticket.countDocuments(matchCriteria);
+
+    const tickets = await Ticket.find(matchCriteria)
+      .populate({
+        path: "createdBy",
+        model: "User",
+      })
+      .sort(options.sort)
+      .skip(options.limit * (options.page - 1))
+      .limit(options.limit);
 
     res.status(200).json({
       message: "Successfully fetched your requests",
       data: {
-        tickets: tickets[0].data,
-        meta: tickets[0].meta[0],
+        tickets,
+        meta: {
+          total: totalCount,
+          page: options.page,
+          perPage: options.limit,
+        },
       },
       status: "success",
     });
@@ -129,12 +111,42 @@ const getMyOrganizationTickets = async (req, res) => {
   }
 };
 
+
 const getMyTickets = async (req, res) => {
+  const { perPage, page, topic } = req.query;
+
+  const options = {
+    page: page || 1,
+    limit: perPage || PER_PAGE,
+    sort: { _id: -1 },
+  };
+
   try {
-    const tickets = await Ticket.findById(req.user._id);
+    const matchCriteria = {
+      createdBy: req.user._id,
+    };
+
+    if (topic) {
+      matchCriteria.topic = { $regex: topic, $options: "i" };
+    }
+
+    const totalCount = await Ticket.countDocuments(matchCriteria);
+
+    const tickets = await Ticket.find(matchCriteria)
+      .sort(options.sort)
+      .skip(options.limit * (options.page - 1))
+      .limit(options.limit);
+
     res.status(200).json({
       message: "Successfully fetched your requests",
-      data: { tickets },
+      data: {
+        tickets,
+        meta: {
+          total: totalCount,
+          page: options.page,
+          perPage: options.limit,
+        },
+      },
       status: "success",
     });
   } catch (error) {
@@ -145,6 +157,7 @@ const getMyTickets = async (req, res) => {
     });
   }
 };
+
 
 const createTicket = async (req, res) => {
   try {

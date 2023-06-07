@@ -42,7 +42,7 @@ const initiateRequest = async (req, res) => {
       minAmount: { $lte: request.amount },
       maxAmount: { $gte: request.amount },
     }).populate({
-      path: "authorisers",
+      path: "verifiers",
       select: "firstName lastName email phone",
     });
 
@@ -59,11 +59,11 @@ const initiateRequest = async (req, res) => {
     const result = await request.save();
     const notificationsToCreate = [];
 
-    for (const authoriser of mandate.authorisers) {
+    for (const verifier of mandate.verifiers) {
       const notification = {
         title: "Transaction request Initiated",
         transaction: result._id,
-        user: authoriser._id,
+        user: verifier._id,
         message:
           "A transaction request was initiated and is awaiting your approval",
       };
@@ -74,14 +74,14 @@ const initiateRequest = async (req, res) => {
       const subject = "Transaction Request Initiated";
 
       const message = {
-        firstName: authoriser.firstName,
-        message: `Dear ${authoriser.firstName}. The below request was initiated for your authorization.
-          TransactionID: ${result._id} Amount: ${result.amount}
-          `,
+        firstName: verifier.firstName,
+        message: 'The below request was initiated for your verification. Kindly login to your account to review',
+        amount: result.amount,
+        reference: result.transactionReference,
         year: new Date().getFullYear(),
       };
 
-      await sendEmail(authoriser.email, subject, "transfer-request", message);
+      await sendEmail(verifier.email, subject, "transfer-request", message);
     }
 
     // send out notifications
@@ -119,7 +119,7 @@ const getAllInitiatorRequests = async (req, res) => {
   const options = {
     page: page || 1,
     limit: perPage || PER_PAGE,
-    sort: { createdAt: -1 },
+    sort: { _id: -1 },
   };
 
   const filter = {
@@ -179,12 +179,12 @@ const getAllAssignedRequests = async (req, res) => {
   const query = {
     $or: [
       {
-        "mandate.authorisers": {
+        "mandate.verifiers": {
           $in: [mongoose.Types.ObjectId(req.user._id)],
         },
       },
       {
-        "mandate.verifier": mongoose.Types.ObjectId(req.user._id),
+        "mandate.authoriser": mongoose.Types.ObjectId(req.user._id),
       },
     ],
   };
@@ -294,7 +294,7 @@ const getAllRequestPerOrganization = async (req, res) => {
 
     const skipCount = (options.page - 1) * options.limit;
     const requests = await InitiateRequest.find(query)
-      .sort({ amount: -1 })
+      .sort({ _id: -1 })
       .skip(skipCount)
       .limit(options.limit)
       .populate("mandate");
@@ -322,15 +322,15 @@ const getRequestById = async (req, res) => {
     const request = await InitiateRequest.findOne({ _id })
       .populate({
         path: "mandate",
-        select: "maxAmount minAmount authorisers verifier",
+        select: "maxAmount minAmount authoriser verifiers",
         populate: [
           {
-            path: "authorisers",
+            path: "authoriser",
             model: "User",
             select: "firstName lastName",
           },
           {
-            path: "verifier",
+            path: "verifiers",
             model: "User",
             select: "firstName lastName",
           },
@@ -398,10 +398,10 @@ const declineRequest = async (req, res) => {
     }
 
     let duplicate = false;
-    for (let i = 0; i < request.authorisersAction.length; i++) {
-      let transaction = request.authorisersAction[i];
+    for (let i = 0; i < request.verifiersAction.length; i++) {
+      let transaction = request.verifiersAction[i];
       if (
-        transaction.authoriserID == req.user._id &&
+        transaction.verifierID == req.user._id &&
         transaction.status === "rejected"
       ) {
         return res.status(404).json({
@@ -409,8 +409,8 @@ const declineRequest = async (req, res) => {
           status: "failed",
         });
       } else if (
-        transaction.authoriserID == req.user._id &&
-        transaction.status === "authorised"
+        transaction.verifierID == req.user._id &&
+        transaction.status === "verified"
       ) {
         transaction.status = "rejected";
         transaction.reason = req.body.reason;
@@ -419,9 +419,9 @@ const declineRequest = async (req, res) => {
     }
 
     if (duplicate === false) {
-      request.authorisersAction.push({
+      request.verifiersAction.push({
         status: "rejected",
-        authoriserID: userId,
+        verifierID: userId,
         reason: req.body.reason,
       });
     }
@@ -431,32 +431,43 @@ const declineRequest = async (req, res) => {
         transaction: request._id,
         user: request.initiator,
         title: "Transaction Request Declined",
-        message: `An authoriser has declined your transaction request for ${request.customerName}`,
-        message: `An authoriser has declined your transaction request for ${request.customerName}`,
-      },
-      // {
-      //   transaction: request._id,
-      //   user: request.verifier,
-      //   title: "Transaction Request Declined",
-      //   message: `An authoriser declined transaction request for ${request.customerName}`,
-      // },
+        message: `A verifier has declined your transaction request for ${request.customerName}`,
+        message: `A verifier has declined your transaction request for ${request.customerName}`,
+      }
     ]);
 
     request.status = "in progress";
 
     if (
-      request.authorisersAction.length === request.mandate.numberOfAuthorisers
+      request.verifiersAction.length === request.mandate.numberOfVerifiers
     ) {
       await notificationService.createNotifications([
         {
           transaction: request._id,
-          user: request.mandate.verifier,
-          title: "Verification Required",
+          user: request.mandate.authoriser,
+          title: "Authorization Required",
           message: "New transaction request require your review",
         },
       ]);
 
-      request.status = "awaiting verification";
+      request.status = "awaiting authorization";
+
+       //send mail to authoriser
+       const authoriserInfo = await User.findById(request.mandate.authoriser).select(
+        "email firstName _id"
+      );
+
+      const subject = "Authorization Required";
+
+      const message = {
+        firstName: authoriserInfo.firstName,
+        amount: request.amount,
+        reference: request.transactionReference,
+        message: 'The below request requires your authorization. Kindly login to your account to review',
+        year: new Date().getFullYear(),
+      };
+
+      await sendEmail(authoriserInfo.email, subject, "transfer-request", message);
     }
 
     // create audit trail
@@ -470,7 +481,7 @@ const declineRequest = async (req, res) => {
       type: "transaction",
       transaction: request._id,
       message: `${user.firstName} rejected a transaction request on ${date} by ${time}`,
-      organization: mine.organization,
+      organization: mine.organizationId,
     });
 
     await audit.save();
@@ -508,7 +519,7 @@ const approveRequest = async (req, res) => {
     if (request.status === "approved") {
       return res.status(401).json({
         message:
-          "You can no longer edit this request after the verifier has approved",
+          "You can no longer edit this request after the authoriser has approved",
         status: "failed",
       });
     }
@@ -527,30 +538,30 @@ const approveRequest = async (req, res) => {
     }
 
     let duplicate = false;
-    for (let i = 0; i < request.authorisersAction.length; i++) {
-      let transaction = request.authorisersAction[i];
+    for (let i = 0; i < request.verifiersAction.length; i++) {
+      let transaction = request.verifiersAction[i];
       if (
-        transaction.authoriserID == req.user._id &&
-        transaction.status === "authorised"
+        transaction.verifierID == req.user._id &&
+        transaction.status === "verified"
       ) {
         return res.status(404).json({
           message: "You have already approved this transaction",
           status: "failed",
         });
       } else if (
-        transaction.authoriserID == req.user._id &&
+        transaction.verifierID == req.user._id &&
         transaction.status === "rejected"
       ) {
         transaction.reason = req.body.reason;
-        transaction.status = "authorised";
+        transaction.status = "verified";
         duplicate = true;
       }
     }
 
     if (duplicate === false) {
-      request.authorisersAction.push({
-        status: "authorised",
-        authoriserID: userId,
+      request.verifiersAction.push({
+        status: "verified",
+        verifierID: userId,
         reason: req.body.reason,
       });
     }
@@ -560,41 +571,41 @@ const approveRequest = async (req, res) => {
         transaction: request._id,
         user: request.initiator,
         title: "Transaction Request Approved",
-        message: `An authoriser has approved your transaction request for ${request.customerName}`,
+        message: `A verifier has approved your transaction request for ${request.customerName}`,
       },
     ]);
 
     request.status = "in progress";
 
     if (
-      request.authorisersAction.length == request.mandate.numberOfAuthorisers
+      request.verifiersAction.length == request.mandate.numberOfVerifiers
     ) {
       await notificationService.createNotifications([
         {
           transaction: request._id,
-          user: request.verifier,
-          title: "Verification Required",
+          user: request.mandate.authoriser,
+          title: "Authorization Required",
           message: "New transaction request require your review",
         },
       ]);
-      request.status = "awaiting verification";
+      request.status = "awaiting authorization";
 
-      //send mail to verifier
-      const verifierInfo = await User.findById(request.mandate.verifier).select(
+      //send mail to authoriser
+      const authoriserInfo = await User.findById(request.mandate.authoriser).select(
         "email firstName _id"
       );
 
-      const subject = "Verification Required";
+      const subject = "Authorization Required";
 
       const message = {
-        firstName: verifierInfo.firstName,
-        message: `Dear ${verifierInfo.firstName}. The below request was initiated for your verification.
-            TransactionID: ${request._id} Amount: ${request.amount}
-            `,
+        firstName: authoriserInfo.firstName,
+        amount: request.amount,
+        reference: request.transactionReference,
+        message: 'The below request requires your authorization. Kindly login to your account to review',
         year: new Date().getFullYear(),
       };
 
-      await sendEmail(verifierInfo.email, subject, "transfer-request", message);
+      await sendEmail(authoriserInfo.email, subject, "transfer-request", message);
     }
 
     // create audit trail
@@ -607,8 +618,8 @@ const approveRequest = async (req, res) => {
       user: req.user._id,
       type: "transaction",
       transaction: request._id,
-      message: `${user.firstName} authorised a transaction request on ${date} by ${time}`,
-      organization: mine.organization,
+      message: `${user.firstName} verified a transaction request on ${date} by ${time}`,
+      organization: mine.organizationId,
     });
 
     await audit.save();
@@ -628,7 +639,7 @@ const approveRequest = async (req, res) => {
   }
 };
 
-const verifierApproveRequest = async (req, res) => {
+const authoriserApproveRequest = async (req, res) => {
   const mine = await User.findById(req.user._id);
   const organization = await Account.findById(mine.organizationId);
   try {
@@ -660,14 +671,14 @@ const verifierApproveRequest = async (req, res) => {
     // update and save request
     request.status = "approved";
     request.transferStatus = "disburse pending";
-    request.verifierAction = {
+    request.authoriserAction = {
       status: "approved",
       reason: req.body.reason,
     };
     await request.save();
 
-    // notify initiator and authorizers
-    const authorizers = request.mandate.authorisers;
+    // notify initiator and verifiers
+    const verifiers = request.mandate.verifiers;
     await notificationService.createNotifications([
       {
         transaction: request._id,
@@ -675,9 +686,9 @@ const verifierApproveRequest = async (req, res) => {
         title: "Request approved",
         message: `Your transaction request for ${request.customerName} has been approved`,
       },
-      ...authorizers.map((authorizer) => ({
+      ...verifiers.map((verifier) => ({
         transaction: request._id,
-        user: authorizer,
+        user: verifier,
         title: "Request approved",
         message: `Transaction request for ${request.customerName} has been approved`,
       })),
@@ -765,7 +776,7 @@ const verifierApproveRequest = async (req, res) => {
   }
 };
 
-const verifierDeclineRequest = async (req, res) => {
+const authoriserDeclineRequest = async (req, res) => {
   try {
     const _id = req.params.id;
     const userId = req.user._id;
@@ -796,25 +807,25 @@ const verifierDeclineRequest = async (req, res) => {
 
     // update request
     request.status = "declined";
-    request.verifierAction = {
+    request.authoriserAction = {
       status: "declined",
       reason: req.body.reason,
     };
     await request.save();
 
     // create notifications
-    const authorizers = request.mandate.authorisers;
+    const verifiers = request.mandate.verifiers;
     await notificationService.createNotifications([
       {
         transaction: request._id,
         user: request.initiator,
-        title: "Request not Verified",
+        title: "Request not Authorised",
         message: `Your transaction request for ${request.customerName} has been declined`,
       },
-      ...authorizers.map((authorizer) => ({
+      ...verifiers.map((verifier) => ({
         transaction: request._id,
-        user: authorizer,
-        title: "Request not Verified",
+        user: verifier,
+        title: "Request not Authorised",
         message: `Transaction request for ${request.customerName} has been declined`,
       })),
     ]);
@@ -959,7 +970,7 @@ const approveBulkRequest = async (req, res) => {
     const auditMessages = [];
     const notificationMessages = [];
     const verifierIds = [];
-    const verifiers_message = [];
+    const authorisers_message = [];
 
     await Promise.all(
       requests.map(async (request) => {
@@ -984,11 +995,11 @@ const approveBulkRequest = async (req, res) => {
         }
 
         let duplicate = false;
-        for (let i = 0; i < request.authorisersAction.length; i++) {
-          let transaction = request.authorisersAction[i];
+        for (let i = 0; i < request.verifiersAction.length; i++) {
+          let transaction = request.verifiersAction[i];
           if (
-            transaction.authoriserID == req.user._id &&
-            transaction.status === "authorised"
+            transaction.verifierID == req.user._id &&
+            transaction.status === "verified"
           ) {
             errors.push({
               message: `You have already approved transaction ${request._id}`,
@@ -996,65 +1007,65 @@ const approveBulkRequest = async (req, res) => {
             duplicate = true;
             break;
           } else if (
-            transaction.authoriserID == req.user._id &&
+            transaction.verifierID == req.user._id &&
             transaction.status === "rejected"
           ) {
             transaction.reason = req.body.reason;
-            transaction.status = "authorised";
+            transaction.status = "verified";
             duplicate = true;
           }
         }
 
         if (duplicate === false) {
-          request.authorisersAction.push({
-            status: "authorised",
-            authoriserID: req.user._id,
+          request.verifiersAction.push({
+            status: "verified",
+            verifierID: req.user._id,
             reason: req.body.reason,
           });
         }
 
-        verifierIds.push(request.mandate.verifier);
+        verifierIds.push(request.mandate.authoriser);
 
-        // send notification to verifier
+        // send notification to authorizer
         notificationMessages.push({
           transaction: requests[0].batchVerificationID,
           user: request.initiator,
           title: "Transaction Request Approved",
-          message: `An authoriser has approved your transaction request for ${request.mandate.accountName}`,
+          message: `A verifier has approved your transaction request for ${request.mandate.accountName}`,
         });
 
         request.status = "in progress";
 
         if (
-          request.authorisersAction.length ==
-          request.mandate.numberOfAuthorisers
+          request.verifiersAction.length ==
+          request.mandate.numberOfVerifiers
         ) {
-          // send notification to verifier
+          // send notification to authoriser
           notificationMessages.push({
             transaction: requests[0].batchVerificationID,
-            user: request.mandate.verifier,
-            title: "Verification Required",
+            user: request.mandate.authoriser,
+            title: "Authorization Required",
             message: "New transaction request requires your review",
           });
 
-          request.status = "awaiting verification";
+          request.status = "awaiting authorization";
 
-          // send email to verifier
-          const verifierInfo = await User.findById(
-            request.mandate.verifier
+          // send email to authoriser
+          const authoriserInfo = await User.findById(
+            request.mandate.authoriser
           ).select("email firstName _id");
-          if (verifierInfo) {
+          if (authoriserInfo) {
             const message = {
-              firstName: verifierInfo.firstName,
-              message: `Dear ${verifierInfo.firstName}. The below request was initiated for your verification.
-              TransactionID: ${request._id} Amount: ${request.amount}
-              `,
+              firstName: authoriserInfo.firstName,
+              message: 'The below request requires your authorization. Kindly login to your account to review',
+              amount: request.amount,
+              reference: request.transactionReference,
               year: new Date().getFullYear(),
             };
 
-            verifiers_message.push({
-              receiver: verifierInfo.email,
-              subject: "Verification Required",
+            authorisers_message.push({
+              receiver: authoriserInfo.email,
+              subject: "Authorization Required",
               title: "transfer-request",
               message: message,
             });
@@ -1063,7 +1074,7 @@ const approveBulkRequest = async (req, res) => {
 
         // create audit trail message
         auditMessages.push(
-          `${req.user.firstName} authorised a transaction request for ${request.customerName}`
+          `${req.user.firstName} verified a transaction request for ${request.customerName}`
         );
 
         request.save();
@@ -1071,24 +1082,23 @@ const approveBulkRequest = async (req, res) => {
       })
     );
 
-    if (verifiers_message.length > 0) {
+    if (authorisers_message.length > 0) {
       sendEmail(
-        verifiers_message[0].receiver,
-        "Verification Required",
+        authorisers_message[0].receiver,
+        "Authorization Required",
         "transfer-request",
-        verifiers_message[0].message
+        authorisers_message[0].message
       );
     }
 
     // create audit trail message
     if (auditMessages.length > 0) {
-      const user = await User.findById(req.user._id);
       let dt = new Date(new Date().getTime() + 60 * 60 * 1000 * 3);
       let auditTrailMessage = {
         date: dt,
         user: req.user._id,
         message: auditMessages[0],
-        type: "authorisation",
+        type: "verification",
       };
       await AuditTrail.create(auditTrailMessage);
     }
@@ -1099,7 +1109,7 @@ const approveBulkRequest = async (req, res) => {
         {
           transaction: notificationMessages[0].transaction,
           user: notificationMessages[0].user,
-          title: "Verification Required",
+          title: "Authorization Required",
           message: "New transaction request require your review",
         },
       ]);
@@ -1107,17 +1117,19 @@ const approveBulkRequest = async (req, res) => {
 
     // send emails
     if (notificationMessages.length > 0) {
-      const verifierInfo = await User.findById(
+      const authoriserInfo = await User.findById(
         notificationMessages[0].user
       ).select("email firstName _id");
+
       const message = {
-        firstName: verifierInfo.firstName,
-        message: `Dear ${verifierInfo.firstName}. The below request was initiated for your verification.
-          TransactionID: ${notificationMessages[0].transaction} `,
+        firstName: authoriserInfo.firstName,
+        message: 'The below request requires your authorization. Kindly login to your account to review',
+        reference: notificationMessages[0].transaction,
         year: new Date().getFullYear(),
       };
+      
       await sendEmail(
-        verifierInfo.email,
+        authoriserInfo.email,
         notificationMessages[0].title,
         "transfer-request",
         message
@@ -1138,7 +1150,7 @@ const approveBulkRequest = async (req, res) => {
   }
 };
 
-const verifierBulkaprove = async (req, res) => {
+const authoriserBulkaprove = async (req, res) => {
   try {
     const mine = await User.findById(req.user._id);
     const organization = await Account.findById(mine.organizationId);
@@ -1197,14 +1209,14 @@ const verifierBulkaprove = async (req, res) => {
 
       request.status = "approved";
       request.transferStatus = "disburse pending";
-      request.verifierAction = {
+      request.authoriserAction = {
         status: "approved",
         reason: req.body.reason,
       };
       await request.save();
 
       // add notification and audit trail to arrays
-      const authorizers = request.mandate.authorisers;
+      const verifiers = request.mandate.verifiers;
 
       await notificationService.createNotifications([
         {
@@ -1213,9 +1225,9 @@ const verifierBulkaprove = async (req, res) => {
           title: "Request approved",
           message: `Your transaction request for ${request.mandate.accountName} has been approved`,
         },
-        ...authorizers.map((authorizer) => ({
+        ...verifiers.map((verifier) => ({
           transaction: request._id,
-          user: authorizer,
+          user: verifier,
           title: "Request approved",
           message: `Transaction request for ${request.mandate.accountName} has been approved`,
         })),
@@ -1313,9 +1325,9 @@ module.exports = {
   getAllRequestPerOrganization,
   getRequestById,
   getAllAssignedRequests,
-  verifierDeclineRequest,
-  verifierApproveRequest,
+  authoriserApproveRequest,
+  authoriserDeclineRequest,
   getAllTransferRequests,
   approveBulkRequest,
-  verifierBulkaprove,
+  authoriserBulkaprove,
 };

@@ -6,7 +6,7 @@ const { allUsersAuth, superUserAuth } = require("../middleware/auth");
 
 router.get("/all", superUserAuth, getAllAuditTrail);
 router.get("/organization", allUsersAuth, getOrganizationAuditTrail);
-router.get("/audit_trails_for/:userId", allUsersAuth, getAuditTrailForSingleUser);
+router.get("/user/:userId", allUsersAuth, getAuditTrailForSingleUser);
 
 
 module.exports = router;

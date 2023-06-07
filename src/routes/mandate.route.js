@@ -24,7 +24,7 @@ router.post(
 router.put("/update/:mandateId", adminAuth, updateMandate);
 router.get("/all", allUsersAuth, getAllMandates);
 router.get("/:id", allUsersAuth, getSingleMandate);
-router.delete('/deleteMandate/:mandateId', superUserAuth, deleteMandate)
+router.delete('/deleteMandate/:mandateId',adminAuth, deleteMandate)
 
 
 

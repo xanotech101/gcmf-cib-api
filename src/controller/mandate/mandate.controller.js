@@ -10,6 +10,7 @@ const InitiateRequest = require("../../model/initiateRequest.model")
 //@access   Public
 const registerMandate = async (req, res) => {
   try {
+    
     const { organizationId } = req.user;
     const mandateExists = await Mandate.findOne({ name: req.body.name, organizationId: organizationId });
     if (mandateExists) {
@@ -55,12 +56,12 @@ const registerMandate = async (req, res) => {
         name: req.body.name,
         minAmount: req.body.minAmount,
         maxAmount: req.body.maxAmount,
-        authorisers: req.body.authorisers,
+        authoriser: req.body.authoriser,
         organizationId: mine.organizationId.toString(),
-        verifier: req.body.verifier,
+        verifiers: req.body.verifiers,
       });
 
-      mandate.numberOfAuthorisers = mandate.authorisers.length;
+      mandate.numberOfVerifiers = mandate.verifiers.length;
 
       const result = await mandate.save();
 
@@ -84,12 +85,12 @@ const registerMandate = async (req, res) => {
         name: req.body.name,
         minAmount: req.body.minAmount,
         maxAmount: req.body.maxAmount,
-        authorisers: req.body.authorisers,
+        authoriser: req.body.authoriser,
         organizationId: mine.organizationId.toString(),
-        verifier: req.body.verifier,
+        verifiers: req.body.verifiers,
       });
 
-      mandate.numberOfAuthorisers = mandate.authorisers.length;
+      mandate.numberOfVerifiers = mandate.verifiers.length;
 
       const result = await mandate.save();
 
@@ -140,7 +141,7 @@ const updateMandate = async (req, res) => {
 
 
 const getAllMandates = async (req, res) => {
-  const { perPage, page, search } = req.query;
+  const { perPage, page, name } = req.query;
 
   const options = {
     page: page || 1,
@@ -153,8 +154,8 @@ const getAllMandates = async (req, res) => {
     const organizationId = mine.organizationId.toString();
 
     const filter = { organizationId };
-    if (search) {
-      filter.name = { $regex: search, $options: "i" }; // Case-insensitive regex matching mandate name
+    if (name) {
+      filter.name = { $regex: name, $options: "i" }; // Case-insensitive regex matching mandate name
     }
 
     const totalMandates = await Mandate.countDocuments(filter);
@@ -189,11 +190,11 @@ const getSingleMandate = async (req, res) => {
   try {
     const mandate = await Mandate.findById(id.toString()).populate([
       {
-        path: "authorisers",
+        path: "authoriser",
         select: "firstName lastName",
       },
       {
-        path: "verifier",
+        path: "verifiers",
         select: "firstName lastName"
       }
     ])
@@ -218,14 +219,13 @@ const deleteMandate = async(req, res) =>{
         message:'can\'t find this madate'
       })
     }
-
     //check if mandate is tied to a transfer request
     const checkTransfer = await InitiateRequest.find({mandate:req.params.mandateId})
 
     if(checkTransfer.length > 0){
       return res.status(400).send({
         success: false,
-        message:'can\'t delete this madate, this mandate is tied to one or more transfers'
+        message:'can\'t delete this mandate, this mandate is tied to one or more transfers'
       })
     }
     

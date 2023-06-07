@@ -33,7 +33,7 @@ const initiateRequestSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectID,
       ref: "Account",
     },
-    numberOfAuthorisers: Number,
+    numberOfVerifiers: Number,
     transferStatus: {
       type: String,
       enum: ["disburse pending", "pending", "successful", "failed"],
@@ -44,7 +44,7 @@ const initiateRequestSchema = new mongoose.Schema(
       enum: [
         "pending",
         "in progress",
-        "awaiting verification",
+        "awaiting authorization",
         "approved",
         "declined"
       ],
@@ -54,20 +54,20 @@ const initiateRequestSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectID,
       ref: "User",
     },
-    authorisersAction: [
+    verifiersAction: [
       {
         status: {
           type: String,
-          enum: ["authorised", "rejected"],
+          enum: ["verified", "rejected"],
         },
-        authoriserID: {
+        verifierID: {
           type: mongoose.Schema.Types.ObjectID,
           ref: "User",
         },
         reason: String,
       },
     ],
-    verifierAction: {
+    authoriserAction: {
       status: {
         type: String,
         enum: ["approved", "declined"],
