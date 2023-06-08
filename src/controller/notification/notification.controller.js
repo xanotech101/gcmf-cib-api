@@ -17,7 +17,7 @@ const getMyNotifications = async (req, res) => {
     const options = {
       page: page || 1,
       limit: perPage || PER_PAGE,
-      sort: { createdAt: -1 },
+      sort: { _id: -1 },
     };
 
     const notifications = await Notification.aggregate([

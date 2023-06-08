@@ -27,10 +27,18 @@ const ticketSchema = new mongoose.Schema(
       }
     ],
     meta: {},
-    createdAt: { type: String, default: toISOLocal(new Date()) },
-    updatedAt: { type: String, default: toISOLocal(new Date()) },
+    createdAt: { type: String },
+    updatedAt: { type: String },
   },
 
 );
+
+// Set the createdAt and updatedAt values before saving the document
+ticketSchema.pre("save", function (next) {
+  const currentDate = toISOLocal();
+  this.createdAt = currentDate;
+  this.updatedAt = currentDate;
+  next();
+})
 
 module.exports = mongoose.model("Ticket", ticketSchema);

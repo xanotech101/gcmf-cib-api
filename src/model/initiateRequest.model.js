@@ -33,7 +33,7 @@ const initiateRequestSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectID,
       ref: "Account",
     },
-    numberOfAuthorisers: Number,
+    numberOfVerifiers: Number,
     transferStatus: {
       type: String,
       enum: ["disburse pending", "pending", "successful", "failed"],
@@ -44,7 +44,7 @@ const initiateRequestSchema = new mongoose.Schema(
       enum: [
         "pending",
         "in progress",
-        "awaiting verification",
+        "awaiting authorization",
         "approved",
         "declined"
       ],
@@ -54,20 +54,20 @@ const initiateRequestSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectID,
       ref: "User",
     },
-    authorisersAction: [
+    verifiersAction: [
       {
         status: {
           type: String,
-          enum: ["authorised", "rejected"],
+          enum: ["verified", "rejected"],
         },
-        authoriserID: {
+        verifierID: {
           type: mongoose.Schema.Types.ObjectID,
           ref: "User",
         },
         reason: String,
       },
     ],
-    verifierAction: {
+    authoriserAction: {
       status: {
         type: String,
         enum: ["approved", "declined"],
@@ -80,9 +80,18 @@ const initiateRequestSchema = new mongoose.Schema(
     },
     meta:{},
     time: Date,
-    createdAt: { type: String, default: toISOLocal(new Date()) },
-    updatedAt: { type: String, default: toISOLocal(new Date()) },
+    createdAt: { type: String },
+    updatedAt: { type: String },
   }
 );
+
+// Set the createdAt and updatedAt values before saving the document
+initiateRequestSchema.pre("save", function (next) {
+  const currentDate = toISOLocal();
+  this.createdAt = currentDate;
+  this.updatedAt = currentDate;
+  next();
+})
+
 
 module.exports = mongoose.model("InitiateRequest", initiateRequestSchema);

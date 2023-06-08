@@ -4,135 +4,38 @@ const User = require("../model/user.model");
 const { default: mongoose } = require("mongoose");
 
 const getAllAuditTrail = async (req, res) => {
-  const { page, perPage } = req.query;
+  const { page, perPage, type } = req.query;
 
   const options = {
-    page: page || 1,
-    limit: perPage || PER_PAGE,
-    sort: { createdAt: -1 },
+    page: parseInt(page) || 1,
+    limit: parseInt(perPage) || PER_PAGE,
+    sort: { _id: -1 },
   };
 
-  try {
-    
-    const result = await AuditTrail.aggregate([
-      {
-        $lookup: {
-          from: "users",
-          localField: "user",
-          foreignField: "_id",
-          as: "user",
-        },
-      },
-      {
-        $facet: {
-          data: [
-            {
-              $sort: { ...options.sort },
-            },
-            {
-              $skip: options.limit * (options.page - 1),
-            },
-            {
-              $limit: options.limit * 1,
-            },
-          ],
-          meta: [
-            {
-              $count: "total",
-            },
-            {
-              $addFields: {
-                page: options.page,
-                perPage: options.limit,
-              },
-            },
-          ],
-        },
-      },
-    ]);
+  const filter = {};
 
-    res.status(200).json({
-      message: "Audit trail fetcehd successfully",
-      data: {
-        trails: result[0].data,
-        meta: result[0].meta[0],
-      },
-    });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: error.message });
+  if (type) {
+    filter.type = { $regex: type, $options: "i" }; // Case-insensitive regex matching the type field
   }
-};
-
-const getOrganizationAuditTrail = async (req, res) => {
-  const { page, perPage } = req.query;
-
-  const options = {
-    page: page || 1,
-    limit: perPage || PER_PAGE,
-    sort: { createdAt: -1 },
-  };
 
   try {
-    const mine = await User.findById(req.user._id)
-    const organizationId = mine.organizationId.toString();
-    const result = await AuditTrail.aggregate([
-      {
-        $match: { organization: organizationId },
-      },
-      {
-        $lookup: {
-          from: "users",
-          localField: "user",
-          foreignField: "_id",
-          as: "user",
-          pipeline: [
-            {
-              $project: {
-                _id: 1,
-                firstName: 1,
-                lastName: 1,
-              },
-            },
-          ],
-        },
-      },
-      {
-        $unwind: "$user",
-      },
-      {
-        $facet: {
-          data: [
-            {
-              $sort: { ...options.sort },
-            },
-            {
-              $skip: options.limit * (options.page - 1),
-            },
-            {
-              $limit: options.limit * 1,
-            },
-          ],
-          meta: [
-            {
-              $count: "total",
-            },
-            {
-              $addFields: {
-                page: options.page,
-                perPage: options.limit,
-              },
-            },
-          ],
-        },
-      },
-    ]);
+    const totalTrails = await AuditTrail.countDocuments(filter);
+
+    const trails = await AuditTrail.find(filter)
+      .sort(options.sort)
+      .skip(options.limit * (options.page - 1))
+      .limit(options.limit)
+      .populate("user");
 
     res.status(200).json({
       message: "Audit trail fetched successfully",
       data: {
-        trails: result[0].data,
-        meta: result[0].meta[0],
+        trails,
+        meta: {
+          total: totalTrails,
+          page: options.page,
+          perPage: options.limit,
+        },
       },
     });
   } catch (error) {
@@ -141,63 +44,92 @@ const getOrganizationAuditTrail = async (req, res) => {
   }
 };
 
-const getAuditTrailForSingleUser = async(req, res) => {
-  const { page, perPage } = req.query;
-  const { userId } = req.params;
+
+const getOrganizationAuditTrail = async (req, res) => {
+  const { page, perPage, type } = req.query;
 
   const options = {
-    page: page || 1,
-    limit: perPage || PER_PAGE,
-    sort: { createdAt: -1 },
+    page: parseInt(page) || 1,
+    limit: parseInt(perPage) || PER_PAGE,
+    sort: { _id: -1 },
   };
 
   try {
-    
-    const result = await AuditTrail.aggregate([
-      {
-        $match: { user: mongoose.Types.ObjectId(userId) },
-      },
-      {
-        $lookup: {
-          from: "users",
-          localField: "user",
-          foreignField: "_id",
-          as: "user",
+    const mine = await User.findById(req.user._id);
+    const organizationId = mine.organizationId.toString();
+
+    const filter = { organization: organizationId };
+
+    if (type) {
+      filter.type = { $regex: type, $options: "i" }; // Case-insensitive regex matching the type field
+    }
+
+    const totalTrails = await AuditTrail.countDocuments(filter);
+
+    const trails = await AuditTrail.find(filter)
+      .sort(options.sort)
+      .skip(options.limit * (options.page - 1))
+      .limit(options.limit)
+      .populate({
+        path: "user",
+        select: "_id firstName lastName",
+      });
+
+    res.status(200).json({
+      message: "Audit trail fetched successfully",
+      data: {
+        trails,
+        meta: {
+          total: totalTrails,
+          page: options.page,
+          perPage: options.limit,
         },
       },
-      {
-        $facet: {
-          data: [
-            {
-              $sort: { ...options.sort },
-            },
-            {
-              $skip: options.limit * (options.page - 1),
-            },
-            {
-              $limit: options.limit * 1,
-            },
-          ],
-          meta: [
-            {
-              $count: "total",
-            },
-            {
-              $addFields: {
-                page: options.page,
-                perPage: options.limit,
-              },
-            },
-          ],
-        },
-      },
-    ]);
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+const getAuditTrailForSingleUser = async (req, res) => {
+  const { page, perPage, type } = req.query;
+  const { userId } = req.params;
+
+  const options = {
+    page: parseInt(page) || 1,
+    limit: parseInt(perPage) || PER_PAGE,
+    sort: { _id: -1 },
+  };
+
+  try {
+    const filter = { user: mongoose.Types.ObjectId(userId) };
+
+    if (type) {
+      filter.type = { $regex: type, $options: "i" }; // Case-insensitive regex matching the type field
+    }
+
+    const totalTrails = await AuditTrail.countDocuments(filter);
+
+    const trails = await AuditTrail.find(filter)
+      .sort(options.sort)
+      .skip(options.limit * (options.page - 1))
+      .limit(options.limit)
+      .populate({
+        path: "user",
+        select: "_id firstName lastName",
+      });
 
     res.status(200).json({
       message: "User audit trail fetched successfully",
       data: {
-        trails: result[0].data,
-        meta: result[0].meta[0],
+        trails,
+        meta: {
+          total: totalTrails,
+          page: options.page,
+          perPage: options.limit,
+        },
       },
     });
   } catch (error) {

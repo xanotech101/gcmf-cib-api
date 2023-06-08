@@ -9,21 +9,30 @@ const mandateSchema = new mongoose.Schema(
     minAmount: Number,
     maxAmount: Number,
     organizationId: String,
-    authorisers: [
+    verifiers: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
       },
     ],
-    numberOfAuthorisers: Number,
-    verifier:
+    numberOfVerifiers: Number,
+    authoriser:
     {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
-    createdAt: { type: String, default: toISOLocal(new Date()) },
-    updatedAt: { type: String, default: toISOLocal(new Date()) },
+    createdAt: { type: String },
+    updatedAt: { type: String },
   }
 );
+
+// Set the createdAt and updatedAt values before saving the document
+mandateSchema.pre("save", function (next) {
+  const currentDate = toISOLocal();
+  this.createdAt = currentDate;
+  this.updatedAt = currentDate;
+  next();
+})
+
 
 module.exports = mongoose.model("Mandate", mandateSchema);
