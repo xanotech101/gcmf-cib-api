@@ -94,9 +94,9 @@ const VerifyBatchUpload = async (req, res) => {
 
                   const message = {
                     firstName: authoriser.firstName,
-                    message: `The below request was initiated for your authorization.
-              TransactionID: ${result._id}    Amount: ${result.amount}  Kindly login to your account to review
-             `,
+                    message: 'The below request was initiated for your authorization. Kindly login to your account to review',
+                    amount: request.amount,
+                    reference: request.transactionReference,
                     year: new Date().getFullYear()
                   }
 
@@ -179,12 +179,11 @@ const VerifyBatchUpload = async (req, res) => {
                   //Mail notification
                   const subject = "Transaction Request Initiated";
 
-
                   const message = {
                     firstName: verifier.firstName,
-                    message: `The below request was initiated for your verificationc.
-              TransactionID: ${result._id}    Amount: ${result.amount}  Kindly login to your account to review
-             `,
+                    message: 'The below request was initiated for your verification. Kindly login to your account to review',
+                    amount: request.amount,
+                    reference: request.transactionReference,
                     year: new Date().getFullYear()
                   }
 

@@ -3,6 +3,7 @@ const { validateUpdateMandateSchema } = require("../../utils/utils");
 const { PER_PAGE } = require("../../utils/constants");
 const User = require("../../model/user.model");
 const Joi = require("joi");
+const InitiateRequest = require("../../model/initiateRequest.model")
 
 //@desc     register a mandate
 //@route    POST /mandate/register
@@ -89,7 +90,7 @@ const registerMandate = async (req, res) => {
         verifiers: req.body.verifiers,
       });
 
-      mandate.numberOfverifier = mandate.verifiers.length;
+      mandate.numberOfVerifiers = mandate.verifiers.length;
 
       const result = await mandate.save();
 
@@ -111,59 +112,25 @@ const registerMandate = async (req, res) => {
 //@access   Public
 const updateMandate = async (req, res) => {
   try {
+    const { mandateId } = req.params;
+    const { name } = req.body;
 
-    const updateMandate = (mandate) => (payload) =>
-      mandate.validate(payload, { abortEarly: false });
-
-
-    const { error } = updateMandate(req.body)
-    // validateUpdateMandateSchema(req.body);
-    if (error) return res.status(400).send(error.details[0].message);
-
-    const mandate = await Mandate.findOne({ name: req.body.name });
-
-    let amount = await Mandate.find({}).select("minAmount maxAmount name");
-
-    let mandateCheckFailed;
-
-    let overlap = {};
-
-    amount.map((item) => {
-      if (
-        item.name !== req.body.name &&
-        ((item.minAmount <= req.body.minAmount &&
-          item.maxAmount >= req.body.minAmount) ||
-          (item.minAmount <= req.body.maxAmount &&
-            item.maxAmount >= req.body.maxAmount))
-      ) {
-
-        mandateCheckFailed = true;
-        overlap.minAmount = item.minAmount;
-        overlap.maxAmount = item.maxAmount;
-        overlap.name = item.name;
-      }
-    });
-
-    if (mandateCheckFailed)
-      return res.status(400).json({
-        message:
-          `Mandate amount is overlapping an already registered mandate which is ${overlap.name} with minimum amount of ${overlap.minAmount} and maximum amount of ${overlap.maxAmount}`
-      });
-
-    mandate.name = req.body.name;
-    mandate.minAmount = req.body.minAmount;
-    mandate.maxAmount = req.body.maxAmount;
-    mandate.verifiers = req.body.verifiers;
-    mandate.authoriser = req.body.authoriser ?? mandate.authoriser
-    mandate.numberOfverifier = req.body.verifiers?.length ?? mandate.numberOfverifier
-
-    if (!mandate)
+    const existingMandate = await Mandate.findById(mandateId);
+    if (!existingMandate) {
       return res.status(400).json({ message: "This mandate doesn't exist" });
+    }
 
-    const result = await mandate.save();
+    const mandateWithSameName = await Mandate.findOne({ name });
+    if (mandateWithSameName && mandateWithSameName._id.toString() !== mandateId) {
+      return res.status(400).json({ message: "Mandate name already exists" });
+    }
+
+    existingMandate.name = name;
+
+    const result = await existingMandate.save();
     return res.status(200).json({
       status: "success",
-      message: "Mandate updated successfully",
+      message: "Mandate name updated successfully",
       details: result,
     });
   } catch (error) {
@@ -171,6 +138,7 @@ const updateMandate = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 
 const getAllMandates = async (req, res) => {
   const { perPage, page, name } = req.query;
@@ -181,80 +149,41 @@ const getAllMandates = async (req, res) => {
     sort: { _id: -1 },
   };
 
-  if(name){
-    options.filter = {name: { $regex: name, $options: "i" }}
-  }
-
   try {
-    const mine = await User.findById(req.user._id)
+    const mine = await User.findById(req.user._id);
     const organizationId = mine.organizationId.toString();
-    const mandates = await Mandate.aggregate([
-      {
-        $match: {
-          organizationId,
-          ...(name && { name: { $regex: name?.trim(), $options: "i" } }),
-        },
-      },
-      {
-        $lookup: {
-          from: "users",
-          localField: "verifiers",
-          foreignField: "_id",
-          as: "verifiers",
-        },
-      },
-      {
-        $lookup: {
-          from: "users",
-          localField: "authoriser",
-          foreignField: "_id",
-          as: "authoriser",
-        },
-      },
-      {
-        $unwind: "$authoriser",
-      },
-      {
-        $facet: {
-          data: [
-            {
-              $sort: { ...options.sort },
-            },
-            {
-              $skip: options.limit * (options.page - 1),
-            },
-            {
-              $limit: options.limit * 1,
-            },
-          ],
-          meta: [
-            {
-              $count: "total",
-            },
-            {
-              $addFields: {
-                page: options.page,
-                perPage: options.limit,
-              },
-            },
-          ],
-        },
-      },
-    ]);
+
+    const filter = { organizationId };
+    if (name) {
+      filter.name = { $regex: name, $options: "i" }; // Case-insensitive regex matching mandate name
+    }
+
+    const totalMandates = await Mandate.countDocuments(filter);
+
+    const mandates = await Mandate.find(filter)
+      .sort(options.sort)
+      .skip(options.limit * (options.page - 1))
+      .limit(options.limit)
+      .populate("authoriser")
+      .populate("verifiers");
 
     return res.status(200).json({
       message: "Request Successful",
       data: {
-        mandates: mandates[0].data,
-        meta: mandates[0].meta[0],
+        mandates,
+        meta: {
+          total: totalMandates,
+          page: options.page,
+          perPage: options.limit,
+        },
       },
     });
-
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: error.message });
   }
 };
+
 
 const getSingleMandate = async (req, res) => {
   const id = req.params.id;
@@ -290,7 +219,16 @@ const deleteMandate = async(req, res) =>{
         message:'can\'t find this madate'
       })
     }
+    //check if mandate is tied to a transfer request
+    const checkTransfer = await InitiateRequest.find({mandate:req.params.mandateId})
 
+    if(checkTransfer.length > 0){
+      return res.status(400).send({
+        success: false,
+        message:'can\'t delete this mandate, this mandate is tied to one or more transfers'
+      })
+    }
+    
     const deleteMandate = await Mandate.deleteOne({_id:req.params.mandateId})
     if(deleteMandate.deletedCount > 0){
       return res.status(200).send({
