@@ -3,7 +3,9 @@ const bcrypt = require("bcrypt");
 const { PER_PAGE } = require("../../utils/constants");
 const mongoose = require("mongoose");
 const Privilege = require("../../model/privilege.model");
-const Account = require("../../model/account")
+const Account = require("../../model/account");
+const { auditTrailService , userService} = require("../../services");
+const { getDateAndTime } = require("../../utils/utils");
 
 const getOrganizationUsers = async (req, res) => {
   try {
@@ -430,10 +432,10 @@ const getAllAdmins = async (req, res) => {
   }
 };
 
-const disableAccount = async (req, res) =>{
-  try{
-    const checkUser = await User.findOne({_id:req.params.userid})
-    if(!checkUser){
+const disableAccount = async (req, res) => {
+  try {
+    const checkUser = await User.findOne({ _id: req.params.userid })
+    if (!checkUser) {
       return res.status(400).send({
         success: false,
         message: 'user not found on this system'
@@ -441,15 +443,24 @@ const disableAccount = async (req, res) =>{
     }
 
 
-    if(checkUser.disabled === true){
+    if (checkUser.disabled === true) {
       return res.status(400).send({
         success: false,
         message: 'this account is already disabled'
       })
     }
 
-    const disableUser = await User.updateOne({_id:req.params.userid},{$set:{disabled: true}})
-    if(disableUser.modifiedCount > 0){
+    const disableUser = await User.updateOne({ _id: req.params.userid }, { $set: { disabled: true } })
+    const user = await userService.getUserById(req.user._id);
+    const { date, time } = getDateAndTime();
+    if (disableUser.modifiedCount > 0) {
+      //create audit trial
+      const auditTrail = {
+        user: req.user._id,
+        type: "disable account",
+        message: `${user.firstName} ${user.lastName} disabled ${checkUser.firstName} ${checkUser.lastName} account on ${date} by ${time}`,
+      };
+      await auditTrailService.createAuditTrail(auditTrail)
       return res.status(200).send({
         success: true,
         message: 'Account successfully disabled'
@@ -459,18 +470,18 @@ const disableAccount = async (req, res) =>{
       success: false,
       message: 'Error disabling account'
     })
-  }catch(error){
+  } catch (error) {
     return res.status(500).send({
-      success:false,
+      success: false,
       message: error.message
     })
   }
 }
 
-const enableAccount = async (req, res) =>{
-  try{
-    const checkUser = await User.findOne({_id:req.params.userid})
-    if(!checkUser){
+const enableAccount = async (req, res) => {
+  try {
+    const checkUser = await User.findOne({ _id: req.params.userid })
+    if (!checkUser) {
       return res.status(400).send({
         success: false,
         message: 'user not found on this system'
@@ -478,15 +489,26 @@ const enableAccount = async (req, res) =>{
     }
 
 
-    if(checkUser.disabled === false){
+    if (checkUser.disabled === false) {
       return res.status(400).send({
         success: false,
         message: 'this account is already enabled'
       })
     }
 
-    const enableUser = await User.updateOne({_id:req.params.userid},{$set:{disabled: false}})
-    if(enableUser.modifiedCount > 0){
+    const enableUser = await User.updateOne({ _id: req.params.userid }, { $set: { disabled: false } })
+
+    const user = await userService.getUserById(req.user._id);
+    const { date, time } = getDateAndTime();
+    if (enableUser.modifiedCount > 0) {
+      //create audit trial
+      const auditTrail = {
+        user: req.user._id,
+        type: "enable account",
+        message: `${user.firstName} ${user.lastName} enabled ${checkUser.firstName} ${checkUser.lastName} account on ${date} by ${time}`,
+      };
+      await auditTrailService.createAuditTrail(auditTrail)
+
       return res.status(200).send({
         success: true,
         message: 'Account successfully enable'
@@ -496,9 +518,9 @@ const enableAccount = async (req, res) =>{
       success: false,
       message: 'Error enabling account'
     })
-  }catch(error){
+  } catch (error) {
     return res.status(500).send({
-      success:false,
+      success: false,
       message: error.message
     })
   }
