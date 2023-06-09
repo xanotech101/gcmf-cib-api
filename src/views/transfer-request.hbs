@@ -107,7 +107,93 @@
             </p>
           </td>
         </tr>
-        <tr style="box-sizing: border-box; display: block; padding-top: 20px; text-align: center; width: 100%">
+        <tr style="box-sizing: border-box">
+          <td
+            class="padded-x"
+            style="
+              box-sizing: border-box;
+              font-size: 16px;
+              color: #311a07;
+              line-height: 28px;
+              background-color: #fbfbfb;
+              padding-top: 30px;
+              padding-bottom: 30px;
+            "
+          >
+            <table
+              class="inner-table righty"
+              style="
+                box-sizing: border-box;
+                border-collapse: collapse;
+                width: 100% !important;
+              "
+            >
+              <tbody style="box-sizing: border-box">
+                <tr style="box-sizing: border-box">
+                  <td
+                    style="
+                      box-sizing: border-box;
+                      font-size: 16px;
+                      color: #311a07;
+                      line-height: 28px;
+                      padding: 10px 0;
+                      border-bottom: 1px solid #f1f2f4;
+                    "
+                  >
+                    Transaction Reference
+                  </td>
+                  <td
+                    style="
+                      box-sizing: border-box;
+                      font-size: 16px;
+                      color: #311a07;
+                      line-height: 28px;
+                      padding: 10px 0;
+                      border-bottom: 1px solid #f1f2f4;
+                      text-align: right !important;
+                    "
+                  >
+                    {{reference}}
+                  </td>
+                </tr>
+                <tr style="box-sizing: border-box">
+                  <td
+                    style="
+                      box-sizing: border-box;
+                      font-size: 16px;
+                      color: #311a07;
+                      line-height: 28px;
+                      padding: 10px 0;
+                    "
+                  >
+                    Amount
+                  </td>
+                  <td
+                    style="
+                      box-sizing: border-box;
+                      font-size: 16px;
+                      color: #311a07;
+                      line-height: 28px;
+                      padding: 10px 0;
+                      text-align: right !important;
+                    "
+                  >
+                    NGN {{amount}}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </td>
+        </tr>
+        <tr
+          style="
+            box-sizing: border-box;
+            display: block;
+            padding-top: 20px;
+            text-align: center;
+            width: 100%;
+          "
+        >
           <td
             class="padded-x padded-y"
             style="
@@ -116,7 +202,6 @@
               color: #311a07;
               line-height: 28px;
               text-align: center;
-              border-top: 1px solid #f1f2f4;
               width: 100%;
               display: block;
             "
@@ -135,8 +220,7 @@
                   color: #737a91;
                   margin-bottom: 10px;
                 "
-                >Copyright © {{year}} GMFB CIB. All Rights
-                Reserved.</span
+                >Copyright © {{year}} GMFB CIB. All Rights Reserved.</span
               >
             </p>
             <img
