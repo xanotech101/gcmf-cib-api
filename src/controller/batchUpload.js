@@ -19,6 +19,218 @@ const authToken = process.env.AUTHTOKEN;
 
 
 // Verify batchupload from bankOne
+// const VerifyBatchUpload = async (req, res) => {
+//   try {
+//     const unresolvedMandates = [];
+//     const unresolvedAccount = [];
+//     const mine = await User.findById(req.user._id);
+//     const batchId = uuid.v4().substring(0, 8);
+//     emitter.once('results', async (results) => {
+
+//       // console.log(results.length)
+
+//       for (const item of results) {
+//         if (item.status === 'success') {
+//           switch (item.bankType) {
+//             case 'intra-bank':
+//               if (item.data.Name != null) {
+//                 const request = new InitiateRequest({
+//                   NIPSessionID: item.data.SessionID,
+//                   amount: item.amount,
+//                   payerAccountNumber: item.payerAccountNumber,
+//                   narration: item.narration,
+//                   beneficiaryAccountName: item.data.Name,
+//                   beneficiaryAccountNumber: item.accountNumber,
+//                   beneficiaryAccountType: item.accountType,
+//                   beneficiaryBVN: item.data.BVN,
+//                   beneficiaryBankCode: item.bankCode,
+//                   beneficiaryBankName: item.bankName,
+//                   beneficiaryKYC: item.data.KYC,
+//                   organizationId: mine.organizationId.toString(),
+//                   transactionReference: generateRandomCode(),
+//                   type: item.bankType,
+//                   batchId: batchId
+//                 });
+
+//                 const mandate = await Mandate.findOne({
+//                   organizationId: mine.organizationId.toString(),
+//                   minAmount: { $lte: request.amount },
+//                   maxAmount: { $gte: request.amount },
+//                 }).populate({
+//                   path: "authoriser",
+//                   select: "firstName lastName email phone",
+//                 });
+
+//                 if (!mandate) {
+//                   unresolvedMandates.push({
+//                     amount: item.amount,
+//                     accountNumber: item.accountNumber,
+//                     bankName: item.bankName,
+//                     error: "No mandate found for this amount"
+//                   });
+//                   continue;
+//                 }
+
+//                 request.mandate = mandate._id;
+//                 request.initiator = req.user._id;
+
+//                 const result = await request.save();
+//                 const notificationsToCreate = [];
+
+//                 for (const authoriser of mandate.authoriser) {
+//                   const notification = {
+//                     title: "Transaction request Initiated",
+//                     transaction: result._id,
+//                     user: authoriser._id,
+//                     message:
+//                       "A transaction request was initiated and is awaiting your approval",
+//                   };
+
+//                   notificationsToCreate.push(notification);
+
+//                   //Mail notification
+//                   const subject = "Transaction Request Initiated";
+
+
+//                   const message = {
+//                     firstName: authoriser.firstName,
+//                     message: `The below request was initiated for your authorization.
+//               TransactionID: ${result._id}    Amount: ${result.amount}  Kindly login to your account to review
+//              `,
+//                     year: new Date().getFullYear()
+//                   }
+
+//                   await sendEmail(authoriser.email, subject, 'transfer-request', message);
+//                 }
+
+//                 // send out notifications
+//                 await notificationService.createNotifications(notificationsToCreate);
+
+//                 // create audit trail
+//                 const user = await userService.getUserById(req.user._id);
+//                 const { date, time } = getDateAndTime();
+//                 await auditTrailService.createAuditTrail({
+//                   user: req.user._id,
+//                   type: "transaction",
+//                   transaction: result._id,
+//                   message: `${user.firstName} ${user.lastName} initiated a transaction request on ${date} by ${time}`,
+//                   organization: mine.organizationId,
+//                 });
+//               }else{
+//                 unresolvedAccount.push(item);
+//               }
+//               break;
+//             case 'inter-bank':
+//               if (item.data.Name != null) {
+//                 const request = new InitiateRequest({
+//                   NIPSessionID: item.data.SessionID,
+//                   amount: item.amount,
+//                   payerAccountNumber: item.payerAccountNumber,
+//                   narration: item.narration,
+//                   beneficiaryAccountName: item.data.Name,
+//                   beneficiaryAccountNumber: item.accountNumber,
+//                   beneficiaryAccountType: item.accountType,
+//                   beneficiaryBVN: item.data.BVN,
+//                   beneficiaryBankCode: item.bankCode,
+//                   beneficiaryBankName: item.bankName,
+//                   beneficiaryKYC: item.data.KYC,
+//                   organizationId: mine.organizationId.toString(),
+//                   transactionReference: generateRandomCode(),
+//                   type: item.bankType,
+//                   batchId: batchId
+//                 });
+
+//                 const mandate = await Mandate.findOne({
+//                   organizationId: mine.organizationId.toString(),
+//                   minAmount: { $lte: request.amount },
+//                   maxAmount: { $gte: request.amount },
+//                 }).populate({
+//                   path: "verifiers",
+//                   select: "firstName lastName email phone",
+//                 });
+
+//                 if (!mandate) {
+//                   unresolvedMandates.push({
+//                     amount: item.amount,
+//                     accountNumber: item.accountNumber,
+//                     bankName: item.bankName,
+//                     error: "No mandate found for this amount"
+//                   });
+//                   continue;
+//                 }
+
+//                 request.mandate = mandate._id;
+//                 request.initiator = req.user._id;
+
+//                 const result = await request.save();
+//                 const notificationsToCreate = [];
+
+//                 for (const verifier of mandate.verifiers) {
+//                   const notification = {
+//                     title: "Transaction request Initiated",
+//                     transaction: result._id,
+//                     user: verifier._id,
+//                     message:
+//                       "A transaction request was initiated and is awaiting your approval",
+//                   };
+
+//                   notificationsToCreate.push(notification);
+
+//                   //Mail notification
+//                   const subject = "Transaction Request Initiated";
+
+
+//                   const message = {
+//                     firstName: verifier.firstName,
+//                     message: `The below request was initiated for your verificationc.
+//               TransactionID: ${result._id}    Amount: ${result.amount}  Kindly login to your account to review
+//              `,
+//                     year: new Date().getFullYear()
+//                   }
+
+//                   await sendEmail(verifier.email, subject, 'transfer-request', message);
+//                 }
+
+//                 // send out notifications
+//                 await notificationService.createNotifications(notificationsToCreate);
+
+//                 // create audit trail
+//                 const user = await userService.getUserById(req.user._id);
+//                 const { date, time } = getDateAndTime();
+//                 await auditTrailService.createAuditTrail({
+//                   user: req.user._id,
+//                   type: "transaction",
+//                   transaction: result._id,
+//                   message: `${user.firstName} ${user.lastName} initiated a transaction request on ${date} by ${time}`,
+//                   organization: mine.organizationId,
+//                 });
+//               }else{
+//                 unresolvedAccount.push(item);
+//               }
+//               break
+//             default:
+//               unresolvedAccount.push(item);
+//           }
+
+//         } else {
+//           unresolvedAccount.push(item);
+//         }
+//       }
+
+//       // console.log('UR',unresolvedAccount.length)
+//       // console.log('M',unresolvedMandates.length)
+//       return res.status(200).json({
+//         message: "Transactions initiated successfully",
+//         status: "success",
+//         data: { unresolvedMandates, unresolvedAccount }
+//       })
+//     })
+//   } catch (error) {
+//     console.log(error);
+//     return res.status(500).json({ message: error.message });
+//   }
+// };
+
 const VerifyBatchUpload = async (req, res) => {
   try {
     const unresolvedMandates = [];
@@ -26,13 +238,15 @@ const VerifyBatchUpload = async (req, res) => {
     const mine = await User.findById(req.user._id);
     const batchId = uuid.v4().substring(0, 8);
     emitter.once('results', async (results) => {
-
-      // console.log(results.length)
+      const notificationsToCreate = [];
+      const emailsToSend = [];
+      const auditTrailsToCreate = [];
 
       for (const item of results) {
         if (item.status === 'success') {
           switch (item.bankType) {
             case 'intra-bank':
+              console.log(item)
               if (item.data.Name != null) {
                 const request = new InitiateRequest({
                   NIPSessionID: item.data.SessionID,
@@ -75,48 +289,42 @@ const VerifyBatchUpload = async (req, res) => {
                 request.initiator = req.user._id;
 
                 const result = await request.save();
-                const notificationsToCreate = [];
 
-                for (const authoriser of mandate.authoriser) {
-                  const notification = {
-                    title: "Transaction request Initiated",
-                    transaction: result._id,
-                    user: authoriser._id,
-                    message:
-                      "A transaction request was initiated and is awaiting your approval",
-                  };
+                for (const verifier of mandate.verifiers) {
+                  if (!notificationsToCreate.some(notification => notification.user.equals(verifier._id))) {
+                    const notification = {
+                      title: "Transaction request Initiated",
+                      transaction: result._id,
+                      user: verifier._id,
+                      message: "some transaction requests was initiated and is awaiting your approval",
+                    };
+                    notificationsToCreate.push(notification);
 
-                  notificationsToCreate.push(notification);
-
-                  //Mail notification
-                  const subject = "Transaction Request Initiated";
-
-
-                  const message = {
-                    firstName: authoriser.firstName,
-                    message: `The below request was initiated for your authorization.
-              TransactionID: ${result._id}    Amount: ${result.amount}  Kindly login to your account to review
-             `,
-                    year: new Date().getFullYear()
+                    const subject = "Transaction Request Initiated";
+                    const message = {
+                      firstName: verifier.firstName,
+                      message: `The below request was initiated for your verification.
+                      TransactionID: ${result._id}    Amount: ${result.amount}  Kindly login to your account to review`,
+                      year: new Date().getFullYear()
+                    };
+                    emailsToSend.push({ email: verifier.email, subject, template: 'transfer-request', message });
                   }
-
-                  await sendEmail(authoriser.email, subject, 'transfer-request', message);
                 }
 
-                // send out notifications
-                await notificationService.createNotifications(notificationsToCreate);
-
-                // create audit trail
                 const user = await userService.getUserById(req.user._id);
                 const { date, time } = getDateAndTime();
-                await auditTrailService.createAuditTrail({
+                const auditTrail = {
                   user: req.user._id,
                   type: "transaction",
                   transaction: result._id,
-                  message: `${user.firstName} ${user.lastName} initiated a transaction request on ${date} by ${time}`,
+                  message: `${user.firstName} ${user.lastName} initiated some transaction requests on ${date} by ${time}`,
                   organization: mine.organizationId,
-                });
-              }else{
+                };
+                if (!auditTrailsToCreate.some(trail => trail.user === auditTrail.user)) {
+                  auditTrailsToCreate.push(auditTrail);
+                }
+
+              } else {
                 unresolvedAccount.push(item);
               }
               break;
@@ -163,73 +371,83 @@ const VerifyBatchUpload = async (req, res) => {
                 request.initiator = req.user._id;
 
                 const result = await request.save();
-                const notificationsToCreate = [];
 
                 for (const verifier of mandate.verifiers) {
-                  const notification = {
-                    title: "Transaction request Initiated",
-                    transaction: result._id,
-                    user: verifier._id,
-                    message:
-                      "A transaction request was initiated and is awaiting your approval",
-                  };
+                  if (!notificationsToCreate.some(notification => notification.user.equals(verifier._id))) {
+                    const notification = {
+                      title: "Transaction request Initiated",
+                      transaction: result._id,
+                      user: verifier._id,
+                      message: "some transaction requests was initiated and is awaiting your approval",
+                    };
+                    notificationsToCreate.push(notification);
 
-                  notificationsToCreate.push(notification);
-
-                  //Mail notification
-                  const subject = "Transaction Request Initiated";
-
-
-                  const message = {
-                    firstName: verifier.firstName,
-                    message: `The below request was initiated for your verificationc.
-              TransactionID: ${result._id}    Amount: ${result.amount}  Kindly login to your account to review
-             `,
-                    year: new Date().getFullYear()
+                    const subject = "Transaction Request Initiated";
+                    const message = {
+                      firstName: verifier.firstName,
+                      message: `The below request was initiated for your verification.
+                      TransactionID: ${result._id}    Amount: ${result.amount}  Kindly login to your account to review`,
+                      year: new Date().getFullYear()
+                    };
+                    emailsToSend.push({ email: verifier.email, subject, template: 'transfer-request', message });
                   }
-
-                  await sendEmail(verifier.email, subject, 'transfer-request', message);
                 }
 
-                // send out notifications
-                await notificationService.createNotifications(notificationsToCreate);
-
-                // create audit trail
                 const user = await userService.getUserById(req.user._id);
+
                 const { date, time } = getDateAndTime();
-                await auditTrailService.createAuditTrail({
+                const auditTrail = {
                   user: req.user._id,
                   type: "transaction",
                   transaction: result._id,
-                  message: `${user.firstName} ${user.lastName} initiated a transaction request on ${date} by ${time}`,
+                  message: `${user.firstName} ${user.lastName} initiated some transaction requests on ${date} by ${time}`,
                   organization: mine.organizationId,
-                });
-              }else{
+                };
+                if (!auditTrailsToCreate.some(trail => trail.user === auditTrail.user)) {
+                  auditTrailsToCreate.push(auditTrail);
+                }
+
+              } else {
                 unresolvedAccount.push(item);
               }
-              break
+              break;
             default:
               unresolvedAccount.push(item);
           }
-
         } else {
           unresolvedAccount.push(item);
         }
       }
 
-      // console.log('UR',unresolvedAccount.length)
-      // console.log('M',unresolvedMandates.length)
+      // Create notifications
+      for (const notification of notificationsToCreate) {
+        await notificationService.createNotifications(notification);
+      }
+
+      // Send emails
+      for (const emailData of emailsToSend) {
+        await sendEmail(emailData.email, emailData.subject, emailData.template, emailData.message);
+      }
+
+
+      // Create audit trails
+      for (const audit of auditTrailsToCreate) {
+        await auditTrailService.createAuditTrail(audit);
+      }
+
+
       return res.status(200).json({
         message: "Transactions initiated successfully",
         status: "success",
         data: { unresolvedMandates, unresolvedAccount }
-      })
-    })
+      });
+    });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: error.message });
   }
 };
+
 
 function generateRandomCode() {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
