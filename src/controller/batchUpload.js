@@ -33,7 +33,6 @@ const VerifyBatchUpload = async (req, res) => {
         if (item.status === 'success') {
           switch (item.bankType) {
             case 'intra-bank':
-              console.log(item)
               if (item.data.Name != null) {
                 const request = new InitiateRequest({
                   NIPSessionID: item.data.SessionID,
@@ -58,7 +57,7 @@ const VerifyBatchUpload = async (req, res) => {
                   minAmount: { $lte: request.amount },
                   maxAmount: { $gte: request.amount },
                 }).populate({
-                  path: "authoriser",
+                  path: "verifiers",
                   select: "firstName lastName email phone",
                 });
 
@@ -78,6 +77,7 @@ const VerifyBatchUpload = async (req, res) => {
                 const result = await request.save();
 
                 for (const verifier of mandate.verifiers) {
+                 
                   if (!notificationsToCreate.some(notification => notification.user.equals(verifier._id))) {
                     const notification = {
                       title: "Transaction request Initiated",
