@@ -245,7 +245,7 @@ const changePassword = async (req, res) => {
 
 const getAllUsers = async (req, res) => {
   try {
-    const { page, perPage, search } = req.query;
+    const { page, perPage, search, withPagination } = req.query;
 
     const options = {
       limit: perPage || PER_PAGE,
@@ -253,25 +253,57 @@ const getAllUsers = async (req, res) => {
       sort: { _id: -1 },
     };
 
+
     const matchStage = {};
-    if (search) {
-      const trimmedSearch = search.trim();
-      matchStage.$or = [
-        { firstName: { $regex: new RegExp(trimmedSearch, "i") } },
-        { lastName: { $regex: new RegExp(trimmedSearch, "i") } },
-        { email: { $regex: new RegExp(trimmedSearch, "i") } },
-        {
-          $expr: {
-            $regexMatch: {
-              input: { $concat: ["$firstName", " ", "$lastName"] },
-              regex: new RegExp(trimmedSearch, "i"),
+      if (search) {
+        const trimmedSearch = search.trim();
+        matchStage.$or = [
+          { firstName: { $regex: new RegExp(trimmedSearch, "i") } },
+          { lastName: { $regex: new RegExp(trimmedSearch, "i") } },
+          { email: { $regex: new RegExp(trimmedSearch, "i") } },
+          {
+            $expr: {
+              $regexMatch: {
+                input: { $concat: ["$firstName", " ", "$lastName"] },
+                regex: new RegExp(trimmedSearch, "i"),
+              },
             },
           },
-        },
-      ];
-    }
+        ];
+      }
 
-    const totalCount = await User.countDocuments(matchStage);
+
+      const totalCount = await User.countDocuments(matchStage);
+
+    if (withPagination === 'false') {
+      const users = await User.find(matchStage)
+        .sort({_id:-1})
+        .populate({
+          path: "organizationId",
+          select: "accountName",
+        })
+        .populate({
+          path: "privileges",
+          select: "name",
+        });
+
+      if (totalCount == 0) {
+        return res.status(404).json({
+          message: "No user found with the provided name",
+          status: "failed",
+        });
+      }
+
+      return res.status(200).json({
+        message: "Successfully fetched users",
+        data: {
+          users,
+          meta: { total: totalCount},
+        },
+        status: "success",
+      });
+    }
+    
     const users = await User.find(matchStage)
       .sort(options.sort)
       .skip((options.page - 1) * options.limit)
@@ -300,6 +332,7 @@ const getAllUsers = async (req, res) => {
       },
       status: "success",
     });
+
   } catch (error) {
     res.status(500).json({
       message: error.message,
