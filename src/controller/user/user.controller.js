@@ -3,7 +3,9 @@ const bcrypt = require("bcrypt");
 const { PER_PAGE } = require("../../utils/constants");
 const mongoose = require("mongoose");
 const Privilege = require("../../model/privilege.model");
-const Account = require("../../model/account")
+const Account = require("../../model/account");
+const { auditTrailService , userService} = require("../../services");
+const { getDateAndTime } = require("../../utils/utils");
 
 const getOrganizationUsers = async (req, res) => {
   try {
@@ -482,7 +484,16 @@ const disableAccount = async (req, res) => {
     }
 
     const disableUser = await User.updateOne({ _id: req.params.userid }, { $set: { disabled: true } })
+    const user = await userService.getUserById(req.user._id);
+    const { date, time } = getDateAndTime();
     if (disableUser.modifiedCount > 0) {
+      //create audit trial
+      const auditTrail = {
+        user: req.user._id,
+        type: "disable account",
+        message: `${user.firstName} ${user.lastName} disabled ${checkUser.firstName} ${checkUser.lastName} account on ${date} by ${time}`,
+      };
+      await auditTrailService.createAuditTrail(auditTrail)
       return res.status(200).send({
         success: true,
         message: 'Account successfully disabled'
@@ -519,7 +530,18 @@ const enableAccount = async (req, res) => {
     }
 
     const enableUser = await User.updateOne({ _id: req.params.userid }, { $set: { disabled: false } })
+
+    const user = await userService.getUserById(req.user._id);
+    const { date, time } = getDateAndTime();
     if (enableUser.modifiedCount > 0) {
+      //create audit trial
+      const auditTrail = {
+        user: req.user._id,
+        type: "enable account",
+        message: `${user.firstName} ${user.lastName} enabled ${checkUser.firstName} ${checkUser.lastName} account on ${date} by ${time}`,
+      };
+      await auditTrailService.createAuditTrail(auditTrail)
+
       return res.status(200).send({
         success: true,
         message: 'Account successfully enable'
