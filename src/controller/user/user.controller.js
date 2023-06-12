@@ -489,8 +489,7 @@ const disableAccount = async (req, res) => {
     if (checkMandate.length > 0) {
       return res.status(400).send({
         success: false,
-        message: 'Sorry this user is already tied to the following mandates, replace this user from all available mandates before disabling.',
-        data:checkMandate
+        message: 'Sorry this user is already tied to the following mandates, replace this user from all available mandates before disabling.'
       })
     }
 
