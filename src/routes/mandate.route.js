@@ -5,7 +5,8 @@ const {
   updateMandate,
   getAllMandates,
   getSingleMandate,
-  deleteMandate
+  deleteMandate,
+  updateMandateAuthorizerVerifiers
 } = require("../controller/mandate/mandate.controller");
 const { validate, mandateSchemas } = require("../validations");
 const {
@@ -25,6 +26,7 @@ router.put("/update/:mandateId", adminAuth, updateMandate);
 router.get("/all", allUsersAuth, getAllMandates);
 router.get("/:id", allUsersAuth, getSingleMandate);
 router.delete('/deleteMandate/:mandateId',adminAuth, deleteMandate)
+router.patch('/updateMandateAuthorizerVerifiers', superUserAuth, updateMandateAuthorizerVerifiers)
 
 
 

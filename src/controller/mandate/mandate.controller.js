@@ -4,13 +4,14 @@ const { PER_PAGE } = require("../../utils/constants");
 const User = require("../../model/user.model");
 const Joi = require("joi");
 const InitiateRequest = require("../../model/initiateRequest.model")
+const Privilege = require("../../model/privilege.model")
 
 //@desc     register a mandate
 //@route    POST /mandate/register
 //@access   Public
 const registerMandate = async (req, res) => {
   try {
-    
+
     const { organizationId } = req.user;
     const mandateExists = await Mandate.findOne({ name: req.body.name, organizationId: organizationId });
     if (mandateExists) {
@@ -73,7 +74,7 @@ const registerMandate = async (req, res) => {
 
     } else {
 
-      if(req.body.minAmount !== 0){
+      if (req.body.minAmount !== 0) {
         return res.status(400).json({
           status: "failed",
           message: "minAmount must be from 0",
@@ -210,27 +211,27 @@ const getSingleMandate = async (req, res) => {
 };
 
 
-const deleteMandate = async(req, res) =>{
-  try{
-    const checkMandate = await Mandate.findOne({_id:req.params.mandateId})
-    if(!checkMandate){
+const deleteMandate = async (req, res) => {
+  try {
+    const checkMandate = await Mandate.findOne({ _id: req.params.mandateId })
+    if (!checkMandate) {
       return res.status(400).send({
         success: false,
-        message:'can\'t find this madate'
+        message: 'can\'t find this madate'
       })
     }
     //check if mandate is tied to a transfer request
-    const checkTransfer = await InitiateRequest.find({mandate:req.params.mandateId})
+    const checkTransfer = await InitiateRequest.find({ mandate: req.params.mandateId })
 
-    if(checkTransfer.length > 0){
+    if (checkTransfer.length > 0) {
       return res.status(400).send({
         success: false,
-        message:'can\'t delete this mandate, this mandate is tied to one or more transfers'
+        message: 'can\'t delete this mandate, this mandate is tied to one or more transfers'
       })
     }
-    
-    const deleteMandate = await Mandate.deleteOne({_id:req.params.mandateId})
-    if(deleteMandate.deletedCount > 0){
+
+    const deleteMandate = await Mandate.deleteOne({ _id: req.params.mandateId })
+    if (deleteMandate.deletedCount > 0) {
       return res.status(200).send({
         success: true,
         message: 'mandate deleted'
@@ -241,7 +242,7 @@ const deleteMandate = async(req, res) =>{
       message: 'Error deleting mandate'
     })
 
-  }catch(error){
+  } catch (error) {
     console.log(error)
     return res.status(500).send({
       message: error.message
@@ -249,10 +250,129 @@ const deleteMandate = async(req, res) =>{
   }
 }
 
+const updateMandateAuthorizerVerifiers = async (req, res) => {
+  try {
+    // Check the privilege of the incoming user
+    const checkUserPrivilege = await User.findOne({ _id: req.body.incomingUser });
+    const getMandateInfo = await Mandate.findOne({ _id: req.body.mandateId });
+
+    if (!checkUserPrivilege) {
+      return res.status(400).send({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    switch (req.body.type) {
+      case 'authoriser':
+        const getPrivilegeId = await Privilege.findOne({ name: 'authoriser' });
+
+        if (checkUserPrivilege.privileges[0].toString() !== getPrivilegeId._id.toString()) {
+          return res.status(400).send({
+            success: false,
+            message: 'This user does not have the privilege of an authoriser'
+          });
+        }
+
+        // Check if the incoming user is in the same organization as the mandate
+        if (checkUserPrivilege.organizationId.toString() !== getMandateInfo.organizationId.toString()) {
+          return res.status(400).send({
+            success: false,
+            message: 'This user does not belong to this organization'
+          });
+        }
+
+        // Update all mandates with the incoming user as the authorizer
+        const updateMandateAuthorizer = await Mandate.updateMany(
+          { organizationId: getMandateInfo.organizationId, authoriser: req.body.outgoingUser },
+          { $set: { authoriser: req.body.incomingUser } }
+        );
+
+        if (updateMandateAuthorizer.matchedCount < 1) {
+          return res.status(500).send({
+            success: false,
+            message: 'There was an error updating the mandate'
+          });
+        }
+
+        return res.status(200).send({
+          success: true,
+          message: 'Authoriser updated successfully'
+        });
+
+      case 'verifier':
+        // TODO: Implement the verifier logic here
+        const getverifierPrivilegeId = await Privilege.findOne({ name: 'verifier' });
+        if (checkUserPrivilege.privileges[0].toString() !== getverifierPrivilegeId._id.toString()) {
+          return res.status(400).send({
+            success: false,
+            message: 'This user does not have the privilege of a verifier'
+          });
+        }
+
+        // Check if the incoming user is in the same organization as the mandate
+        if (checkUserPrivilege.organizationId.toString() !== getMandateInfo.organizationId.toString()) {
+          return res.status(400).send({
+            success: false,
+            message: 'This user does not belong to this organization'
+          });
+        }
+
+        // Update all mandates with the incoming user as the authorizer
+        const PullMandateVerifier = await Mandate.updateMany(
+          {
+            organizationId: getMandateInfo.organizationId,
+            verifiers: { $in: [req.body.outgoingUser] }
+          },
+          {
+            $pull: { verifiers: req.body.outgoingUser }
+          }
+        );
+        if (PullMandateVerifier.modifiedCount > 0) {
+
+          const addUser = await Mandate.updateMany({
+            organizationId: getMandateInfo.organizationId
+          },
+
+            {
+              $addToSet: { verifiers: req.body.incomingUser }
+            }
+          )
+          if (addUser.matchedCount < 1) {
+            return res.status(500).send({
+              success: false,
+              message: 'There was an error updating the mandate'
+            });
+          }
+
+          return res.status(200).send({
+            success: true,
+            message: 'verifier updated successfully'
+          });
+        }
+
+        break;
+
+      default:
+        return res.status(400).send({
+          success: false,
+          message: 'This user is not authorized to be part of a mandate'
+        });
+    }
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send({
+      message: error.message
+    });
+  }
+};
+
+
 module.exports = {
   registerMandate,
   updateMandate,
   getAllMandates,
   getSingleMandate,
-  deleteMandate
+  deleteMandate,
+  updateMandateAuthorizerVerifiers
 };
