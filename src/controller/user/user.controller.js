@@ -7,6 +7,7 @@ const Mandate = require("../../model/mandate.model");
 const Account = require("../../model/account");
 const { auditTrailService, userService } = require("../../services");
 const { getDateAndTime } = require("../../utils/utils");
+const otpModel = require("../../model/otp.model");
 
 const getOrganizationUsers = async (req, res) => {
   try {
@@ -492,6 +493,15 @@ const disableAccount = async (req, res) => {
         message: 'Sorry this user is already tied to the following mandates, replace this user from all available mandates before disabling.'
       })
     }
+    
+    // check for otp
+    const checkOtp = await otpModel.findOne({ user: req.user._id, otp: req.body.otp, context: 'disable user' })
+    if (!checkOtp) {
+      return res.status(400).send({
+        success: false,
+        message: 'invalid otp'
+      })
+    }
 
     const disableUser = await User.updateOne({ _id: req.params.userid }, { $set: { disabled: true } })
     const user = await userService.getUserById(req.user._id);
@@ -504,6 +514,7 @@ const disableAccount = async (req, res) => {
         message: `${user.firstName} ${user.lastName} disabled ${checkUser.firstName} ${checkUser.lastName} account on ${date} by ${time}`,
       };
       await auditTrailService.createAuditTrail(auditTrail)
+      checkOtp.delete()
       return res.status(200).send({
         success: true,
         message: 'Account successfully disabled'
