@@ -3,6 +3,7 @@ const bcrypt = require("bcrypt");
 const { PER_PAGE } = require("../../utils/constants");
 const mongoose = require("mongoose");
 const Privilege = require("../../model/privilege.model");
+const Mandate = require("../../model/mandate.model");
 const Account = require("../../model/account");
 const { auditTrailService, userService } = require("../../services");
 const { getDateAndTime } = require("../../utils/utils");
@@ -484,6 +485,15 @@ const disableAccount = async (req, res) => {
       })
     }
 
+    //check if account is tied to a mandate
+    const checkMandate = await Mandate.find({ $or: [{ authoriser: req.params.userid }, { verifiers: { $in: [req.params.userid] } }] })
+    if (checkMandate.length > 0) {
+      return res.status(400).send({
+        success: false,
+        message: 'Sorry this user is already tied to the following mandates, replace this user from all available mandates before disabling.'
+      })
+    }
+    
     // check for otp
     const checkOtp = await otpModel.findOne({ user: req.user._id, otp: req.body.otp, context: 'disable user' })
     if (!checkOtp) {
