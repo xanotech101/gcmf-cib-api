@@ -350,7 +350,10 @@ const updateMandateAuthorizerVerifiers = async (req, res) => {
             message: 'verifier updated successfully'
           });
         }
-
+        res.status(500).send({
+          success: true,
+          message: 'Error update this verifier'
+        });
         break;
 
       default:
