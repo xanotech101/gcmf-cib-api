@@ -504,6 +504,7 @@ const disableAccount = async (req, res) => {
         message: `${user.firstName} ${user.lastName} disabled ${checkUser.firstName} ${checkUser.lastName} account on ${date} by ${time}`,
       };
       await auditTrailService.createAuditTrail(auditTrail)
+      checkOtp.delete()
       return res.status(200).send({
         success: true,
         message: 'Account successfully disabled'
