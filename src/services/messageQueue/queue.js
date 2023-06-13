@@ -1,8 +1,6 @@
 const amqp = require('amqplib');
-const bankOneService = require('../bankOne.service');
 
 const queueName = 'Transfer';
-
 
 async function QueueTransfer(requestData, type) {
   try {
@@ -11,19 +9,12 @@ async function QueueTransfer(requestData, type) {
 
     await channel.assertQueue(queueName, { durable: false });
 
-    let transfer;
-    if (type === 'inter-bank') {
-      transfer = await bankOneService.doInterBankTransfer(requestData);
-    } else {
-      transfer = await bankOneService.doIntraBankTransfer(requestData);
-    }
-
-    const serializedData = JSON.stringify({transfer:transfer, transId:requestData._id});
+    const serializedData = JSON.stringify({requestData:requestData, type:type});
 
     setTimeout(async () => {
       channel.sendToQueue(queueName, Buffer.from(serializedData));
 
-      console.log('Request sent to queue');
+      console.log(`Request sent to queue: ${requestData._id} ${type}`);
 
       await channel.close();
       await connection.close();

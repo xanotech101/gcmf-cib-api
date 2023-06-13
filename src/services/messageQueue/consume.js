@@ -1,5 +1,6 @@
 const amqp = require('amqplib');
-const InitiateRequest = require("../../model/initiateRequest.model")
+const InitiateRequest = require("../../model/initiateRequest.model");
+const bankOneService = require('../bankOne.service');
 const queueName = 'Transfer';
 
 async function consumeTransferRequest() {
@@ -11,11 +12,19 @@ async function consumeTransferRequest() {
 
         channel.consume(queueName, async (message) => {
             if (message !== null) {
+
                 const serializedMessage = message.content.toString();
                 try {
-                    const { transfer, transId } = JSON.parse(serializedMessage);
-                    if (transfer || transId) {
-                        const request = await InitiateRequest.findById(transId)
+                    const { requestData, type } = JSON.parse(serializedMessage);
+
+                    let transfer;
+                    if (type === 'inter-bank') {
+                        transfer = await bankOneService.doInterBankTransfer(requestData);
+                    } else {
+                        transfer = await bankOneService.doIntraBankTransfer(requestData);
+                    }
+                    if (transfer) {
+                        const request = await InitiateRequest.findById(requestData._id)
                         if (transfer?.Status === "Successful" || transfer?.ResponseCode === "00") {
                             request.transferStatus = "successful";
                             request.meta = transfer;
@@ -34,7 +43,7 @@ async function consumeTransferRequest() {
                             await request.save();
                         }
                     }
-                    console.log('resolved transfer')
+                    console.log(`resolved transfer ${requestData._id} ${type}`)
                     channel.ack(message);
                 } catch (error) {
                     console.error('Response processing error:', error);
