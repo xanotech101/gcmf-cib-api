@@ -135,7 +135,7 @@ async function sendToGolang(data) {
             const batch = data.slice(i, i + batchSize);
 
             try {
-                const response = await axios.post('http://localhost:3003/api/verify_account', batch);
+                const response = await axios.post('http://35.169.118.252:3003/api/verify_account', batch);
                 responses.push(response.data);
                 console.log(`Batch ${i + 1}-${i + batchSize} sent successfully. ${response.data}`);
             } catch (error) {
