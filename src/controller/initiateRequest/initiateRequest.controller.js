@@ -14,6 +14,7 @@ const {
 const { getDateAndTime, toISOLocal } = require("../../utils/utils");
 const bankOneService = require("../../services/bankOne.service");
 const Account = require("../../model/account");
+const { QueueTransfer } = require("../../services/messageQueue/queue");
 const authToken = process.env.AUTHTOKEN;
 
 const initiateRequest = async (req, res) => {
@@ -452,8 +453,8 @@ const declineRequest = async (req, res) => {
 
       request.status = "awaiting authorization";
 
-       //send mail to authoriser
-       const authoriserInfo = await User.findById(request.mandate.authoriser).select(
+      //send mail to authoriser
+      const authoriserInfo = await User.findById(request.mandate.authoriser).select(
         "email firstName _id"
       );
 
@@ -710,12 +711,12 @@ const authoriserApproveRequest = async (req, res) => {
 
     // update request date
     request.updatedAt = new Date();
-    await request.save();
 
     // send request to bank one
-    let transfer;
+
     if (request.type === "inter-bank") {
       const payload = {
+        _id: request._id,
         Amount: request.amount * 100,
         Payer: organization.accountName,
         PayerAccountNumber: request.payerAccountNumber,
@@ -732,9 +733,10 @@ const authoriserApproveRequest = async (req, res) => {
         Narration: request.narration,
       };
 
-      transfer = await bankOneService.doInterBankTransfer(payload);
+      QueueTransfer(payload, 'inter-bank')
     } else {
       const payload = {
+        _id: request._id,
         Amount: request.amount * 100,
         RetrievalReference: request.transactionReference,
         FromAccountNumber: request.payerAccountNumber,
@@ -742,31 +744,17 @@ const authoriserApproveRequest = async (req, res) => {
         AuthenticationKey: authToken,
         Narration: request.narration,
       };
-      transfer = await bankOneService.doIntraBankTransfer(payload);
+      QueueTransfer(payload, 'intra-bank')
     }
 
-    if (transfer?.Status === "Successful" || transfer?.ResponseCode === "00") {
-      request.transferStatus = "successful";
-      request.meta = transfer;
-      await request.save();
-    } else if (
-      transfer?.Status === "Pending" ||
-      ["91", "06"].includes(transfer?.ResponseCode)
-    ) {
-      request.meta = transfer;
-      request.updatedAt = new Date();
-      await request.save();
-    } else {
-      request.meta = transfer;
-      request.updatedAt = new Date();
-      request.transferStatus = "failed";
-      await request.save();
-    }
+    request.transferStatus = "queued";
+    await request.save();
+
     return res.status(200).json({
       message: "Request approved successfully",
-      status: "success",
-      meta: transfer,
+      status: "success"
     });
+
   } catch (error) {
     console.log(error);
     res.status(500).json({
@@ -1127,7 +1115,7 @@ const approveBulkRequest = async (req, res) => {
         reference: notificationMessages[0].transaction,
         year: new Date().getFullYear(),
       };
-      
+
       await sendEmail(
         authoriserInfo.email,
         notificationMessages[0].title,
@@ -1249,12 +1237,15 @@ const authoriserBulkaprove = async (req, res) => {
 
       // update request date
       request.updatedAt = new Date();
+
+      request.transferStatus = "queued";
       await request.save();
 
       // send request to bank one
 
       if (request.type === "inter-bank") {
         const payload = {
+          _id: request._id,
           Amount: request.amount * 100,
           Payer: organization.accountName,
           PayerAccountNumber: request.payerAccountNumber,
@@ -1271,9 +1262,10 @@ const authoriserBulkaprove = async (req, res) => {
           Narration: request.narration,
         };
 
-        transfer = await bankOneService.doInterBankTransfer(payload);
+        QueueTransfer(payload, 'inter-bank')
       } else {
         const payload = {
+          _id: request._id,
           Amount: request.amount * 100,
           RetrievalReference: request.transactionReference,
           FromAccountNumber: request.payerAccountNumber,
@@ -1281,32 +1273,12 @@ const authoriserBulkaprove = async (req, res) => {
           AuthenticationKey: authToken,
           Narration: request.narration,
         };
-        transfer = await bankOneService.doIntraBankTransfer(payload);
-      }
-
-      if (
-        transfer?.Status === "Successful" ||
-        transfer?.ResponseCode === "00"
-      ) {
-        request.meta = transfer;
-        request.transferStatus = "successful";
-        await request.save();
-      } else if (transfer?.Status === "Failed") {
-        request.meta = transfer;
-        request.transferStatus = "failed";
-        request.updatedAt = new Date();
-        await request.save();
-      } else {
-        request.meta = transfer;
-        request.updatedAt = new Date();
-        await request.save();
+        QueueTransfer(payload, 'intra-bank')
       }
     });
-
     return res.status(200).json({
       message: "Request approved successfully",
-      status: "success",
-      meta: transfer,
+      status: "success"
     });
   } catch (error) {
     console.log(error);
