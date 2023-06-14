@@ -30,6 +30,7 @@ const gcadminRoute = require('./routes/gcadmin.route')
 const cors = require("cors");
 const connectDB = require("./config/db");
 const { sendSMS } = require("./services/sms.service");
+const { setup } = require("./services/messageQueue/queueing_system");
 
 
 let URI = process.env.MONGO_URI;
@@ -55,6 +56,16 @@ app.use(
     preflightContinue: false,
   })
 );
+
+// ConnectMQ().then(() =>{
+//   ConsumeFromQueue()
+// }).catch((error) =>{
+//   console.log(error)
+// })
+
+setup().catch((error) => {
+  console.error(error);
+});
 
 app.use('/static', express.static(path.join(__dirname, 'public')))
 

@@ -23,6 +23,7 @@
   "homepage": "https://github.com/xanotech101/gcmf-cib-api#readme",
   "dependencies": {
     "africastalking": "^0.6.0",
+    "amqplib": "^0.10.3",
     "axios": "^1.3.0",
     "bcrypt": "^5.1.0",
     "body-parser": "^1.20.1",

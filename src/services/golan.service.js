@@ -105,7 +105,7 @@ async function Verify_Account(req, res, next) {
             }
             return obj;
         });
-        // Send the data to Kafka
+        // Send the data to RMQ
         sendToGolang(formattedData);
         // Call the next middleware function
         next();
