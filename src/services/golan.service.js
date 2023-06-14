@@ -94,7 +94,16 @@ async function Verify_Account(req, res, next) {
         }
 
         // Filter the formattedData array to include only objects that have non-empty values for accountType, bankCode, and banktype
-        formattedData = formattedData.filter((obj) => obj.accountNumber && obj.accountNumber.trim() !== '' && obj.bankCode && obj.bankCode.trim() !== '');
+        formattedData = formattedData.filter((obj) => {
+            if (obj.banktype === 'intra-bank') {
+                return obj.accountNumber && obj.accountNumber.trim() !== '';
+            } else {
+                return (
+                    obj.accountNumber && obj.accountNumber.trim() !== '' &&
+                    obj.bankCode && obj.bankCode.trim() !== ''
+                );
+            }
+        });
 
         // Convert values to strings
         formattedData = formattedData.map(obj => {
