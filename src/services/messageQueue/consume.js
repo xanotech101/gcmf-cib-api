@@ -5,7 +5,7 @@ const queueName = 'Transfer';
 
 async function consumeTransferRequest() {
     try {
-        const connection = await amqp.connect('http://54.163.217.223:15672/');
+        const connection = await amqp.connect(process.env.RABBIT_MQ_URL || 'amqp://localhost');
         const channel = await connection.createChannel();
 
         await channel.assertQueue(queueName, { durable: false });
