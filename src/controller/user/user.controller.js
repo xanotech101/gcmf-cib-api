@@ -3,9 +3,11 @@ const bcrypt = require("bcrypt");
 const { PER_PAGE } = require("../../utils/constants");
 const mongoose = require("mongoose");
 const Privilege = require("../../model/privilege.model");
+const Mandate = require("../../model/mandate.model");
 const Account = require("../../model/account");
-const { auditTrailService , userService} = require("../../services");
+const { auditTrailService, userService } = require("../../services");
 const { getDateAndTime } = require("../../utils/utils");
+const otpModel = require("../../model/otp.model");
 
 const getOrganizationUsers = async (req, res) => {
   try {
@@ -255,29 +257,29 @@ const getAllUsers = async (req, res) => {
 
 
     const matchStage = {};
-      if (search) {
-        const trimmedSearch = search.trim();
-        matchStage.$or = [
-          { firstName: { $regex: new RegExp(trimmedSearch, "i") } },
-          { lastName: { $regex: new RegExp(trimmedSearch, "i") } },
-          { email: { $regex: new RegExp(trimmedSearch, "i") } },
-          {
-            $expr: {
-              $regexMatch: {
-                input: { $concat: ["$firstName", " ", "$lastName"] },
-                regex: new RegExp(trimmedSearch, "i"),
-              },
+    if (search) {
+      const trimmedSearch = search.trim();
+      matchStage.$or = [
+        { firstName: { $regex: new RegExp(trimmedSearch, "i") } },
+        { lastName: { $regex: new RegExp(trimmedSearch, "i") } },
+        { email: { $regex: new RegExp(trimmedSearch, "i") } },
+        {
+          $expr: {
+            $regexMatch: {
+              input: { $concat: ["$firstName", " ", "$lastName"] },
+              regex: new RegExp(trimmedSearch, "i"),
             },
           },
-        ];
-      }
+        },
+      ];
+    }
 
 
-      const totalCount = await User.countDocuments(matchStage);
+    const totalCount = await User.countDocuments(matchStage);
 
     if (withPagination === 'false') {
       const users = await User.find(matchStage)
-        .sort({_id:-1})
+        .sort({ _id: -1 })
         .populate({
           path: "organizationId",
           select: "accountName",
@@ -298,12 +300,12 @@ const getAllUsers = async (req, res) => {
         message: "Successfully fetched users",
         data: {
           users,
-          meta: { total: totalCount},
+          meta: { total: totalCount },
         },
         status: "success",
       });
     }
-    
+
     const users = await User.find(matchStage)
       .sort(options.sort)
       .skip((options.page - 1) * options.limit)
@@ -483,6 +485,24 @@ const disableAccount = async (req, res) => {
       })
     }
 
+    //check if account is tied to a mandate
+    const checkMandate = await Mandate.find({ $or: [{ authoriser: req.params.userid }, { verifiers: { $in: [req.params.userid] } }] })
+    if (checkMandate.length > 0) {
+      return res.status(400).send({
+        success: false,
+        message: 'Sorry this user is already tied to the following mandates, replace this user from all available mandates before disabling.'
+      })
+    }
+    
+    // check for otp
+    const checkOtp = await otpModel.findOne({ user: req.user._id, otp: req.body.otp, context: 'disable user' })
+    if (!checkOtp) {
+      return res.status(400).send({
+        success: false,
+        message: 'invalid otp'
+      })
+    }
+
     const disableUser = await User.updateOne({ _id: req.params.userid }, { $set: { disabled: true } })
     const user = await userService.getUserById(req.user._id);
     const { date, time } = getDateAndTime();
@@ -494,6 +514,7 @@ const disableAccount = async (req, res) => {
         message: `${user.firstName} ${user.lastName} disabled ${checkUser.firstName} ${checkUser.lastName} account on ${date} by ${time}`,
       };
       await auditTrailService.createAuditTrail(auditTrail)
+      checkOtp.delete()
       return res.status(200).send({
         success: true,
         message: 'Account successfully disabled'
