@@ -24,12 +24,12 @@ const getOrganizationUsers = async (req, res) => {
 
     const { privilege, withPagination } = req.query;
 
-    const privilegeId =
-      (await Privilege.findOne({ name: privilege })?._id) || null;
+    const checkPrivilege = await Privilege.findOne({ name: privilege });
 
     const filter = {
       organizationId: mongoose.Types.ObjectId(id),
     };
+  
 
     if (search) {
       const trimmedSearch = search.trim();
@@ -75,6 +75,12 @@ const getOrganizationUsers = async (req, res) => {
         },
       });
     }
+
+    if(checkPrivilege) {
+      filter.privileges = { $in: [mongoose.Types.ObjectId(checkPrivilege._id)] };
+    }
+
+    console.log("filter", filter);
 
     const users = await User.find(filter)
       .sort({ _id: -1 })
@@ -467,16 +473,15 @@ const getAllAdmins = async (req, res) => {
   }
 };
 
-const disableAccount = async (req, res) => {
+const disableUser = async (req, res) => {
   try {
-    const checkUser = await User.findOne({ _id: req.params.userid })
+    const checkUser = await User.findOne({ _id: req.params.id })
     if (!checkUser) {
       return res.status(400).send({
         success: false,
         message: 'user not found on this system'
       })
     }
-
 
     if (checkUser.disabled === true) {
       return res.status(400).send({
@@ -486,11 +491,12 @@ const disableAccount = async (req, res) => {
     }
 
     //check if account is tied to a mandate
-    const checkMandate = await Mandate.find({ $or: [{ authoriser: req.params.userid }, { verifiers: { $in: [req.params.userid] } }] })
+    const checkMandate = await Mandate.find({ $or: [{ authoriser: req.params.id }, { verifiers: { $in: [req.params.id] } }] })
+    
     if (checkMandate.length > 0) {
-      return res.status(400).send({
+      return res.status(422).send({
         success: false,
-        message: 'Sorry this user is already tied to the following mandates, replace this user from all available mandates before disabling.'
+        message: 'Sorry this user is already tied a mandate, replace this user from all available mandates before disabling.'
       })
     }
     
@@ -503,9 +509,10 @@ const disableAccount = async (req, res) => {
       })
     }
 
-    const disableUser = await User.updateOne({ _id: req.params.userid }, { $set: { disabled: true } })
+    const disableUser = await User.updateOne({ _id: req.params.id }, { $set: { disabled: true } })
     const user = await userService.getUserById(req.user._id);
     const { date, time } = getDateAndTime();
+
     if (disableUser.modifiedCount > 0) {
       //create audit trial
       const auditTrail = {
@@ -532,9 +539,10 @@ const disableAccount = async (req, res) => {
   }
 }
 
-const enableAccount = async (req, res) => {
+const enableUser = async (req, res) => {
   try {
-    const checkUser = await User.findOne({ _id: req.params.userid })
+    const checkUser = await User.findOne({ _id: req.params.id })
+
     if (!checkUser) {
       return res.status(400).send({
         success: false,
@@ -542,6 +550,14 @@ const enableAccount = async (req, res) => {
       })
     }
 
+    const checkOtp = await otpModel.findOne({ user: req.user._id, otp: req.body.otp, context: 'enable user' })
+
+    if (!checkOtp) {
+      return res.status(400).send({
+        success: false,
+        message: 'Invalid OTP'
+      })
+    }
 
     if (checkUser.disabled === false) {
       return res.status(400).send({
@@ -549,25 +565,27 @@ const enableAccount = async (req, res) => {
         message: 'this account is already enabled'
       })
     }
-
-    const enableUser = await User.updateOne({ _id: req.params.userid }, { $set: { disabled: false } })
-
+    
+    const enableUser = await User.updateOne({ _id: req.params.id }, { $set: { disabled: false } })
     const user = await userService.getUserById(req.user._id);
+
     const { date, time } = getDateAndTime();
     if (enableUser.modifiedCount > 0) {
-      //create audit trial
       const auditTrail = {
         user: req.user._id,
         type: "enable account",
         message: `${user.firstName} ${user.lastName} enabled ${checkUser.firstName} ${checkUser.lastName} account on ${date} by ${time}`,
       };
+
       await auditTrailService.createAuditTrail(auditTrail)
+      checkOtp.delete()
 
       return res.status(200).send({
         success: true,
         message: 'Account successfully enable'
       })
     }
+  
     return res.status(500).send({
       success: false,
       message: 'Error enabling account'
@@ -580,7 +598,7 @@ const enableAccount = async (req, res) => {
   }
 }
 
-const DeleteAccount = async (req, res) => {
+const deleteAccount = async (req, res) => {
   try {
 
     const findAccount = await User.findOne({ _id: mongoose.Types.ObjectId(req.params.id) });
@@ -633,7 +651,7 @@ module.exports = {
   updateUserPriviledge,
   getUserProfileById,
   getAllAdmins,
-  disableAccount,
-  enableAccount,
-  DeleteAccount
+  disableUser,
+  enableUser,
+  deleteAccount
 };
