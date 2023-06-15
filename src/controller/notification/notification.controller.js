@@ -41,9 +41,6 @@ const getMyNotifications = async (req, res) => {
         $unwind: "$user",
       },
       {
-        $unwind: "$transaction",
-      },
-      {
         $facet: {
           data: [
             {
