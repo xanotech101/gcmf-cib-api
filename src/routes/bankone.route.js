@@ -7,7 +7,6 @@ const {
   getTransactionHistory,
   getAccountStatement,
   getNameEnquiry,
-  getTransactionsPaginated,
   interbankTransfer,
    getAccountDetails,
   getAccountInfo,
@@ -24,7 +23,6 @@ router.get("/getaccount2/:accountNo", allUsersAuth, getAccountByAccountNoV2);
 router.get("/history/:accountNo", allUsersAuth, getTransactionHistory);
 router.get("/statement/:account", allUsersAuth, getAccountStatement);
 router.post("/name-enquiry", allUsersAuth, getNameEnquiry);
-router.get("/transactions/:account", allUsersAuth, getTransactionsPaginated);
 router.post("/transfer/interbank", adminAuth, interbankTransfer);
 router.post("/details", allUsersAuth, getAccountDetails);
 router.get("/info", allUsersAuth, getAccountInfo);

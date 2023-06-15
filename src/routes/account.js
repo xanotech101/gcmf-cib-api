@@ -9,7 +9,6 @@ const {
   verifyAccount,
   getAccount,
   bulkOnboard,
-  DeleteAccount,
 } = require("../controller/account");
 const upload = require("../middleware/multer");
 

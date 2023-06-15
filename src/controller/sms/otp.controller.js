@@ -240,6 +240,76 @@ const disableUserOtp = async(req, res) => {
   }
 }
 
+const enableUserOtp = async(req, res) => {
+  try {
+    const id = req.user;
+    const user = await User.findById(id)
+
+    const otp = crypto.randomBytes(3).toString("hex");
+    const smsBody = `Your confirmation OTP code is ${otp}.`;
+
+    let num = `${user.phone}`;
+    if (/^080|^081|^070|^071|^090|^091/.test(num)) {
+      // Replace the first 0 with +234
+      num = num.replace(/^0/, "+234");
+    } else if (/^\+2340/.test(num)) {
+      // Remove the first 0
+      num = num.replace(/^0/, "");
+    }
+
+
+    let newOtp = {}
+
+    const otpRecord = await Otp.findOne({
+      user: user._id,
+      context: 'enable user',
+    });
+
+    if (!otpRecord) {
+      // create one and send to the user
+      newOtp = new Otp({
+        user: user._id,
+        context:"enable user",
+        otp,
+      });
+    } else {
+      newOtp = otpRecord;
+      newOtp.otp = otp;
+    }
+
+    await newOtp.save();
+
+    await sendSMS(num, smsBody);
+
+    const subject = "Confirmation Code";
+    const messageData = {
+      firstName: user.firstName,
+      otp: otp,
+      message: 'Your OTP is ready',
+      year: new Date().getFullYear()
+    }
+
+    await sendEmail(user.email, subject, 'otp', messageData);
+
+    return res.status(200).json({
+      message: "Successfully sent otp code",
+      data: otp,
+      status: "success",
+    });
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: error.message,
+      data: null,
+      status: "failed",
+    });
+  }
+}
+
 module.exports = {
-  generateOTP, generateOtpForBatchUpload,disableUserOtp
+  generateOTP, 
+  generateOtpForBatchUpload,
+  disableUserOtp,
+  enableUserOtp
 };
