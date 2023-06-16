@@ -29,7 +29,7 @@ const getOrganizationUsers = async (req, res) => {
     const filter = {
       organizationId: mongoose.Types.ObjectId(id),
     };
-  
+
 
     if (search) {
       const trimmedSearch = search.trim();
@@ -76,7 +76,7 @@ const getOrganizationUsers = async (req, res) => {
       });
     }
 
-    if(checkPrivilege) {
+    if (checkPrivilege) {
       filter.privileges = { $in: [mongoose.Types.ObjectId(checkPrivilege._id)] };
     }
 
@@ -492,14 +492,14 @@ const disableUser = async (req, res) => {
 
     //check if account is tied to a mandate
     const checkMandate = await Mandate.find({ $or: [{ authoriser: req.params.id }, { verifiers: { $in: [req.params.id] } }] })
-    
+
     if (checkMandate.length > 0) {
       return res.status(422).send({
         success: false,
         message: 'Sorry this user is already tied a mandate, replace this user from all available mandates before disabling.'
       })
     }
-    
+
     // check for otp
     const checkOtp = await otpModel.findOne({ user: req.user._id, otp: req.body.otp, context: 'disable user' })
     if (!checkOtp) {
@@ -565,7 +565,7 @@ const enableUser = async (req, res) => {
         message: 'this account is already enabled'
       })
     }
-    
+
     const enableUser = await User.updateOne({ _id: req.params.id }, { $set: { disabled: false } })
     const user = await userService.getUserById(req.user._id);
 
@@ -585,7 +585,7 @@ const enableUser = async (req, res) => {
         message: 'Account successfully enable'
       })
     }
-  
+
     return res.status(500).send({
       success: false,
       message: 'Error enabling account'
@@ -638,6 +638,53 @@ const deleteAccount = async (req, res) => {
   }
 }
 
+const editEmail = async (req, res) => {
+  try {
+    const checkIf_userExit = await User.findOne({ email: req.body.email })
+    if (!checkIf_userExit) {
+      return res.status(400).send({
+        success: false,
+        message: 'user with this email does not exist'
+      })
+    }
+
+    // check for otp
+    const checkOtp = await otpModel.findOne({ user: req.user._id, otp: req.body.otp })
+    if (!checkOtp) {
+      return res.status(400).send({
+        success: false,
+        message: 'invalid otp'
+      })
+    }
+
+    // check if the new email is already in use
+    const checkIf_newEmailExist = await User.findOne({ email: req.body.newEmail })
+    if (checkIf_newEmailExist) {
+      return res.status(400).send({
+        success: false,
+        message: 'This email is already in use'
+      })
+    }
+
+    // update email 
+
+    checkIf_userExit.email = req.body.newEmail
+    checkIf_userExit.save()
+    checkOtp.delete()
+
+    return res.status(200).send({
+      success: true,
+      message: 'email updated successfully'
+    })
+
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send({
+      success: false,
+      messsage: error.message,
+    });
+  }
+}
 
 module.exports = {
   getOrganizationUsers,
@@ -653,5 +700,6 @@ module.exports = {
   getAllAdmins,
   disableUser,
   enableUser,
-  deleteAccount
+  deleteAccount,
+  editEmail
 };
