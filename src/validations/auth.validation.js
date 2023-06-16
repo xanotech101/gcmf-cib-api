@@ -24,29 +24,60 @@ const authSchemas = {
       .required()
       .label("Confirm password")
       .messages({ "any.only": "{{#label}} does not match" }),
-      secretQuestions: Joi.array().items(
-        Joi.object({
-          question: Joi.string().required(),
-          answer: Joi.string().min(3).required(),
-          question: Joi.string().required(),
-          answer: Joi.string().min(3).required(),
-          question: Joi.string().required(),
-          answer: Joi.string().min(3).required(),
-        })
-      ).required()
+    secretQuestions: Joi.array().items(
+      Joi.object({
+        question: Joi.string().required(),
+        answer: Joi.string().min(3).required(),
+        question: Joi.string().required(),
+        answer: Joi.string().min(3).required(),
+        question: Joi.string().required(),
+        answer: Joi.string().min(3).required(),
+      })
+    ).required()
   }),
 
   resetPassword: Joi.object()
     .keys({
-      password: Joi.string().min(8).required().label("Password"),
-      confirm_password: Joi.any()
-        .equal(Joi.ref("password"))
+      password: Joi.string()
+        .min(8)
         .required()
-        .label("Confirm password")
-        .messages({ "any.only": "{{#label}} does not match" }),
+        .label('Password')
+        .messages({
+          'string.base': 'Password must be a string',
+          'string.empty': 'Password is required',
+          'string.min': 'Password must be at least {{#limit}} characters long',
+          'any.required': 'Password is required',
+        }),
+      confirm_password: Joi.any()
+        .equal(Joi.ref('password'))
+        .required()
+        .label('Confirm password')
+        .messages({ 'any.only': '{{#label}} does not match' }),
       token: Joi.string(),
     })
     .with("password", "confirm_password"),
+
+  changePassword: Joi.object()
+    .keys({
+      password: Joi.string()
+        .min(8)
+        .required()
+        .label('Password')
+        .messages({
+          'string.base': 'Password must be a string',
+          'string.empty': 'Password is required',
+          'string.min': 'Password must be at least {{#limit}} characters long',
+          'any.required': 'Password is required',
+        }),
+      old_password: Joi.string()
+        .required()
+        .label('Old password')
+        .messages({
+          'string.base': 'Old password must be a string',
+          'string.empty': 'Old password is required',
+          'any.required': 'Old password is required',
+        })
+    }),
 
   register: Joi.object()
     .keys({
@@ -72,9 +103,9 @@ const authSchemas = {
     })
     .with("password", "confirm_password"),
 
-    refreshAuth: Joi.object().keys({
-      email:Joi.string().trim().lowercase().required().email()
-    })
+  refreshAuth: Joi.object().keys({
+    email: Joi.string().trim().lowercase().required().email()
+  })
 };
 
 module.exports = authSchemas;

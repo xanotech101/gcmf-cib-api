@@ -20,6 +20,7 @@ const {
   allUsersAuth,
   superUserAuth,
 } = require("../middleware/auth");
+const { validate, authSchemas } = require("../validations");
 
 const router = express.Router();
 
@@ -29,7 +30,7 @@ router.get("/profile/:id", adminAuth, getUserProfileById);
 
 router.put("/profile", adminAuth, updateUserProfile);
 router.put("/userPrivilege", adminAuth, updateUserPriviledge);
-router.post("/change-password", allUsersAuth, changePassword);
+router.post("/change-password", allUsersAuth, validate(authSchemas.changePassword,"body"), changePassword);
 router.post("/secret-questions/create", createSecurityQuestions)
 
 //admin routes
