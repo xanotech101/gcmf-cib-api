@@ -182,7 +182,7 @@ const forgetPassword = async (req, res) => {
     const messageData = {
       firstName: user.firstName,
       url: link,
-      message: `Hello ${user.firstName}  Please follow the link to verify your account ${link}`,
+      message: `Hello ${user.firstName}  Please follow the link to verify your account ${link}, Please note that this link will expire after 30 minutes`,
       year: new Date().getFullYear(),
     }
     await sendEmail(user.email, subject, "reset-password", messageData);
