@@ -190,7 +190,7 @@ const forgetPassword = async (req, res) => {
     res.status(200).json({
       status: "success",
       message:
-        "If the mail you inputed is registered on the platform, you will get a mail to change you password",
+        "If the mail you inputed is registered on the platform, you will get a mail to reset your password",
       data: null,
     });
   } catch (error) {
@@ -349,7 +349,7 @@ const registerUser = async (req, res) => {
     const messageData = {
       firstName: user.firstName,
       url: link,
-      message: ' Please follow the link to verify your account'
+      message: 'Follow the link to verify your account, Please note this link will expire after 30 minutes'
     }
     await sendEmail(user.email, subject, "verify-email", messageData);
 
