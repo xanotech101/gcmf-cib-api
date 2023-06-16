@@ -145,7 +145,30 @@ const authSchemas = {
         'string.email': 'Email must be a valid email address',
         'any.required': 'Email is required',
       })
-  })
+  }),
+  updateEmail: Joi.object()
+    .keys({
+      email: Joi.string().trim().lowercase().required().email()
+        .messages({
+          'string.base': 'Email must be a string',
+          'string.empty': 'Email cannot be empty',
+          'string.min': 'Email length must be at least {#limit} characters long',
+          'string.max': 'Email length must be less than or equal to {#limit} characters',
+          'string.email': 'Email must be a valid email address',
+          'any.required': 'Email is required',
+        }),
+      newEmail: Joi.string().trim().lowercase().required().email()
+        .messages({
+          'string.base': 'Email must be a string',
+          'string.empty': 'Email cannot be empty',
+          'string.min': 'Email length must be at least {#limit} characters long',
+          'string.max': 'Email length must be less than or equal to {#limit} characters',
+          'string.email': 'Email must be a valid email address',
+          'any.required': 'Email is required',
+        }),
+      otp: Joi.string().trim().required()
+    })
+
 };
 
 module.exports = authSchemas;

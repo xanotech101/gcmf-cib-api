@@ -259,7 +259,14 @@ const updateMandateAuthorizerVerifiers = async (req, res) => {
     if (!checkIncomingUser || !checkOutgoingUser) {
       return res.status(400).send({
         success: false,
-        message: 'User not found'
+        message: 'User not found or has been'
+      });
+    }
+
+    if(checkIncomingUser.disabled === true){
+      return res.status(400).send({
+        success: false,
+        message: 'This user is disabled from this system at the moment'
       });
     }
 

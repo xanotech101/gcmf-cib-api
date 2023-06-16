@@ -13,7 +13,8 @@ const {
   getAllAdmins,
   disableUser,
   enableUser,
-  deleteAccount
+  deleteAccount,
+  editEmail
 } = require("../controller/user/user.controller");
 const {
   adminAuth,
@@ -42,7 +43,9 @@ router.delete("/delete_user", superUserAuth, deleteAnyUser);
 router.delete("/delete_nonadmin", adminAuth, deleteNonAdminUsers);
 router.patch("/disable/:id", superUserAuth, disableUser)
 router.patch("/enable/:id", superUserAuth, enableUser)
-router.delete("/deleteAccount/:id",superUserAuth,deleteAccount)
+router.delete("/deleteAccount/:id", superUserAuth, deleteAccount)
+
+router.patch("/editEmail", superUserAuth, validate(authSchemas.updateEmail,"body"), editEmail)
 
 module.exports = router;
 
