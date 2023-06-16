@@ -5,6 +5,7 @@ const {
   getMyNotifications,
   deleteNotifications,
   markNotificationsAsRead,
+  getUnreadNotificationCount
 } = require("../controller/notification/notification.controller");
 const { allUsersAuth } = require("../middleware/auth");
 
@@ -24,6 +25,11 @@ router.delete(
   allUsersAuth,
   validate(notificationsSchemas.notifications),
   deleteNotifications
+);
+router.get(
+  "/unread/count",
+  allUsersAuth,
+  getUnreadNotificationCount
 );
 
 module.exports = router;

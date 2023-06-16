@@ -77,9 +77,9 @@ const registerAccount = async (req, res) => {
     const accountEmail = input.accountDetails.email;
     const subject = "Account Verification";
     const messageData = {
-      firstName: admin.firstName,
+      firstName: input.accountDetails.accountName,
       url: `${process.env.FRONTEND_URL}/auth/account/verify-account/${token}`,
-      message: "click the link to verify your account, please note this link will expire after 10 hours",
+      message: "click the link to verify your account, Please note this link will expire after 10 hours",
       year: new Date().getUTCFullYear(),
     };
 
