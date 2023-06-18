@@ -36,7 +36,14 @@ async function consumeTransferRequest() {
                             request.meta = transfer;
                             request.updatedAt = new Date();
                             await request.save();
-                        } else {
+                        } else if (transfer?.Status === "Awaiting confirmation status" ||
+                            ["08"].includes(transfer?.ResponseCode)) {
+                            request.meta = transfer;
+                            request.updatedAt = new Date();
+                            request.transferStatus = "Awaiting confirmation status";
+                            await request.save();
+                        }
+                        else {
                             request.meta = transfer;
                             request.updatedAt = new Date();
                             request.transferStatus = "failed";
