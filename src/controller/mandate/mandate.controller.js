@@ -111,34 +111,7 @@ const registerMandate = async (req, res) => {
 //@desc     update a mandate
 //@route    POST /mandate/update
 //@access   Public
-// const updateMandate = async (req, res) => {
-//   try {
-//     const { mandateId } = req.params;
-//     const { name } = req.body;
 
-//     const existingMandate = await Mandate.findById(mandateId);
-//     if (!existingMandate) {
-//       return res.status(400).json({ message: "This mandate doesn't exist" });
-//     }
-
-//     const mandateWithSameName = await Mandate.findOne({ name });
-//     if (mandateWithSameName && mandateWithSameName._id.toString() !== mandateId) {
-//       return res.status(400).json({ message: "Mandate name already exists" });
-//     }
-
-//     existingMandate.name = name;
-
-//     const result = await existingMandate.save();
-//     return res.status(200).json({
-//       status: "success",
-//       message: "Mandate name updated successfully",
-//       details: result,
-//     });
-//   } catch (error) {
-//     console.log(error);
-//     res.status(500).json({ message: error.message });
-//   }
-// };
 
 const updateMandate = async (req, res) => {
   try {
@@ -208,7 +181,9 @@ const updateMandate = async (req, res) => {
           }
 
           existingMandate.verifiers.addToSet(req.body.user);
+          existingMandate.numberOfVerifiers += 1
           changeVerifier = true;
+
           break;
 
         default:
