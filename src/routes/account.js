@@ -9,6 +9,7 @@ const {
   verifyAccount,
   getAccount,
   bulkOnboard,
+  getOrganizationStats
 } = require("../controller/account");
 const upload = require("../middleware/multer");
 

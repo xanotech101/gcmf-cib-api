@@ -555,19 +555,19 @@ const getOrganizationStats = async (req, res) => {
     const totalMoneyDisbursed = await initiateRequestModel.aggregate([
       {
         $match: {
-          organizationId: organizationId,
+          organizationId: mongoose.Types.ObjectId(organizationId),
           transferStatus: 'successful',
         },
       },
       {
         $group: {
           _id: null,
-          totalAmount: { $sum: '$amount' },
+          amount: { $sum: '$amount' },
         },
       },
     ]);
 
-    const totalAmountDisbursed = totalMoneyDisbursed.length > 0 ? totalMoneyDisbursed[0].totalAmount : 0;
+    const totalAmountDisbursed = totalMoneyDisbursed.length > 0 ? totalMoneyDisbursed[0].amount : 0;
 
     return res.status(200).json({
       success: true,
