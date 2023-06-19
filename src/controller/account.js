@@ -9,6 +9,7 @@ const fs = require("fs");
 const excelToJson = require("convert-excel-to-json");
 const bankOneService = require("../services/bankOne.service");
 const { default: mongoose } = require("mongoose");
+const initiateRequestModel = require("../model/initiateRequest.model");
 const authToken = process.env.AUTHTOKEN;
 
 // const registerAccount = async (req, res) => {
@@ -522,6 +523,64 @@ const getAllAccountsByLabel = async (req, res) => {
   }
 };
 
+const getOrganizationStats = async (req, res) => {
+  try {
+    const { organizationId } = req.params;
+
+    // Check if organization exists
+    const existingOrganization = await Account.findOne({ _id: organizationId });
+    if (!existingOrganization) {
+      return res.status(400).send({
+        success: false,
+        message: 'Organization does not exist',
+      });
+    }
+
+    // Get number of users
+    const totalUsers = await User.countDocuments({ organizationId: organizationId });
+
+    // Get total successful transfers
+    const totalSuccessfulTransfers = await initiateRequestModel.countDocuments({
+      organizationId: organizationId,
+      transferStatus: 'successful',
+    });
+
+    // Get total failed transfers
+    const totalFailedTransfers = await initiateRequestModel.countDocuments({
+      organizationId: organizationId,
+      transferStatus: 'failed',
+    });
+
+    // Get total money disbursed
+    const totalMoneyDisbursed = await initiateRequestModel.aggregate([
+      {
+        $match: {
+          organizationId: organizationId,
+          transferStatus: 'successful',
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalAmount: { $sum: '$amount' },
+        },
+      },
+    ]);
+
+    const totalAmountDisbursed = totalMoneyDisbursed.length > 0 ? totalMoneyDisbursed[0].totalAmount : 0;
+
+    return res.status(200).json({
+      success: true,
+      totalUsers: totalUsers,
+      totalSuccessfulTransfers: totalSuccessfulTransfers,
+      totalFailedTransfers: totalFailedTransfers,
+      totalAmountDisbursed: totalAmountDisbursed,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: error.message });
+  }
+};
 
 
 module.exports = {
@@ -530,5 +589,6 @@ module.exports = {
   verifyAccount,
   getAccount,
   bulkOnboard,
-  getAllAccountsByLabel
+  getAllAccountsByLabel,
+  getOrganizationStats
 };

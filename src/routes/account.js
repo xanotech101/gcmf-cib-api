@@ -33,4 +33,5 @@ router.get("/all_accounts/:id", allUsersAuth, getAccount);
 router.post("/bulkOnboard", superUserAuth, upload.array("files"), bulkOnboard)
 
 
+router.get('/stats/:organizationId', allUsersAuth, getOrganizationStats)
 module.exports = router;
