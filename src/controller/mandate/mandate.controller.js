@@ -219,7 +219,10 @@ const getAllMandates = async (req, res) => {
 
   try {
     const mine = await User.findById(req.user._id);
-    const organizationId = mine.organizationId.toString();
+    const userOrganizationId = mine.organizationId.toString();
+    const paramsOrganizationId = req.query.organizationId;
+
+    const organizationId = paramsOrganizationId || userOrganizationId;
 
     const filter = { organizationId };
     if (name) {
