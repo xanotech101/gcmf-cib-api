@@ -587,6 +587,122 @@ const getOrganizationStats = async (req, res) => {
 };
 
 
+const disableAccount = async (req, res) => {
+  try {
+    const checkAccount = await Account.findOne({ _id: req.params.id })
+    if (!checkAccount) {
+      return res.status(400).send({
+        success: false,
+        message: 'Account not found on this system'
+      })
+    }
+
+    if (checkAccount.disabled === true) {
+      return res.status(400).send({
+        success: false,
+        message: 'this account is already disabled'
+      })
+    }
+
+    // check for otp
+    const checkOtp = await otpModel.findOne({ user: req.user._id, otp: req.body.otp, context: 'disable account' })
+    if (!checkOtp) {
+      return res.status(400).send({
+        success: false,
+        message: 'invalid otp'
+      })
+    }
+
+    const disable_account = await Account.updateOne({ _id: req.params.id }, { $set: { disabled: true } })
+    const user = await userService.getUserById(req.user._id);
+    const { date, time } = getDateAndTime();
+
+    if (disable_account.modifiedCount > 0) {
+      //create audit trial
+      const auditTrail = {
+        user: req.user._id,
+        type: "disable account",
+        message: `${user.firstName} ${user.lastName} disabled ${checkAccount.accountName} co-operate account on ${date} by ${time}`,
+      };
+      await auditTrailService.createAuditTrail(auditTrail)
+      checkOtp.delete()
+      return res.status(200).send({
+        success: true,
+        message: 'Account successfully disabled'
+      })
+    }
+    return res.status(500).send({
+      success: false,
+      message: 'Error disabling account'
+    })
+  } catch (error) {
+    return res.status(500).send({
+      success: false,
+      message: error.message
+    })
+  }
+}
+
+const enableAccount = async (req, res) => {
+  try {
+    const checkAccount = await Account.findOne({ _id: req.params.id })
+
+    if (!checkAccount) {
+      return res.status(400).send({
+        success: false,
+        message: 'account not found on this system'
+      })
+    }
+
+    const checkOtp = await otpModel.findOne({ user: req.user._id, otp: req.body.otp, context: 'enable account' })
+
+    if (!checkOtp) {
+      return res.status(400).send({
+        success: false,
+        message: 'Invalid OTP'
+      })
+    }
+
+    if (checkAccount.disabled === false) {
+      return res.status(400).send({
+        success: false,
+        message: 'this account is already enabled'
+      })
+    }
+
+    const enable_account = await Account.updateOne({ _id: req.params.id }, { $set: { disabled: false } })
+    const user = await userService.getUserById(req.user._id);
+
+    const { date, time } = getDateAndTime();
+    if (enable_account.modifiedCount > 0) {
+      const auditTrail = {
+        user: req.user._id,
+        type: "enable account",
+        message: `${user.firstName} ${user.lastName} enabled ${checkAccount.accountName} cooperate account on ${date} by ${time}`,
+      };
+
+      await auditTrailService.createAuditTrail(auditTrail)
+      checkOtp.delete()
+
+      return res.status(200).send({
+        success: true,
+        message: 'Account successfully enable'
+      })
+    }
+
+    return res.status(500).send({
+      success: false,
+      message: 'Error enabling account'
+    })
+  } catch (error) {
+    return res.status(500).send({
+      success: false,
+      message: error.message
+    })
+  }
+}
+
+
 module.exports = {
   getAllAccount,
   registerAccount,
@@ -594,5 +710,7 @@ module.exports = {
   getAccount,
   bulkOnboard,
   getAllAccountsByLabel,
-  getOrganizationStats
+  getOrganizationStats,
+  disableAccount,
+  enableAccount
 };
