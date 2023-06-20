@@ -33,7 +33,7 @@ const VerifyBatchUpload = async (req, res) => {
         if (item.status === 'success') {
           switch (item.bankType) {
             case 'intra-bank':
-              if (item.data.Name != null) {
+              if (item.data.Name != null || item.data.Name != "") {
                 const request = new InitiateRequest({
                   NIPSessionID: item.data.SessionID,
                   amount: item.amount,
@@ -116,7 +116,7 @@ const VerifyBatchUpload = async (req, res) => {
               }
               break;
             case 'inter-bank':
-              if (item.data.Name != null) {
+              if (item.data.Name != null || item.data.Name != "") {
                 const request = new InitiateRequest({
                   NIPSessionID: item.data.SessionID,
                   amount: item.amount,

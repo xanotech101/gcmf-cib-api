@@ -36,7 +36,7 @@ const initiateRequestSchema = new mongoose.Schema(
     numberOfVerifiers: Number,
     transferStatus: {
       type: String,
-      enum: ["disburse pending", "pending", "queued", "successful", "failed"],
+      enum: ["disburse pending", "pending", "queued", "successful", "failed", "Awaiting confirmation status"],
       default: 'pending'
     },
     status: {
