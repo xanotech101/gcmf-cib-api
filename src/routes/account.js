@@ -9,6 +9,7 @@ const {
   verifyAccount,
   getAccount,
   bulkOnboard,
+  getOrganizationStats
 } = require("../controller/account");
 const upload = require("../middleware/multer");
 
@@ -33,4 +34,5 @@ router.get("/all_accounts/:id", allUsersAuth, getAccount);
 router.post("/bulkOnboard", superUserAuth, upload.array("files"), bulkOnboard)
 
 
+router.get('/stats/:organizationId', allUsersAuth, getOrganizationStats)
 module.exports = router;
