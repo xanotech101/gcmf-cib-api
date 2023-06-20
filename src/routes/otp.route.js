@@ -4,10 +4,11 @@ const {
   generateOtpForBatchUpload, 
   disableUserOtp,
   enableUserOtp,
-  Update_emailOTP
+  Update_emailOTP,
+  disableAccountOtp,
+  enableAccountOtp
 } = require("../controller/sms/otp.controller");
 const { allUsersAuth, superUserAuth } = require("../middleware/auth");
-const { disableAccount, enableAccount } = require("../controller/account");
 
 const router = express.Router();
 
@@ -16,8 +17,8 @@ router.post("/generateBatchOtp", allUsersAuth, generateOtpForBatchUpload);
 router.post("/regenerate", allUsersAuth, generateOTP);
 router.post('/disableUserOtp', allUsersAuth, disableUserOtp)
 router.post('/enableUserOtp', allUsersAuth, enableUserOtp)
-router.post('/disableAccountOtp', allUsersAuth, disableAccount)
-router.post('/enableAccountOtp', allUsersAuth, enableAccount)
+router.post('/disableAccountOtp', allUsersAuth, disableAccountOtp)
+router.post('/enableAccountOtp', allUsersAuth, enableAccountOtp)
 router.post('/updateEmailotp', superUserAuth, Update_emailOTP)
 
 
