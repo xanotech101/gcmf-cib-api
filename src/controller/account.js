@@ -9,67 +9,19 @@ const fs = require("fs");
 const excelToJson = require("convert-excel-to-json");
 const bankOneService = require("../services/bankOne.service");
 const { default: mongoose } = require("mongoose");
+const initiateRequestModel = require("../model/initiateRequest.model");
 const authToken = process.env.AUTHTOKEN;
 
-// const registerAccount = async (req, res) => {
-//   try {
-//     const input = _.pick(req.body, ["admin", "accountDetails"]);
 
-//     let role = "admin";
+function isValidEmail(email) {
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailPattern.test(email);
+}
 
-//     const privilege = await Privilege.findOne({ name: "admin" });
-//     const admin = await User.create({
-//       ...input.admin,
-//       token: "",
-//       role,
-//       privileges: [privilege._id],
-//     });
-
-//     const token = jwt.sign(
-//       { accountDetails: input.accountDetails.accountNumber },
-//       process.env.EMAIL_SECRET,
-//       {
-//         expiresIn: "10h",
-//       }
-//     );
-
-//     // create account
-//     const result = await Account.create({
-//       ...input.accountDetails,
-//       adminId: admin._id,
-//       accountToken: token,
-//       adminID: admin._id,
-//       organizationLabel: input.accountDetails.organizationLabel,
-//       customerID: input.accountDetails.customerID,
-//     });
-
-//     // update admin organization id
-//     admin.organizationId = result._id;
-//     await admin.save();
-
-//     const accountEmail = input.accountDetails.email;
-//     const subject = "Account Verification";
-//     const messageData = {
-//       firstName: admin.firstName,
-//       url: `${process.env.FRONTEND_URL}/auth/account/verify-account/${token}`,
-//       message: "click the link to verify your account",
-//       year: new Date().getUTCFullYear(),
-//     };
-
-//     await sendEmail(accountEmail, subject, "verify-account", messageData);
-
-//     return res.status(201).json({
-//       status: "Success",
-//       result,
-//     });
-//   } catch (error) {
-//     console.log(error);
-//     return res.status(500).json({
-//       status: "Failed",
-//       Message: error.message ?? "Unable to create an account",
-//     });
-//   }
-// };
+function isValidPhoneNumber(phoneNumber) {
+  const phoneNumberPattern = /^\+?.{8,}$/;
+  return phoneNumberPattern.test(phoneNumber);
+}
 
 const registerAccount = async (req, res) => {
   try {
@@ -79,11 +31,37 @@ const registerAccount = async (req, res) => {
 
     const privilege = await Privilege.findOne({ name: "admin" });
 
+    // Validate account email
+    if (!isValidEmail(input.accountDetails.email)) {
+      const errorMessage = 'Invalid account email format';
+      return res.status(400).json({
+        success: false,
+        message: errorMessage
+      });
+    }
+
+    // Validate admin email
+    if (!isValidEmail(input.admin.email)) {
+      const errorMessage = 'Invalid admin email format';
+      return res.status(400).json({
+        success: false,
+        message: errorMessage
+      });
+    }
+
+    if (!isValidPhoneNumber(input.admin.phone)) {
+      const errorMessage = 'Invalid admin phone number format';
+      return res.status(400).json({
+        success: false,
+        message: errorMessage
+      })
+    }
+
     // Check if admin already exists
     const checkAdmin = await User.findOne({ email: input.admin.email });
 
     if (checkAdmin) {
-           return res.status(400).json({
+      return res.status(400).json({
         status: "Failed",
         message: "Admin already exists",
       });
@@ -137,9 +115,9 @@ const registerAccount = async (req, res) => {
     const accountEmail = input.accountDetails.email;
     const subject = "Account Verification";
     const messageData = {
-      firstName: admin.firstName,
+      firstName: input.accountDetails.accountName,
       url: `${process.env.FRONTEND_URL}/auth/account/verify-account/${token}`,
-      message: "click the link to verify your account",
+      message: "click the link to verify your account, Please note this link will expire after 10 hours",
       year: new Date().getUTCFullYear(),
     };
 
@@ -204,7 +182,7 @@ const verifyAccount = async (req, res) => {
     const messageData = {
       firstName: user.firstName,
       url: `${process.env.FRONTEND_URL}/verify-account/${userToken}`,
-      message: "click the link to verify your account ",
+      message: "click the link to verify your account, please note this link will expire after 10 hours",
       year: new Date().getUTCFullYear(),
     };
     sendEmail(userEmail, subject, "verify-email", messageData);
@@ -395,6 +373,33 @@ const bulkOnboard = async (req, res) => {
         continue; // Skip processing this account
       }
 
+      if (!isValidEmail(input.admin.email)) {
+        const errorMessage = 'Invalid admin email format';
+        invalidAccount.push({
+          message: errorMessage,
+          account: input.admin,
+        });
+        continue
+      }
+
+      if (!isValidEmail(input.accountDetails.email)) {
+        const errorMessage = 'Invalid acount email format';
+        invalidAccount.push({
+          message: errorMessage,
+          account: input.admin,
+        });
+        continue
+      }
+
+      if (!isValidPhoneNumber(input.admin.phone)) {
+        const errorMessage = 'Invalid admin phone number format';
+        invalidAccount.push({
+          message: errorMessage,
+          account: input.admin,
+        });
+        continue;
+      }
+
       const checkAccountNum = await bankOneService.BulkOnboardingaccountByAccountNo(input.accountDetails.accountNumber, authToken);
 
       if (!checkAccountNum) {
@@ -405,10 +410,10 @@ const bulkOnboard = async (req, res) => {
         continue; // Skip creating this account and admin
       }
 
-      
+
       input.accountDetails.customerID = checkAccountNum.customerID;
-      
-      input.accountDetails.accountName = input.accountDetails.accountName === ""?`${checkAccountNum.LastName} ${checkAccountNum.OtherNames}`:input.accountDetails.accountName 
+
+      input.accountDetails.accountName = input.accountDetails.accountName === "" ? `${checkAccountNum.LastName} ${checkAccountNum.OtherNames}` : input.accountDetails.accountName
 
       const checkAdmin = await User.findOne({ email: input.admin.email });
 
@@ -522,6 +527,64 @@ const getAllAccountsByLabel = async (req, res) => {
   }
 };
 
+const getOrganizationStats = async (req, res) => {
+  try {
+    const { organizationId } = req.params;
+
+    // Check if organization exists
+    const existingOrganization = await Account.findOne({ _id: organizationId });
+    if (!existingOrganization) {
+      return res.status(400).send({
+        success: false,
+        message: 'Organization does not exist',
+      });
+    }
+
+    // Get number of users
+    const totalUsers = await User.countDocuments({ organizationId: organizationId });
+
+    // Get total successful transfers
+    const totalSuccessfulTransfers = await initiateRequestModel.countDocuments({
+      organizationId: organizationId,
+      transferStatus: 'successful',
+    });
+
+    // Get total failed transfers
+    const totalFailedTransfers = await initiateRequestModel.countDocuments({
+      organizationId: organizationId,
+      transferStatus: 'failed',
+    });
+
+    // Get total money disbursed
+    const totalMoneyDisbursed = await initiateRequestModel.aggregate([
+      {
+        $match: {
+          organizationId: mongoose.Types.ObjectId(organizationId),
+          transferStatus: 'successful',
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          amount: { $sum: '$amount' },
+        },
+      },
+    ]);
+
+    const totalAmountDisbursed = totalMoneyDisbursed.length > 0 ? totalMoneyDisbursed[0].amount : 0;
+
+    return res.status(200).json({
+      success: true,
+      totalUsers: totalUsers,
+      totalSuccessfulTransfers: totalSuccessfulTransfers,
+      totalFailedTransfers: totalFailedTransfers,
+      totalAmountDisbursed: totalAmountDisbursed,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: error.message });
+  }
+};
 
 
 module.exports = {
@@ -530,5 +593,6 @@ module.exports = {
   verifyAccount,
   getAccount,
   bulkOnboard,
-  getAllAccountsByLabel
+  getAllAccountsByLabel,
+  getOrganizationStats
 };
