@@ -2,18 +2,42 @@ const Joi = require("joi");
 
 const authSchemas = {
   preLogin: Joi.object().keys({
-    email: Joi.string().min(6).max(40).trim().lowercase().required().email(),
+    email: Joi.string().min(6).max(40).trim().lowercase().required().email()
+    .messages({
+      'string.base': 'Email must be a string',
+      'string.empty': 'Email cannot be empty',
+      'string.min': 'Email length must be at least {#limit} characters long',
+      'string.max': 'Email length must be less than or equal to {#limit} characters',
+      'string.email': 'Email must be a valid email address',
+      'any.required': 'Email is required',
+    }),
     password: Joi.string().min(8).required().label("Password"),
   }),
 
   login: Joi.object().keys({
-    email: Joi.string().min(6).max(40).trim().lowercase().required().email(),
+    email: Joi.string().min(6).max(40).trim().lowercase().required().email()
+      .messages({
+        'string.base': 'Email must be a string',
+        'string.empty': 'Email cannot be empty',
+        'string.min': 'Email length must be at least {#limit} characters long',
+        'string.max': 'Email length must be less than or equal to {#limit} characters',
+        'string.email': 'Email must be a valid email address',
+        'any.required': 'Email is required',
+      }),
     question: Joi.string().required(),
     answer: Joi.string().required(),
   }),
 
   forgetPassword: Joi.object().keys({
-    email: Joi.string().min(6).max(40).trim().lowercase().required().email(),
+    email: Joi.string().min(6).max(40).trim().lowercase().required().email()
+      .messages({
+        'string.base': 'Email must be a string',
+        'string.empty': 'Email cannot be empty',
+        'string.min': 'Email length must be at least {#limit} characters long',
+        'string.max': 'Email length must be less than or equal to {#limit} characters',
+        'string.email': 'Email must be a valid email address',
+        'any.required': 'Email is required',
+      }),
   }),
 
   verifyUser: Joi.object().keys({
@@ -38,21 +62,60 @@ const authSchemas = {
 
   resetPassword: Joi.object()
     .keys({
-      password: Joi.string().min(8).required().label("Password"),
-      confirm_password: Joi.any()
-        .equal(Joi.ref("password"))
+      password: Joi.string()
+        .min(8)
         .required()
-        .label("Confirm password")
-        .messages({ "any.only": "{{#label}} does not match" }),
+        .label('Password')
+        .messages({
+          'string.base': 'Password must be a string',
+          'string.empty': 'Password is required',
+          'string.min': 'Password must be at least {{#limit}} characters long',
+          'any.required': 'Password is required',
+        }),
+      confirm_password: Joi.any()
+        .equal(Joi.ref('password'))
+        .required()
+        .label('Confirm password')
+        .messages({ 'any.only': '{{#label}} does not match' }),
       token: Joi.string(),
     })
     .with("password", "confirm_password"),
+
+  changePassword: Joi.object()
+    .keys({
+      password: Joi.string()
+        .min(8)
+        .required()
+        .label('Password')
+        .messages({
+          'string.base': 'Password must be a string',
+          'string.empty': 'Password is required',
+          'string.min': 'Password must be at least {{#limit}} characters long',
+          'any.required': 'Password is required',
+        }),
+      old_password: Joi.string()
+        .required()
+        .label('Old password')
+        .messages({
+          'string.base': 'Old password must be a string',
+          'string.empty': 'Old password is required',
+          'any.required': 'Old password is required',
+        })
+    }),
 
   register: Joi.object()
     .keys({
       firstName: Joi.string().min(3).max(20).lowercase().required(),
       lastName: Joi.string().min(3).max(20).lowercase().required(),
-      email: Joi.string().min(6).max(40).trim().lowercase().required().email(),
+      email: Joi.string().min(6).max(40).trim().lowercase().required().email()
+        .messages({
+          'string.base': 'Email must be a string',
+          'string.empty': 'Email cannot be empty',
+          'string.min': 'Email length must be at least {#limit} characters long',
+          'string.max': 'Email length must be less than or equal to {#limit} characters',
+          'string.email': 'Email must be a valid email address',
+          'any.required': 'Email is required',
+        }),
       password: Joi.string().min(8).required().label("Password"),
       confirm_password: Joi.any()
         .equal(Joi.ref("password"))
@@ -74,8 +137,15 @@ const authSchemas = {
 
   refreshAuth: Joi.object().keys({
     email: Joi.string().trim().lowercase().required().email()
+      .messages({
+        'string.base': 'Email must be a string',
+        'string.empty': 'Email cannot be empty',
+        'string.min': 'Email length must be at least {#limit} characters long',
+        'string.max': 'Email length must be less than or equal to {#limit} characters',
+        'string.email': 'Email must be a valid email address',
+        'any.required': 'Email is required',
+      })
   }),
-
   updateEmail: Joi.object()
     .keys({
       email: Joi.string().trim().lowercase().required().email()

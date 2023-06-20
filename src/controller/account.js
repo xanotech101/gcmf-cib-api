@@ -12,6 +12,17 @@ const { default: mongoose } = require("mongoose");
 const initiateRequestModel = require("../model/initiateRequest.model");
 const authToken = process.env.AUTHTOKEN;
 
+
+function isValidEmail(email) {
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailPattern.test(email);
+}
+
+function isValidPhoneNumber(phoneNumber) {
+  const phoneNumberPattern = /^\+?.{8,}$/;
+  return phoneNumberPattern.test(phoneNumber);
+}
+
 const registerAccount = async (req, res) => {
   try {
     const input = _.pick(req.body, ["admin", "accountDetails"]);
@@ -20,11 +31,37 @@ const registerAccount = async (req, res) => {
 
     const privilege = await Privilege.findOne({ name: "admin" });
 
+    // Validate account email
+    if (!isValidEmail(input.accountDetails.email)) {
+      const errorMessage = 'Invalid account email format';
+      return res.status(400).json({
+        success: false,
+        message: errorMessage
+      });
+    }
+
+    // Validate admin email
+    if (!isValidEmail(input.admin.email)) {
+      const errorMessage = 'Invalid admin email format';
+      return res.status(400).json({
+        success: false,
+        message: errorMessage
+      });
+    }
+
+    if (!isValidPhoneNumber(input.admin.phone)) {
+      const errorMessage = 'Invalid admin phone number format';
+      return res.status(400).json({
+        success: false,
+        message: errorMessage
+      })
+    }
+
     // Check if admin already exists
     const checkAdmin = await User.findOne({ email: input.admin.email });
 
     if (checkAdmin) {
-           return res.status(400).json({
+      return res.status(400).json({
         status: "Failed",
         message: "Admin already exists",
       });
@@ -336,6 +373,33 @@ const bulkOnboard = async (req, res) => {
         continue; // Skip processing this account
       }
 
+      if (!isValidEmail(input.admin.email)) {
+        const errorMessage = 'Invalid admin email format';
+        invalidAccount.push({
+          message: errorMessage,
+          account: input.admin,
+        });
+        continue
+      }
+
+      if (!isValidEmail(input.accountDetails.email)) {
+        const errorMessage = 'Invalid acount email format';
+        invalidAccount.push({
+          message: errorMessage,
+          account: input.admin,
+        });
+        continue
+      }
+
+      if (!isValidPhoneNumber(input.admin.phone)) {
+        const errorMessage = 'Invalid admin phone number format';
+        invalidAccount.push({
+          message: errorMessage,
+          account: input.admin,
+        });
+        continue;
+      }
+
       const checkAccountNum = await bankOneService.BulkOnboardingaccountByAccountNo(input.accountDetails.accountNumber, authToken);
 
       if (!checkAccountNum) {
@@ -346,10 +410,10 @@ const bulkOnboard = async (req, res) => {
         continue; // Skip creating this account and admin
       }
 
-      
+
       input.accountDetails.customerID = checkAccountNum.customerID;
-      
-      input.accountDetails.accountName = input.accountDetails.accountName === ""?`${checkAccountNum.LastName} ${checkAccountNum.OtherNames}`:input.accountDetails.accountName 
+
+      input.accountDetails.accountName = input.accountDetails.accountName === "" ? `${checkAccountNum.LastName} ${checkAccountNum.OtherNames}` : input.accountDetails.accountName
 
       const checkAdmin = await User.findOne({ email: input.admin.email });
 
