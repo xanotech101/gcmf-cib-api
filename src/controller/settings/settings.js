@@ -15,7 +15,7 @@ const UpdateSecrete = async (req, res) => {
         const user = await Usermodel.findById(req.user._id);
 
         if (!user) {
-            return res.status(401).json({
+            return res.status(422).json({
                 message: 'Unauthorized to perform this action',
                 status: 'failed',
             });
@@ -23,8 +23,8 @@ const UpdateSecrete = async (req, res) => {
 
         //compare password
         if (!await bcrypt.compare(password, user.password)) {
-            return res.status(401).json({
-                message: 'Incorrect password',
+            return res.status(403).json({
+                message: 'Incorrect credentials',
                 status: 'failed',
             });
         }
