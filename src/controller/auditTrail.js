@@ -56,8 +56,9 @@ const getOrganizationAuditTrail = async (req, res) => {
 
   try {
     const mine = await User.findById(req.user._id);
-    const organizationId = mine.organizationId.toString();
-
+    const userOrganizationId = mine.organizationId.toString();
+    const user = await User.findById(req.user._id).select("role")
+    const organizationId = user.role === "system-admin" ? req.query.organizationId : userOrganizationId;
     const filter = { organization: organizationId };
 
     if (type) {

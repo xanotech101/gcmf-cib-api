@@ -111,34 +111,101 @@ const registerMandate = async (req, res) => {
 //@desc     update a mandate
 //@route    POST /mandate/update
 //@access   Public
+
+
 const updateMandate = async (req, res) => {
   try {
     const { mandateId } = req.params;
-    const { name } = req.body;
+    const { name, user } = req.body;
 
     const existingMandate = await Mandate.findById(mandateId);
+    let changeAuthoriser = false;
+    let changeVerifier = false;
+
     if (!existingMandate) {
       return res.status(400).json({ message: "This mandate doesn't exist" });
     }
 
-    const mandateWithSameName = await Mandate.findOne({ name });
-    if (mandateWithSameName && mandateWithSameName._id.toString() !== mandateId) {
-      return res.status(400).json({ message: "Mandate name already exists" });
+    // Update name if provided
+    if (name && name !== existingMandate.name) {
+      const mandateWithSameName = await Mandate.findOne({ name });
+
+      if (mandateWithSameName && mandateWithSameName._id.toString() !== mandateId) {
+        return res.status(400).json({ message: "Mandate name already exists" });
+      }
+
+      existingMandate.name = name;
     }
 
-    existingMandate.name = name;
+    // Update user if provided
+    if (user) {
+      const checkUser = await User.findOne({ _id: user });
+
+      if (!checkUser) {
+        return res.status(400).send({
+          success: false,
+          message: 'This user does not exist',
+        });
+      }
+
+      if (checkUser.disabled === true) {
+        return res.status(400).send({
+          success: false,
+          message: 'This user has been disabled',
+        });
+      }
+
+      switch (req.body.type) {
+        case 'authoriser':
+          const authoriserPrivilege = await Privilege.findOne({ name: 'authoriser' });
+
+          if (!checkUser.privileges.includes(authoriserPrivilege._id.toString())) {
+            return res.status(400).send({
+              success: false,
+              message: 'This user does not have the privilege of an authoriser',
+            });
+          }
+
+          existingMandate.authoriser = req.body.user;
+          changeAuthoriser = true;
+          break;
+
+        case 'verifier':
+          const verifierPrivilege = await Privilege.findOne({ name: 'verifier' });
+
+          if (!checkUser.privileges.includes(verifierPrivilege._id.toString())) {
+            return res.status(400).send({
+              success: false,
+              message: 'This user does not have the privilege of a verifier',
+            });
+          }
+
+          existingMandate.verifiers.addToSet(req.body.user);
+          existingMandate.numberOfVerifiers += 1
+          changeVerifier = true;
+
+          break;
+
+        default:
+          break;
+      }
+    }
 
     const result = await existingMandate.save();
+
     return res.status(200).json({
       status: "success",
-      message: "Mandate name updated successfully",
+      message: "Mandate updated successfully",
       details: result,
+      changeAuthoriser,
+      changeVerifier,
     });
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: error.message });
   }
 };
+
 
 
 const getAllMandates = async (req, res) => {
@@ -152,7 +219,10 @@ const getAllMandates = async (req, res) => {
 
   try {
     const mine = await User.findById(req.user._id);
-    const organizationId = mine.organizationId.toString();
+    const userOrganizationId = mine.organizationId.toString();
+    const paramsOrganizationId = req.query.organizationId;
+
+    const organizationId = paramsOrganizationId || userOrganizationId;
 
     const filter = { organizationId };
     if (name) {
