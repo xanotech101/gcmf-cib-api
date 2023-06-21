@@ -80,12 +80,10 @@ const getOrganizationUsers = async (req, res) => {
       filter.privileges = { $in: [mongoose.Types.ObjectId(checkPrivilege._id)] };
     }
 
-    console.log("filter", filter);
-
     const users = await User.find(filter)
       .sort({ _id: -1 })
       .select(
-        "firstName lastName email phone gender role privileges organizationId isVerified"
+        "firstName lastName email phone gender role privileges organizationId isVerified disabled"
       )
       .populate({ path: "privileges", select: "name" });
 
