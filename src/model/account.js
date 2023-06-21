@@ -27,6 +27,10 @@ const accountSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    disabled:{
+      type: Boolean,
+      default: false,
+    },
     createdAt: { type: String },
     updatedAt: { type: String },
   }

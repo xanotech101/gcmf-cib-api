@@ -116,11 +116,9 @@ const registerMandate = async (req, res) => {
 const updateMandate = async (req, res) => {
   try {
     const { mandateId } = req.params;
-    const { name, user } = req.body;
+    const { name, verifiers, authoriser } = req.body;
 
     const existingMandate = await Mandate.findById(mandateId);
-    let changeAuthoriser = false;
-    let changeVerifier = false;
 
     if (!existingMandate) {
       return res.status(400).json({ message: "This mandate doesn't exist" });
@@ -137,58 +135,16 @@ const updateMandate = async (req, res) => {
       existingMandate.name = name;
     }
 
-    // Update user if provided
-    if (user) {
-      const checkUser = await User.findOne({ _id: user });
-
-      if (!checkUser) {
-        return res.status(400).send({
-          success: false,
-          message: 'This user does not exist',
-        });
+    if(verifiers){
+      if(verifiers.length < 1){
+        return res.status(400).json({ message: "Please select at least one verifier" });
       }
+      existingMandate.verifiers = verifiers;
+      existingMandate.numberOfVerifiers = existingMandate.verifiers.length;
+    }
 
-      if (checkUser.disabled === true) {
-        return res.status(400).send({
-          success: false,
-          message: 'This user has been disabled',
-        });
-      }
-
-      switch (req.body.type) {
-        case 'authoriser':
-          const authoriserPrivilege = await Privilege.findOne({ name: 'authoriser' });
-
-          if (!checkUser.privileges.includes(authoriserPrivilege._id.toString())) {
-            return res.status(400).send({
-              success: false,
-              message: 'This user does not have the privilege of an authoriser',
-            });
-          }
-
-          existingMandate.authoriser = req.body.user;
-          changeAuthoriser = true;
-          break;
-
-        case 'verifier':
-          const verifierPrivilege = await Privilege.findOne({ name: 'verifier' });
-
-          if (!checkUser.privileges.includes(verifierPrivilege._id.toString())) {
-            return res.status(400).send({
-              success: false,
-              message: 'This user does not have the privilege of a verifier',
-            });
-          }
-
-          existingMandate.verifiers.addToSet(req.body.user);
-          existingMandate.numberOfVerifiers += 1
-          changeVerifier = true;
-
-          break;
-
-        default:
-          break;
-      }
+    if(authoriser){
+      existingMandate.authoriser = authoriser;
     }
 
     const result = await existingMandate.save();
@@ -196,9 +152,7 @@ const updateMandate = async (req, res) => {
     return res.status(200).json({
       status: "success",
       message: "Mandate updated successfully",
-      details: result,
-      changeAuthoriser,
-      changeVerifier,
+      data: result,
     });
   } catch (error) {
     console.log(error);

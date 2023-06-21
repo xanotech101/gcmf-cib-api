@@ -1,21 +1,13 @@
-const multer = require("multer");
-let csvToJson = require("convert-csv-to-json");
-const fs = require("fs");
-const excelToJson = require("convert-excel-to-json");
 const Mandate = require("../model/mandate.model");
 const User = require("../model/user.model");
 const InitiateRequest = require("../model/initiateRequest.model");
-const { validateInitiateRequestSchema, getDateAndTime } = require("../utils/utils");
+const { getDateAndTime } = require("../utils/utils");
 const { sendEmail } = require("../utils/emailService");
 const notificationService = require("../services/notification.service");
-const AuditTrail = require("../model/auditTrail");
-const bankOneService = require("../services/bankOne.service");
 const emitter = require("../utils/emitters");
-const { result } = require("lodash");
-const { default: mongoose } = require("mongoose");
 const { userService, auditTrailService } = require("../services");
 const uuid = require('uuid');
-const authToken = process.env.AUTHTOKEN;
+const Account = require("../model/account")
 
 
 const VerifyBatchUpload = async (req, res) => {
@@ -33,7 +25,7 @@ const VerifyBatchUpload = async (req, res) => {
         if (item.status === 'success') {
           switch (item.bankType) {
             case 'intra-bank':
-              if (item.data.Name != null || item.data.Name != "") {
+              if (item.data.Name !== null && item.data.Name !== "" && item.data.Name !== "null") {
                 const request = new InitiateRequest({
                   NIPSessionID: item.data.SessionID,
                   amount: item.amount,
@@ -66,18 +58,22 @@ const VerifyBatchUpload = async (req, res) => {
                     amount: item.amount,
                     accountNumber: item.accountNumber,
                     bankName: item.bankName,
-                    error: "No mandate found for this amount"
+                    bankCode: item.bankCode,
+                    accountType: item.accountType,
                   });
                   continue;
                 }
 
+                const account = await Account.findById(mine.organizationId)
+
                 request.mandate = mandate._id;
                 request.initiator = req.user._id;
+                request.narration = 'Transfer from ' + account?.accountName + ' to ' + ritem.data.Name + '\\\\' + item.narration
 
                 const result = await request.save();
 
                 for (const verifier of mandate.verifiers) {
-                 
+
                   if (!notificationsToCreate.some(notification => notification.user.equals(verifier._id))) {
                     const notification = {
                       title: "Transaction request Initiated",
@@ -116,7 +112,7 @@ const VerifyBatchUpload = async (req, res) => {
               }
               break;
             case 'inter-bank':
-              if (item.data.Name != null || item.data.Name != "") {
+              if (item.data.Name !== null && item.data.Name !== "" && item.data.Name !== "null") {
                 const request = new InitiateRequest({
                   NIPSessionID: item.data.SessionID,
                   amount: item.amount,
@@ -149,13 +145,18 @@ const VerifyBatchUpload = async (req, res) => {
                     amount: item.amount,
                     accountNumber: item.accountNumber,
                     bankName: item.bankName,
+                    bankCode: item.bankCode,
+                    accountType: item.accountType,
                     error: "No mandate found for this amount"
                   });
                   continue;
                 }
 
+                const account = await Account.findById(mine.organizationId)
+
                 request.mandate = mandate._id;
                 request.initiator = req.user._id;
+                request.narration = 'Transfer from ' + account?.accountName + ' to ' + item.data.Name + '\\\\' + item.narration
 
                 const result = await request.save();
 

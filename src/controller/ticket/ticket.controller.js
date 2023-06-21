@@ -268,7 +268,7 @@ const replyTicket = async (req, res) => {
       await ticket.save();
       request_users.map((user) => {
 
-        const subject = 'ticket response'
+        const subject = 'Ticket Response'
         const message = {
           firstName: user.firstName,
           message: `Hello ${user.firstName} a response has been made to a ticket for your organization.`,
@@ -296,7 +296,7 @@ const replyTicket = async (req, res) => {
 
 
     requestSystemAdmin.map((admin) => {
-      const subject = 'ticket response'
+      const subject = 'Ticket Response'
 
       const message = {
         firstName: checkForUserRole.firstName,
