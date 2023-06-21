@@ -11,8 +11,7 @@ const {
   auditTrailService,
   notificationService,
 } = require("../../services");
-const { getDateAndTime, toISOLocal } = require("../../utils/utils");
-const bankOneService = require("../../services/bankOne.service");
+const { getDateAndTime } = require("../../utils/utils");
 const Account = require("../../model/account");
 const { QueueTransfer } = require("../../services/messageQueue/queue");
 const authToken = process.env.AUTHTOKEN;
@@ -38,6 +37,9 @@ const initiateRequest = async (req, res) => {
       type: req.body.type
     });
 
+    const account = await Account.findById(mine.organizationId.toString())
+    console.log("🚀 ~ file: initiateRequest.controller.js:41 ~ initiateRequest ~ account:", account)
+
     const mandate = await Mandate.findOne({
       organizationId: mine.organizationId.toString(),
       minAmount: { $lte: request.amount },
@@ -56,6 +58,7 @@ const initiateRequest = async (req, res) => {
 
     request.mandate = mandate._id;
     request.initiator = req.user._id;
+    request.narration = 'Transfer from ' + account?.accountName + ' to ' + req.body.beneficiaryAccountName + '\\\\' + req.body.narration
 
     const result = await request.save();
     const notificationsToCreate = [];

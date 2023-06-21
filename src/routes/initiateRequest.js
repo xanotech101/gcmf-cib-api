@@ -5,7 +5,6 @@ const {
   authoriserAuth,
   verifierAuth,
   allUsersAuth,
-  superUserAuth
 } = require("../middleware/auth");
 
 const upload = require("../middleware/multer");
