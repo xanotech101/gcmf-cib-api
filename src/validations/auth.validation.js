@@ -100,7 +100,15 @@ const authSchemas = {
           'string.base': 'Old password must be a string',
           'string.empty': 'Old password is required',
           'any.required': 'Old password is required',
-        })
+        }),
+      confirm_password: Joi.string()
+        .required()
+        .label('Confirm password')
+        .messages({
+          'string.base': 'Confirm password must be a string',
+          'string.empty': 'Confirm password is required',
+          'any.required': 'Confirm password is required',
+        }).equal(Joi.ref('password'))
     }),
 
   register: Joi.object()

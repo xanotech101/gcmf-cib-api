@@ -242,6 +242,7 @@ const changePassword = async (req, res) => {
     await user.save();
     return res.status(200).json({ message: "Password changed successfully" });
   } catch (error) {
+    console.log("🚀 ~ file: user.controller.js:245 ~ changePassword ~ error:", error)
     return res.status(500).json({
       status: "Failed",
       Message: "Unable to change user password",

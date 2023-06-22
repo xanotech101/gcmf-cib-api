@@ -42,7 +42,7 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       required: true,
-      enum: ["system-admin", "super-admin", "admin", "user"],
+      enum: ["system-admin", "super-admin", "admin", "user", "gcadmin"],
     },
     disabled:{
       type:Boolean,

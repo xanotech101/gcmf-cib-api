@@ -22,6 +22,10 @@ const privileges = [
   {
     name: "initiator",
     _id: mongoose.Types.ObjectId('63f69765243023c496fe322d'),
+  },
+  {
+    name: "gcadmin",
+    _id: mongoose.Types.ObjectId('63f69765243023c496fe322e'),
   }
 ] 
 
