@@ -31,7 +31,7 @@ const preLogin = async (req, res) => {
 
     const userOrganization = await Account.findOne({ _id: user.organizationId  });
 
-    if(userOrganization.disabled === true){
+    if(userOrganization?.disabled === true){
       return res.status(422).send({
         data: null,
         message: "Sorry your organization has been disabled and you can't login, if you think this is a mistake contact the administrator thank you",
