@@ -28,14 +28,16 @@ async function getAllusersTiedToGCAccount(req, res) {
 
         const request_users = [];
         for (const account of request_accounts) {
-            const users = await userModel.find({ organizationId: account._id });
+            const users = await userModel.find({ organizationId: account._id }).populate('privileges');
             request_users.push(...users);
         }
 
         return res.status(200).send({
             success: false,
             message: 'users fetched successufully',
-            data: request_users
+            data: {
+                users: request_users
+            }
         });
 
 
@@ -65,7 +67,9 @@ async function getAllusersTiedToAnAccount(req, res) {
         return res.status(200).json({
             success: true,
             message: 'Users tied to this account',
-            data: users,
+            data: {
+                users,
+            },
             currentPage: page,
             totalPages: totalPages
         });

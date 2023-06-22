@@ -14,6 +14,7 @@ const otpModel = require("../model/otp.model");
 const { userService, auditTrailService } = require("../services");
 const { getDateAndTime } = require("../utils/utils");
 const authToken = process.env.AUTHTOKEN;
+const Organization = require("../model/organization");
 
 
 function isValidEmail(email) {
@@ -501,25 +502,38 @@ const bulkOnboard = async (req, res) => {
 
 const getAllAccountsByLabel = async (req, res) => {
   try {
-    const PAGE_SIZE = 10; // Number of accounts per page
-
+    const perPage = parseInt(req.query.perPage) || 10;
     const page = parseInt(req.query.page) || 1;
-    const skip = (page - 1) * PAGE_SIZE;
+    const skip = (page - 1) * perPage;
 
-    const organizationLabel = req.params.organizationlabel;
+    const requestLabel = await Organization.findOne({ label: 'Grooming Centre' });
+
+    if(!requestLabel){
+      return res.status(400).send({
+        success: false,
+        message: 'No organization with that label'
+      })
+    }
 
     // Find accounts based on organizationLabel
-    const accounts = await Account.find({ organizationLabel })
+    const accounts = await Account.find({ organizationLabel: requestLabel._id })
       .skip(skip)
-      .limit(PAGE_SIZE)
+      .limit(perPage)
       .sort({ _id: -1 })
       .populate("adminID")
       .populate("organizationLabel");
 
+      const totalCount = await Account.countDocuments({ organizationLabel: requestLabel._id });
+
     // Return the accounts
     return res.status(200).json({
       status: "Success",
-      accounts,
+      data: {
+        currentPage: page,
+        totalCount,
+        totalPages: Math.ceil(totalCount / perPage),
+        accounts,
+      },
     });
   } catch (error) {
     console.log(error);
