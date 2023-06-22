@@ -2,6 +2,8 @@ const { default: mongoose } = require("mongoose");
 const Account = require("../model/account");
 const organization = require("../model/organization");
 const userModel = require("../model/user.model");
+const Audit = require("../model/auditTrail")
+
 const { getMonthName } = require("./external/externalcontroller");
 
 async function getAllusersTiedToGCAccount(req, res) {
@@ -169,4 +171,63 @@ const dashBoardAnalytics = async (req, res) => {
     });
 };
 
-module.exports = { getAllusersTiedToGCAccount, getAllusersTiedToAnAccount, getGcAnalytics, dashBoardAnalytics }
+const gcAudit = async (req, res) => {
+    try {
+        const requestlabel = await organization.findOne({ label: 'Grooming Centre' })
+        if (!requestlabel) {
+            return res.status(400).send({
+                success: false,
+                message: 'No organization with that label'
+            });
+        }
+
+        // Get all accounts tied to the gc organization label
+        const request_accounts = await Account.find({
+            organizationLabel: requestlabel._id
+        });
+        if (!request_accounts || request_accounts.length === 0) {
+            return res.status(400).send({
+                success: false,
+                message: 'No account registered with this organization yet',
+            });
+        }
+
+        // Fetch all audits for each request_accounts._id with search filter and pagination
+        const page = req.query.page || 1; // Current page number
+        const limit = req.query.limit || 10; // Number of audits per page
+        const searchType = req.query.type || ''; // Search type
+
+        const query = {
+            organization: { $in: request_accounts.map(account => account._id) },
+        };
+
+        if (searchType) {
+            query.type = { $regex: searchType, $options: 'i' };
+        }
+
+        const count = await Audit.countDocuments(query);
+        const audits = await Audit.find(query)
+            .skip((page - 1) * limit)
+            .limit(limit);
+
+        return res.status(200).send({
+            success: true,
+            message: 'Audits retrieved successfully',
+            data: {
+                audits,
+                total: count,
+                page: parseInt(page),
+                totalPages: Math.ceil(count / limit),
+            },
+        });
+
+    } catch (error) {
+        console.log(error.message);
+        return res.status(500).send({
+            message: error.message,
+        });
+    }
+};
+
+
+module.exports = { getAllusersTiedToGCAccount, getAllusersTiedToAnAccount, getGcAnalytics, dashBoardAnalytics,gcAudit }
