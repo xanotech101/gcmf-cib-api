@@ -5,10 +5,10 @@ const { getAllusersTiedToGCAccount, getAllusersTiedToAnAccount, getGcAnalytics, 
 
 const router = express.Router();
 
-router.get("/getAccount_oragnizationlabel/:organizationlabel", gcAuth, getAllAccountsByLabel)
+router.get("/accounts", gcAuth, getAllAccountsByLabel)
 router.get("/fetchAllusers", gcAuth, getAllusersTiedToGCAccount)
 router.get("/fetchusersByAccount/:account", gcAuth, getAllusersTiedToAnAccount)
 router.get("/anaylytics", gcAuth, getGcAnalytics)
-router.get("/gc-report", gcAuth, dashBoardAnalytics)
+router.get("/dashboard-analytics", gcAuth, dashBoardAnalytics)
 
 module.exports = router;
