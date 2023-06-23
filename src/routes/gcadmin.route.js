@@ -1,7 +1,7 @@
 const express = require("express");
 const { gcAuth } = require("../middleware/auth");
 const { getAllAccountsByLabel } = require("../controller/account");
-const { getAllusersTiedToGCAccount, getAllusersTiedToAnAccount, getGcAnalytics, dashBoardAnalytics, gcAudit } = require("../controller/gcadmin");
+const { getAllusersTiedToGCAccount, getAllusersTiedToAnAccount, getGcAnalytics, dashBoardAnalytics, transferRequest } = require("../controller/gcadmin");
 
 const router = express.Router();
 
@@ -10,7 +10,6 @@ router.get("/fetchAllusers", gcAuth, getAllusersTiedToGCAccount)
 router.get("/fetchusersByAccount/:account", gcAuth, getAllusersTiedToAnAccount)
 router.get("/anaylytics", gcAuth, getGcAnalytics)
 router.get("/dashboard-analytics", gcAuth, dashBoardAnalytics)
-router.get("/audit-trails", gcAuth, gcAudit)
-
+router.get("/transferRequest",gcAuth, transferRequest)
 
 module.exports = router;

@@ -2,8 +2,7 @@ const { default: mongoose } = require("mongoose");
 const Account = require("../model/account");
 const organization = require("../model/organization");
 const userModel = require("../model/user.model");
-const Audit = require("../model/auditTrail")
-
+const InitiateRequest = require("../model/initiateRequest.model")
 const { getMonthName } = require("./external/externalcontroller");
 
 async function getAllusersTiedToGCAccount(req, res) {
@@ -51,35 +50,18 @@ async function getAllusersTiedToGCAccount(req, res) {
 
 async function getAllusersTiedToAnAccount(req, res) {
     try {
+
         const page = parseInt(req.query.page) || 1;
         const limit = 10; // Set the desired number of users per page
 
-        const filter = {
-            organizationId: req.params.account
-        };
-
-        const { firstName, lastName, email } = req.query;
-
-        if (firstName) {
-            filter.firstName = { $regex: firstName, $options: 'i' };
-        }
-
-        if (lastName) {
-            filter.lastName = { $regex: lastName, $options: 'i' };
-        }
-
-        if (email) {
-            filter.email = { $regex: email, $options: 'i' };
-        }
-
-        const totalCount = await userModel.countDocuments(filter);
+        const totalCount = await userModel.countDocuments({ organizationId: req.params.account });
 
         const totalPages = Math.ceil(totalCount / limit);
 
         const skip = (page - 1) * limit;
 
         const users = await userModel
-            .find(filter)
+            .find({ organizationId: req.params.account })
             .skip(skip)
             .limit(limit);
 
@@ -97,7 +79,6 @@ async function getAllusersTiedToAnAccount(req, res) {
         return res.status(500).json({ message: error.message });
     }
 }
-
 
 async function getGcAnalytics(req, res) {
     try {
@@ -189,8 +170,9 @@ const dashBoardAnalytics = async (req, res) => {
     });
 };
 
-const gcAudit = async (req, res) => {
+const transferRequest = async (req, res) => {
     try {
+        // Get gc organization label
         const requestlabel = await organization.findOne({ label: 'Grooming Centre' })
         if (!requestlabel) {
             return res.status(400).send({
@@ -210,44 +192,47 @@ const gcAudit = async (req, res) => {
             });
         }
 
-        // Fetch all audits for each request_accounts._id with search filter and pagination
+        // Fetch transfers from InitiateRequest model for each request_accounts._id with search filter and pagination
         const page = req.query.page || 1; // Current page number
-        const limit = req.query.perPage || 10; // Number of audits per page
-        const searchType = req.query.type || ''; // Search type
+        const limit = req.query.limit || 10; // Number of transfers per page
+        const transferStatus = req.query.transferStatus || ''; // Transfer status filter
+        const transactionReference = req.query.transactionReference || ''; // Transaction reference filter
 
         const query = {
-            organization: { $in: request_accounts.map(account => account._id) },
+            organizationId: { $in: request_accounts.map(account => account._id) },
         };
 
-        if (searchType) {
-            query.type = { $regex: searchType, $options: 'i' };
+        if (transferStatus) {
+            query.transferStatus = { $regex: transferStatus, $options: 'i' };
         }
 
-        const count = await Audit.countDocuments(query);
-        const trails = await Audit.find(query)
+        if (transactionReference) {
+            query.transactionReference = { $regex: transactionReference, $options: 'i' };
+        }
+
+        const count = await InitiateRequest.countDocuments(query);
+        const transfers = await InitiateRequest.find(query)
             .skip((page - 1) * limit)
-            .sort({ _id: -1 })
             .limit(limit);
 
         return res.status(200).send({
             success: true,
-            message: 'Audits retrieved successfully',
+            message: 'Transfers retrieved successfully',
             data: {
-                trails,
-                meta: {
-                    total: count,
-                    page: parseInt(page),
-                    perPage: parseInt(limit),
-                }
-            },
+                transfers,
+                total: count,
+                page: parseInt(page),
+                totalPages: Math.ceil(count / limit)
+            }
         });
 
     } catch (error) {
         console.log(error.message);
         return res.status(500).send({
+            message: error.message
         });
     }
 };
 
 
-module.exports = { getAllusersTiedToGCAccount, getAllusersTiedToAnAccount, getGcAnalytics, dashBoardAnalytics,gcAudit }
+module.exports = { getAllusersTiedToGCAccount, getAllusersTiedToAnAccount, getGcAnalytics, dashBoardAnalytics, transferRequest }
