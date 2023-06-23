@@ -9,7 +9,9 @@ const {
   verifyAccount,
   getAccount,
   bulkOnboard,
-  DeleteAccount,
+  getOrganizationStats,
+  disableAccount,
+  enableAccount
 } = require("../controller/account");
 const upload = require("../middleware/multer");
 
@@ -32,6 +34,8 @@ router.get("/all_accounts/:id", allUsersAuth, getAccount);
 
 //onboard multiple account
 router.post("/bulkOnboard", superUserAuth, upload.array("files"), bulkOnboard)
+router.patch("/disable/:id", superUserAuth, disableAccount)
+router.patch("/enable/:id", superUserAuth, enableAccount)
 
-
+router.get('/stats/:organizationId', allUsersAuth, getOrganizationStats)
 module.exports = router;

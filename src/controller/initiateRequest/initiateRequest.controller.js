@@ -11,8 +11,7 @@ const {
   auditTrailService,
   notificationService,
 } = require("../../services");
-const { getDateAndTime, toISOLocal } = require("../../utils/utils");
-const bankOneService = require("../../services/bankOne.service");
+const { getDateAndTime } = require("../../utils/utils");
 const Account = require("../../model/account");
 const { QueueTransfer } = require("../../services/messageQueue/queue");
 const authToken = process.env.AUTHTOKEN;
@@ -38,6 +37,9 @@ const initiateRequest = async (req, res) => {
       type: req.body.type
     });
 
+    const account = await Account.findById(mine.organizationId.toString())
+    console.log("🚀 ~ file: initiateRequest.controller.js:41 ~ initiateRequest ~ account:", account)
+
     const mandate = await Mandate.findOne({
       organizationId: mine.organizationId.toString(),
       minAmount: { $lte: request.amount },
@@ -56,6 +58,7 @@ const initiateRequest = async (req, res) => {
 
     request.mandate = mandate._id;
     request.initiator = req.user._id;
+    request.narration = 'Transfer from ' + account?.accountName + ' to ' + req.body.beneficiaryAccountName + '\\\\' + req.body.narration
 
     const result = await request.save();
     const notificationsToCreate = [];
@@ -63,7 +66,7 @@ const initiateRequest = async (req, res) => {
     for (const verifier of mandate.verifiers) {
       const notification = {
         title: "Transaction request Initiated",
-        transaction: result._id,
+        identifier: result._id,
         user: verifier._id,
         message:
           "A transaction request was initiated and is awaiting your approval",
@@ -429,7 +432,7 @@ const declineRequest = async (req, res) => {
 
     await notificationService.createNotifications([
       {
-        transaction: request._id,
+        identifier: request._id,
         user: request.initiator,
         title: "Transaction Request Declined",
         message: `A verifier has declined your transaction request for ${request.customerName}`,
@@ -444,7 +447,7 @@ const declineRequest = async (req, res) => {
     ) {
       await notificationService.createNotifications([
         {
-          transaction: request._id,
+          identifier: request._id,
           user: request.mandate.authoriser,
           title: "Authorization Required",
           message: "New transaction request require your review",
@@ -569,7 +572,7 @@ const approveRequest = async (req, res) => {
 
     await notificationService.createNotifications([
       {
-        transaction: request._id,
+        identifier: request._id,
         user: request.initiator,
         title: "Transaction Request Approved",
         message: `A verifier has approved your transaction request for ${request.customerName}`,
@@ -583,7 +586,7 @@ const approveRequest = async (req, res) => {
     ) {
       await notificationService.createNotifications([
         {
-          transaction: request._id,
+          identifier: request._id,
           user: request.mandate.authoriser,
           title: "Authorization Required",
           message: "New transaction request require your review",
@@ -671,7 +674,7 @@ const authoriserApproveRequest = async (req, res) => {
 
     // update and save request
     request.status = "approved";
-    request.transferStatus = "disburse pending";
+    request.transferStatus = "queued";
     request.authoriserAction = {
       status: "approved",
       reason: req.body.reason,
@@ -682,7 +685,7 @@ const authoriserApproveRequest = async (req, res) => {
     const verifiers = request.mandate.verifiers;
     await notificationService.createNotifications([
       {
-        transaction: request._id,
+        identifier: request._id,
         user: request.initiator,
         title: "Request approved",
         message: `Your transaction request for ${request.customerName} has been approved`,
@@ -805,7 +808,7 @@ const authoriserDeclineRequest = async (req, res) => {
     const verifiers = request.mandate.verifiers;
     await notificationService.createNotifications([
       {
-        transaction: request._id,
+        identifier: request._id,
         user: request.initiator,
         title: "Request not Authorised",
         message: `Your transaction request for ${request.customerName} has been declined`,
@@ -1095,7 +1098,7 @@ const approveBulkRequest = async (req, res) => {
     if (notificationMessages.length > 0) {
       await notificationService.createNotifications([
         {
-          transaction: notificationMessages[0].transaction,
+          identifier: notificationMessages[0].transaction,
           user: notificationMessages[0].user,
           title: "Authorization Required",
           message: "New transaction request require your review",
@@ -1208,7 +1211,7 @@ const authoriserBulkaprove = async (req, res) => {
 
       await notificationService.createNotifications([
         {
-          transaction: request._id,
+          identifier: request._id,
           user: request.initiator,
           title: "Request approved",
           message: `Your transaction request for ${request.mandate.accountName} has been approved`,

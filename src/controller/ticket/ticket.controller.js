@@ -3,8 +3,9 @@ const { PER_PAGE } = require("../../utils/constants");
 const mongoose = require("mongoose");
 const userModel = require("../../model/user.model");
 const { sendEmail } = require("../../utils/emailService");
-const { insertMany } = require("../../model/account");
-const { toISOLocal } = require("../../utils/utils");
+const {
+  notificationService,
+} = require("../../services");
 
 const getAllTickets = async (req, res) => {
   const { perPage, page, topic } = req.query;
@@ -35,7 +36,6 @@ const getAllTickets = async (req, res) => {
       .sort(options.sort);
 
     if (tickets.length === 0) {
-      console.log("No tickets found");
       return res.status(404).json({
         message: "No tickets found",
         status: "error",
@@ -111,7 +111,6 @@ const getMyOrganizationTickets = async (req, res) => {
   }
 };
 
-
 const getMyTickets = async (req, res) => {
   const { perPage, page, topic } = req.query;
 
@@ -158,7 +157,6 @@ const getMyTickets = async (req, res) => {
   }
 };
 
-
 const createTicket = async (req, res) => {
   try {
     const checkForUserRole = await userModel.findOne({ _id: req.user._id })
@@ -169,7 +167,7 @@ const createTicket = async (req, res) => {
       });
     }
 
-    await Ticket.create({
+    const ticket = await Ticket.create({
       createdBy: mongoose.Types.ObjectId(req.user._id),
       topic: req.body.topic,
       message: req.body.message,
@@ -177,6 +175,7 @@ const createTicket = async (req, res) => {
       organization: mongoose.Types.ObjectId(req.user.organizationId)
     });
 
+    const notifications = []
 
     if (checkForUserRole.role !== 'super-admin') {
       const requestSystemAdmin = await userModel.find({ role: 'system-admin' })
@@ -190,16 +189,28 @@ const createTicket = async (req, res) => {
 
 
       requestSystemAdmin.map((admin) => {
-
         const subject = 'new ticket'
         const message = {
           firstName: checkForUserRole.firstName,
           message: `A ticket has been created by ${checkForUserRole.firstName} and currently waiting your response.`,
           year: new Date().getFullYear()
         }
+        notifications.push({
+          title: "New Ticket",
+          message: `A ticket has been created by ${checkForUserRole.firstName} and currently waiting your response.`,
+          user: admin._id,
+          type: "ticket",
+          identifier: ticket._id,
+        });
         sendEmail(admin.email, subject, 'ticket', message)
       })
     }
+    console.log("🚀 ~ file: ticket.controller.js:210 ~ createTicket ~ notifications:", notifications)
+
+    if(notifications.length > 0) {
+      await notificationService.createNotifications(notifications);
+    }
+
 
     return res.status(200).json({
       message: "Your request has been logged Successfully",
@@ -257,7 +268,7 @@ const replyTicket = async (req, res) => {
       await ticket.save();
       request_users.map((user) => {
 
-        const subject = 'ticket response'
+        const subject = 'Ticket Response'
         const message = {
           firstName: user.firstName,
           message: `Hello ${user.firstName} a response has been made to a ticket for your organization.`,
@@ -285,7 +296,7 @@ const replyTicket = async (req, res) => {
 
 
     requestSystemAdmin.map((admin) => {
-      const subject = 'ticket response'
+      const subject = 'Ticket Response'
 
       const message = {
         firstName: checkForUserRole.firstName,

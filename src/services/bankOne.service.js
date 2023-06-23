@@ -49,18 +49,12 @@ class BankOneService {
     }
   }
 
-  async transactionHistory(
-    authToken,
-    accountNumber,
-    fromDate,
-    toDate,
-    numberOfItems
-  ) {
+  async transactionHistory(params) {
     try {
 
-      const { data } = await axios.get(
-        `${config.transactionHistory}?authtoken=${authToken}&accountNumber=${accountNumber}&fromDate=${fromDate}&toDate=${toDate}&numberOfItems=${numberOfItems}`
-      );
+      const { data } = await axios.get(config.transactionHistory, {
+        params
+      });
       return data;
     } catch (error) {
       console.log('service', error.response.data);
@@ -120,37 +114,6 @@ class BankOneService {
       console.log('service', error.response.data);
       throw error.response.data;;
     }
-  }
-
-  async getMultipleNameEnquiry(authToken, payload) {
-    const promises = payload.map((item) => {
-      return axios.post(`${config.nameEnquiry}`, {
-        AccountNumber: item.accountNumber,
-        BankCode: item.bankCode,
-        Token: authToken,
-      });
-    });
-
-    const results = await Promise.allSettled(promises);
-
-    const successfulPromises = results.filter(
-      (promise) => promise.status === "fulfilled"
-    );
-    const data = successfulPromises.map((promise) => promise.value.data);
-
-    const failedPromise = results.filter(
-      (promise) => promise.status === "rejected"
-    );
-    const failedPayload = failedPromise.map(
-      (promise) => promise.reason.config.data
-    );
-
-    console.log(failedPromise, failedPayload);
-
-    return {
-      data,
-      failedPayload,
-    };
   }
 
   async accountStatement(authToken, accountNumber, fromDate, toDate, isPdf) {

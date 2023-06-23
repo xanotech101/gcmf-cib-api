@@ -111,34 +111,55 @@ const registerMandate = async (req, res) => {
 //@desc     update a mandate
 //@route    POST /mandate/update
 //@access   Public
+
+
 const updateMandate = async (req, res) => {
   try {
     const { mandateId } = req.params;
-    const { name } = req.body;
+    const { name, verifiers, authoriser } = req.body;
 
     const existingMandate = await Mandate.findById(mandateId);
+
     if (!existingMandate) {
       return res.status(400).json({ message: "This mandate doesn't exist" });
     }
 
-    const mandateWithSameName = await Mandate.findOne({ name });
-    if (mandateWithSameName && mandateWithSameName._id.toString() !== mandateId) {
-      return res.status(400).json({ message: "Mandate name already exists" });
+    // Update name if provided
+    if (name && name !== existingMandate.name) {
+      const mandateWithSameName = await Mandate.findOne({ name });
+
+      if (mandateWithSameName && mandateWithSameName._id.toString() !== mandateId) {
+        return res.status(400).json({ message: "Mandate name already exists" });
+      }
+
+      existingMandate.name = name;
     }
 
-    existingMandate.name = name;
+    if(verifiers){
+      if(verifiers.length < 1){
+        return res.status(400).json({ message: "Please select at least one verifier" });
+      }
+      existingMandate.verifiers = verifiers;
+      existingMandate.numberOfVerifiers = existingMandate.verifiers.length;
+    }
+
+    if(authoriser){
+      existingMandate.authoriser = authoriser;
+    }
 
     const result = await existingMandate.save();
+
     return res.status(200).json({
       status: "success",
-      message: "Mandate name updated successfully",
-      details: result,
+      message: "Mandate updated successfully",
+      data: result,
     });
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: error.message });
   }
 };
+
 
 
 const getAllMandates = async (req, res) => {
@@ -152,7 +173,10 @@ const getAllMandates = async (req, res) => {
 
   try {
     const mine = await User.findById(req.user._id);
-    const organizationId = mine.organizationId.toString();
+    const userOrganizationId = mine.organizationId.toString();
+    const paramsOrganizationId = req.query.organizationId;
+
+    const organizationId = paramsOrganizationId || userOrganizationId;
 
     const filter = { organizationId };
     if (name) {
@@ -253,13 +277,34 @@ const deleteMandate = async (req, res) => {
 const updateMandateAuthorizerVerifiers = async (req, res) => {
   try {
     // Check the privilege of the incoming user
-    const checkUserPrivilege = await User.findOne({ _id: req.body.incomingUser });
-    const getMandateInfo = await Mandate.findOne({ _id: req.body.mandateId });
+    const checkIncomingUser = await User.findOne({ _id: req.body.incomingUser });
+    const checkOutgoingUser = await User.findOne({ _id: req.body.outgoingUser })
 
-    if (!checkUserPrivilege) {
+    if (!checkIncomingUser || !checkOutgoingUser) {
       return res.status(400).send({
         success: false,
-        message: 'User not found'
+        message: 'User not found or has been'
+      });
+    }
+
+    if (checkIncomingUser.disabled === true) {
+      return res.status(400).send({
+        success: false,
+        message: 'This user is disabled from this system at the moment'
+      });
+    }
+
+    if (checkIncomingUser.organizationId.toString() !== checkOutgoingUser.organizationId.toString()) {
+      return res.status(400).send({
+        success: false,
+        message: 'This user is not in the same organization as the outgoing user'
+      });
+    }
+
+    if (req.body.incomingUser === req.body.outgoingUser) {
+      return res.status(400).send({
+        success: false,
+        message: 'The incoming user cannot be the same as the outgoing user'
       });
     }
 
@@ -267,24 +312,16 @@ const updateMandateAuthorizerVerifiers = async (req, res) => {
       case 'authoriser':
         const getPrivilegeId = await Privilege.findOne({ name: 'authoriser' });
 
-        if (checkUserPrivilege.privileges[0].toString() !== getPrivilegeId._id.toString()) {
+        if (checkIncomingUser.privileges[0].toString() !== getPrivilegeId._id.toString()) {
           return res.status(400).send({
             success: false,
             message: 'This user does not have the privilege of an authoriser'
           });
         }
 
-        // Check if the incoming user is in the same organization as the mandate
-        if (checkUserPrivilege.organizationId.toString() !== getMandateInfo.organizationId.toString()) {
-          return res.status(400).send({
-            success: false,
-            message: 'This user does not belong to this organization'
-          });
-        }
-
         // Update all mandates with the incoming user as the authorizer
         const updateMandateAuthorizer = await Mandate.updateMany(
-          { organizationId: getMandateInfo.organizationId, authoriser: req.body.outgoingUser },
+          { organizationId: checkIncomingUser.organizationId, authoriser: req.body.outgoingUser },
           { $set: { authoriser: req.body.incomingUser } }
         );
 
@@ -302,36 +339,29 @@ const updateMandateAuthorizerVerifiers = async (req, res) => {
 
       case 'verifier':
         // TODO: Implement the verifier logic here
-        const getverifierPrivilegeId = await Privilege.findOne({ name: 'verifier' });
-        if (checkUserPrivilege.privileges[0].toString() !== getverifierPrivilegeId._id.toString()) {
+        const getVerifierPrivilegeId = await Privilege.findOne({ name: 'verifier' });
+        if (checkIncomingUser.privileges[0].toString() !== getVerifierPrivilegeId._id.toString()) {
           return res.status(400).send({
             success: false,
             message: 'This user does not have the privilege of a verifier'
           });
         }
 
-        // Check if the incoming user is in the same organization as the mandate
-        if (checkUserPrivilege.organizationId.toString() !== getMandateInfo.organizationId.toString()) {
-          return res.status(400).send({
-            success: false,
-            message: 'This user does not belong to this organization'
-          });
-        }
-
         // Update all mandates with the incoming user as the authorizer
         const PullMandateVerifier = await Mandate.updateMany(
           {
-            organizationId: getMandateInfo.organizationId,
+            organizationId: checkIncomingUser.organizationId,
             verifiers: { $in: [req.body.outgoingUser] }
           },
           {
             $pull: { verifiers: req.body.outgoingUser }
           }
         );
+        console.log("🚀 ~ file: mandate.controller.js:329 ~ updateMandateAuthorizerVerifiers ~ PullMandateVerifier:", PullMandateVerifier)
         if (PullMandateVerifier.modifiedCount > 0) {
 
           const addUser = await Mandate.updateMany({
-            organizationId: getMandateInfo.organizationId
+            organizationId: checkIncomingUser.organizationId,
           },
 
             {
@@ -343,6 +373,18 @@ const updateMandateAuthorizerVerifiers = async (req, res) => {
               success: false,
               message: 'There was an error updating the mandate'
             });
+          }
+
+          const updateVerifiersCount = await Mandate.find({
+            organizationId: checkIncomingUser.organizationId,
+          });
+
+          for (const mandate of updateVerifiersCount) {
+            const numberOfVerifiers = mandate.verifiers.length;
+            await Mandate.updateOne(
+              { _id: mandate._id },
+              { $set: { numberOfVerifiers: numberOfVerifiers } }
+            );
           }
 
           return res.status(200).send({

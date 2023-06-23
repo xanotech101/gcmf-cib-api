@@ -11,15 +11,17 @@ const {
   updateUserPriviledge,
   getUserProfileById,
   getAllAdmins,
-  disableAccount,
-  enableAccount,
-  DeleteAccount
+  disableUser,
+  enableUser,
+  deleteAccount,
+  editEmail
 } = require("../controller/user/user.controller");
 const {
   adminAuth,
   allUsersAuth,
   superUserAuth,
 } = require("../middleware/auth");
+const { validate, authSchemas } = require("../validations");
 
 const router = express.Router();
 
@@ -29,7 +31,7 @@ router.get("/profile/:id", adminAuth, getUserProfileById);
 
 router.put("/profile", adminAuth, updateUserProfile);
 router.put("/userPrivilege", adminAuth, updateUserPriviledge);
-router.post("/change-password", allUsersAuth, changePassword);
+router.post("/change-password", allUsersAuth, validate(authSchemas.changePassword,"body"), changePassword);
 router.post("/secret-questions/create", createSecurityQuestions)
 
 //admin routes
@@ -39,10 +41,12 @@ router.get("/alladmins", superUserAuth, getAllAdmins);
 
 router.delete("/delete_user", superUserAuth, deleteAnyUser);
 router.delete("/delete_nonadmin", adminAuth, deleteNonAdminUsers);
-router.patch("/disable_user_account/:userid", superUserAuth, disableAccount)
-router.patch("/enable_user_account/:userid", superUserAuth, enableAccount)
-router.delete("/deleteAccount/:id",superUserAuth,DeleteAccount )
-// router.post("/priviledges", superUserAuth, createPriviledges);
+router.patch("/disable/:id", superUserAuth, disableUser)
+router.patch("/enable/:id", superUserAuth, enableUser)
+router.delete("/deleteAccount/:id", superUserAuth, deleteAccount)
+
+router.patch("/editEmail", superUserAuth, validate(authSchemas.updateEmail,"body"), editEmail)
+
 module.exports = router;
 
 deleteNonAdminUsers;

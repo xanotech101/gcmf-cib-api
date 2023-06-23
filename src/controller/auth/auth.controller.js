@@ -5,7 +5,7 @@ const secretQuestionService = require("../../services/secretQuestion.service");
 const { sendEmail } = require("../../utils/emailService");
 const { getDateAndTime, toISOLocal } = require("../../utils/utils");
 const auditTrailService = require("../../services/auditTrail.service");
-const { update } = require("lodash");
+const Account = require("../../model/account");
 
 
 const preLogin = async (req, res) => {
@@ -25,6 +25,16 @@ const preLogin = async (req, res) => {
       return res.status(403).send({
         data: null,
         message: "User is still yet to be verified on the platform",
+        status: "failed",
+      });
+    }
+
+    const userOrganization = await Account.findOne({ _id: user.organizationId  });
+
+    if(userOrganization?.disabled === true){
+      return res.status(422).send({
+        data: null,
+        message: "Sorry your organization has been disabled and you can't login, if you think this is a mistake contact the administrator thank you",
         status: "failed",
       });
     }
@@ -182,7 +192,7 @@ const forgetPassword = async (req, res) => {
     const messageData = {
       firstName: user.firstName,
       url: link,
-      message: `Hello ${user.firstName}  Please follow the link to verify your account ${link}`,
+      message: `Hello ${user.firstName}  Please follow the link to verify your account ${link}, Please note that this link will expire after 30 minutes`,
       year: new Date().getFullYear(),
     }
     await sendEmail(user.email, subject, "reset-password", messageData);
@@ -190,7 +200,7 @@ const forgetPassword = async (req, res) => {
     res.status(200).json({
       status: "success",
       message:
-        "If the mail you inputed is registered on the platform, you will get a mail to change you password",
+        "If the mail you inputed is registered on the platform, you will get a mail to reset your password",
       data: null,
     });
   } catch (error) {
@@ -216,7 +226,7 @@ const verifyUser = async (req, res) => {
       });
     }
 
-    const user = await User.findOne({ email: mail.user_email ?? mail.email });
+    const user = await User.findOne({ email: mail.user_email ?? mail.email, verificationToken:req.params.token });
 
     if (!user) {
       return res.status(400).json({
@@ -349,7 +359,7 @@ const registerUser = async (req, res) => {
     const messageData = {
       firstName: user.firstName,
       url: link,
-      message: ' Please follow the link to verify your account'
+      message: 'Follow the link to verify your account, Please note this link will expire after 30 minutes'
     }
     await sendEmail(user.email, subject, "verify-email", messageData);
 
@@ -402,7 +412,7 @@ const refreshAuth = async (req, res) => {
     year: new Date().getFullYear(),
   }
   sendEmail(email, subject, "reset-password", messageData);
-  const user = requestUser.save()
+  requestUser.save()
   return res.status(200).send({ message: 'token generated', data: registerUser })
 }
 

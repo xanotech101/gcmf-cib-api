@@ -41,9 +41,6 @@ const getMyNotifications = async (req, res) => {
         $unwind: "$user",
       },
       {
-        $unwind: "$transaction",
-      },
-      {
         $facet: {
           data: [
             {
@@ -147,8 +144,32 @@ const markNotificationsAsRead = async (req, res) => {
   }
 }
 
+const getUnreadNotificationCount = async (req, res) => {
+  const user = req.user._id;
+
+  try {
+    const count = await Notification.countDocuments({
+      user: mongoose.Types.ObjectId(user),
+      read: false,
+    });
+    return res.status(200).json({
+      message: "Successfully fetched unread notification count",
+      data: {
+        count,
+      },
+      status: "success",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: error.message,
+      status: "failed",
+    });
+  }
+}
+
 module.exports = {
   getMyNotifications,
   deleteNotifications,
   markNotificationsAsRead,
+  getUnreadNotificationCount
 };

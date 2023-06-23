@@ -8,7 +8,7 @@ const notificationSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectID,
       ref: "User",
     },
-    transaction: {
+    identifier: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "InitiateRequest",
     },
@@ -22,6 +22,11 @@ const notificationSchema = new mongoose.Schema(
     },
     createdAt: { type: String },
     updatedAt: { type: String },
+    type: {
+      type: String,
+      enum: ["transaction", "ticket"],
+      default: "transaction",
+    },
   }
 );
 

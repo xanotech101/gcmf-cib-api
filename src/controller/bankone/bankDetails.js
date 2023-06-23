@@ -97,19 +97,16 @@ const getAccountByCustomerID = async (req, res) => {
 
 const getTransactionHistory = async (req, res) => {
   try {
-    const accountNumber = req.params.accountNo;
-    const fromDate = req.query.fromDate;
-    const toDate = req.query.toDate;
-    const numberOfItems = req.query.numberOfItems;
-    const authtoken = process.env.AUTHTOKEN;
-
-    const transHistory = await bankOneService.transactionHistory(
-      authtoken,
-      accountNumber,
-      fromDate,
-      toDate,
-      numberOfItems
-    );
+    const params = {
+      accountNumber: req.params.accountNo,
+      authtoken: process.env.AUTHTOKEN,
+      fromDate: req.query.fromDate,
+      toDate: req.query.toDate,
+      pageNo: req.query.pageNo || 1,
+      PageSize: req.query.PageSize || 50,
+    }
+  
+    const transHistory = await bankOneService.transactionHistory(params);
 
     if (!transHistory) {
       return res.status(500).json({
@@ -249,46 +246,6 @@ const bvnEnquiry = async (req, res) =>{
     });
   }
 }
-
-const getTransactionsPaginated = async (req, res) => {
-  try {
-    const accountNumber = req.params.account;
-    const fromDate = req.query.fromDate;
-    const toDate = req.query.toDate;
-    const institutionCode = req.query.institutionCode;
-    const pageNo = req.query.pageNo;
-    const PageSize = req.query.PageSize;
-
-    const getTransactions = await bankOneService.getTransactionsPaginated(
-      authToken,
-      accountNumber,
-      fromDate,
-      toDate,
-      institutionCode,
-      pageNo,
-      PageSize
-    );
-
-    if (!getTransactions) {
-      return res.status(500).json({
-        status: "Failed",
-        message: "Unable to get bank account details",
-      });
-    }
-
-    return res.status(200).json({
-      status: "Success",
-      message: "Account Details retrieved successfully",
-      data: getTransactions,
-    });
-  } catch (error) {
-    console.log('controller', error)
-    return res.status(500).json({
-      status: "Failed",
-      message: error,
-    });
-  }
-};
 
 const interbankTransfer = async (req, res) => {
   const {
@@ -436,7 +393,6 @@ module.exports = {
   getTransactionHistory,
   getAccountStatement,
   getNameEnquiry,
-  getTransactionsPaginated,
   interbankTransfer,
   getAccountDetails,
   getAccountInfo,

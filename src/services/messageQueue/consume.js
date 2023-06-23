@@ -25,18 +25,26 @@ async function consumeTransferRequest() {
                     }
                     if (transfer) {
                         const request = await InitiateRequest.findById(requestData._id)
+                        request.transferStatus = 'disburse pending';
+
                         if (transfer?.Status === "Successful" || transfer?.ResponseCode === "00") {
                             request.transferStatus = "successful";
                             request.meta = transfer;
                             await request.save();
                         } else if (
                             transfer?.Status === "Pending" ||
-                            ["91", "06"].includes(transfer?.ResponseCode)
+                            ["91", "06", "x06"].includes(transfer?.ResponseCode)
                         ) {
                             request.meta = transfer;
                             request.updatedAt = new Date();
                             await request.save();
-                        } else {
+                        } else if (transfer?.Status === "Awaiting confirmation status" ||
+                            ["08"].includes(transfer?.ResponseCode)) {
+                            request.meta = transfer;
+                            request.updatedAt = new Date();
+                            await request.save();
+                        }
+                        else {
                             request.meta = transfer;
                             request.updatedAt = new Date();
                             request.transferStatus = "failed";
