@@ -4,6 +4,7 @@ const organization = require("../model/organization");
 const userModel = require("../model/user.model");
 const InitiateRequest = require("../model/initiateRequest.model")
 const { getMonthName } = require("./external/externalcontroller");
+const Audit = require("../model/auditTrail");
 
 async function getAllusersTiedToGCAccount(req, res) {
     try {
@@ -159,12 +160,29 @@ const dashBoardAnalytics = async (req, res) => {
             AllUsers.push(...users);
         }
     }
-    const totatlUsers = AllUsers.length
+    const totalUsers = AllUsers.length
+
+    const AllTransfers = [] 
+    if (request_accounts.length > 0) {
+        for (const account of request_accounts) {
+            const transfers = await InitiateRequest.find({ 
+                organizationId: account._id, 
+                transferStatus: {
+                    $in: ["successful", "failed", "pending", "disburse pending"],
+                },
+            });
+            AllTransfers.push(...transfers);
+        }
+    }
+
+    const totalTransfers = AllTransfers.length
+    
 
     return res.status(200).json({
         data: {
             totalAccounts,
-            totatlUsers
+            totalUsers,
+            totalTransfers
         },
         status: "success",
     });
@@ -234,5 +252,65 @@ const transferRequest = async (req, res) => {
     }
 };
 
+const gcAudit = async (req, res) => {
+    try {
+        const requestlabel = await organization.findOne({ label: 'Grooming Centre' })
+        if (!requestlabel) {
+            return res.status(400).send({
+                success: false,
+                message: 'No organization with that label'
+            });
+        }
 
-module.exports = { getAllusersTiedToGCAccount, getAllusersTiedToAnAccount, getGcAnalytics, dashBoardAnalytics, transferRequest }
+        // Get all accounts tied to the gc organization label
+        const request_accounts = await Account.find({
+            organizationLabel: requestlabel._id
+        });
+        if (!request_accounts || request_accounts.length === 0) {
+            return res.status(400).send({
+                success: false,
+                message: 'No account registered with this organization yet',
+            });
+        }
+
+        // Fetch all audits for each request_accounts._id with search filter and pagination
+        const page = req.query.page || 1; // Current page number
+        const limit = req.query.perPage || 10; // Number of audits per page
+        const searchType = req.query.type || ''; // Search type
+
+        const query = {
+            organization: { $in: request_accounts.map(account => account._id) },
+        };
+
+        if (searchType) {
+            query.type = { $regex: searchType, $options: 'i' };
+        }
+
+        const count = await Audit.countDocuments(query);
+        const trails = await Audit.find(query)
+            .skip((page - 1) * limit)
+            .sort({ _id: -1 })
+            .limit(limit)
+            .populate("user");
+
+        return res.status(200).send({
+            success: true,
+            message: 'Audits retrieved successfully',
+            data: {
+                trails,
+                meta: {
+                    total: count,
+                    page: parseInt(page),
+                    perPage: parseInt(limit),
+                }
+            },
+        });
+
+    } catch (error) {
+        console.log(error.message);
+        return res.status(500).send({
+        });
+    }
+};
+
+module.exports = { getAllusersTiedToGCAccount, getAllusersTiedToAnAccount, getGcAnalytics, dashBoardAnalytics, transferRequest, gcAudit }
