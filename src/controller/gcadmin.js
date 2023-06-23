@@ -212,7 +212,7 @@ const gcAudit = async (req, res) => {
 
         // Fetch all audits for each request_accounts._id with search filter and pagination
         const page = req.query.page || 1; // Current page number
-        const limit = req.query.limit || 10; // Number of audits per page
+        const limit = req.query.perPage || 10; // Number of audits per page
         const searchType = req.query.type || ''; // Search type
 
         const query = {
@@ -224,25 +224,27 @@ const gcAudit = async (req, res) => {
         }
 
         const count = await Audit.countDocuments(query);
-        const audits = await Audit.find(query)
+        const trails = await Audit.find(query)
             .skip((page - 1) * limit)
+            .sort({ _id: -1 })
             .limit(limit);
 
         return res.status(200).send({
             success: true,
             message: 'Audits retrieved successfully',
             data: {
-                audits,
-                total: count,
-                page: parseInt(page),
-                totalPages: Math.ceil(count / limit),
+                trails,
+                meta: {
+                    total: count,
+                    page: parseInt(page),
+                    perPage: parseInt(limit),
+                }
             },
         });
 
     } catch (error) {
         console.log(error.message);
         return res.status(500).send({
-            message: error.message,
         });
     }
 };

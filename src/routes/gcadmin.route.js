@@ -10,7 +10,7 @@ router.get("/fetchAllusers", gcAuth, getAllusersTiedToGCAccount)
 router.get("/fetchusersByAccount/:account", gcAuth, getAllusersTiedToAnAccount)
 router.get("/anaylytics", gcAuth, getGcAnalytics)
 router.get("/dashboard-analytics", gcAuth, dashBoardAnalytics)
-router.get("/gcadmin_audit", gcAuth, gcAudit)
+router.get("/audit-trails", gcAuth, gcAudit)
 
 
 module.exports = router;
