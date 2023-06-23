@@ -5,7 +5,7 @@ const secretQuestionService = require("../../services/secretQuestion.service");
 const { sendEmail } = require("../../utils/emailService");
 const { getDateAndTime, toISOLocal } = require("../../utils/utils");
 const auditTrailService = require("../../services/auditTrail.service");
-const { update } = require("lodash");
+const Account = require("../../model/account");
 
 
 const preLogin = async (req, res) => {
@@ -25,6 +25,16 @@ const preLogin = async (req, res) => {
       return res.status(403).send({
         data: null,
         message: "User is still yet to be verified on the platform",
+        status: "failed",
+      });
+    }
+
+    const userOrganization = await Account.findOne({ _id: user.organizationId  });
+
+    if(userOrganization?.disabled === true){
+      return res.status(422).send({
+        data: null,
+        message: "Sorry your organization has been disabled and you can't login, if you think this is a mistake contact the administrator thank you",
         status: "failed",
       });
     }
