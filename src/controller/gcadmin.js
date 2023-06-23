@@ -159,12 +159,12 @@ const dashBoardAnalytics = async (req, res) => {
             AllUsers.push(...users);
         }
     }
-    const totatlUsers = AllUsers.length
+    const totalUsers = AllUsers.length
 
     return res.status(200).json({
         data: {
             totalAccounts,
-            totatlUsers
+            totalUsers
         },
         status: "success",
     });
