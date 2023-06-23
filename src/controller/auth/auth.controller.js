@@ -226,7 +226,7 @@ const verifyUser = async (req, res) => {
       });
     }
 
-    const user = await User.findOne({ email: mail.user_email ?? mail.email });
+    const user = await User.findOne({ email: mail.user_email ?? mail.email, verificationToken:req.params.token });
 
     if (!user) {
       return res.status(400).json({
@@ -412,7 +412,7 @@ const refreshAuth = async (req, res) => {
     year: new Date().getFullYear(),
   }
   sendEmail(email, subject, "reset-password", messageData);
-  const user = requestUser.save()
+  requestUser.save()
   return res.status(200).send({ message: 'token generated', data: registerUser })
 }
 

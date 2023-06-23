@@ -278,7 +278,7 @@ const updateMandateAuthorizerVerifiers = async (req, res) => {
   try {
     // Check the privilege of the incoming user
     const checkIncomingUser = await User.findOne({ _id: req.body.incomingUser });
-    const checkOutgoingUser  = await User.findOne({ _id: req.body.outgoingUser })
+    const checkOutgoingUser = await User.findOne({ _id: req.body.outgoingUser })
 
     if (!checkIncomingUser || !checkOutgoingUser) {
       return res.status(400).send({
@@ -287,7 +287,7 @@ const updateMandateAuthorizerVerifiers = async (req, res) => {
       });
     }
 
-    if(checkIncomingUser.disabled === true){
+    if (checkIncomingUser.disabled === true) {
       return res.status(400).send({
         success: false,
         message: 'This user is disabled from this system at the moment'
@@ -373,6 +373,18 @@ const updateMandateAuthorizerVerifiers = async (req, res) => {
               success: false,
               message: 'There was an error updating the mandate'
             });
+          }
+
+          const updateVerifiersCount = await Mandate.find({
+            organizationId: checkIncomingUser.organizationId,
+          });
+
+          for (const mandate of updateVerifiersCount) {
+            const numberOfVerifiers = mandate.verifiers.length;
+            await Mandate.updateOne(
+              { _id: mandate._id },
+              { $set: { numberOfVerifiers: numberOfVerifiers } }
+            );
           }
 
           return res.status(200).send({
