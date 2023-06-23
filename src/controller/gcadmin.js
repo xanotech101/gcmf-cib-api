@@ -51,18 +51,35 @@ async function getAllusersTiedToGCAccount(req, res) {
 
 async function getAllusersTiedToAnAccount(req, res) {
     try {
-
         const page = parseInt(req.query.page) || 1;
         const limit = 10; // Set the desired number of users per page
 
-        const totalCount = await userModel.countDocuments({ organizationId: req.params.account });
+        const filter = {
+            organizationId: req.params.account
+        };
+
+        const { firstName, lastName, email } = req.query;
+
+        if (firstName) {
+            filter.firstName = { $regex: firstName, $options: 'i' };
+        }
+
+        if (lastName) {
+            filter.lastName = { $regex: lastName, $options: 'i' };
+        }
+
+        if (email) {
+            filter.email = { $regex: email, $options: 'i' };
+        }
+
+        const totalCount = await userModel.countDocuments(filter);
 
         const totalPages = Math.ceil(totalCount / limit);
 
         const skip = (page - 1) * limit;
 
         const users = await userModel
-            .find({ organizationId: req.params.account })
+            .find(filter)
             .skip(skip)
             .limit(limit);
 
@@ -80,6 +97,7 @@ async function getAllusersTiedToAnAccount(req, res) {
         return res.status(500).json({ message: error.message });
     }
 }
+
 
 async function getGcAnalytics(req, res) {
     try {
