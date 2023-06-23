@@ -8,19 +8,19 @@ const Audit = require("../model/auditTrail");
 
 async function getAllusersTiedToGCAccount(req, res) {
     try {
-
-        //get gc organizationlabel
-        const requestlabel = await organization.findOne({ label: 'Grooming Centre' })
+        // Get gc organization label
+        const requestlabel = await organization.findOne({ label: 'Grooming Centre' });
         if (!requestlabel) {
             return res.status(400).send({
                 success: false,
-                message: 'no organization with that label'
-            })
+                message: 'No organization with that label'
+            });
         }
-        //get all accounts tied to the gc organization lable
+
+        // Get all accounts tied to the gc organization label
         const request_accounts = await Account.find({
             organizationLabel: requestlabel._id
-        })
+        });
         if (!request_accounts || request_accounts.length === 0) {
             return res.status(400).send({
                 success: false,
@@ -28,26 +28,56 @@ async function getAllusersTiedToGCAccount(req, res) {
             });
         }
 
-        const request_users = [];
-        for (const account of request_accounts) {
-            const users = await userModel.find({ organizationId: account._id }).populate('privileges');
-            request_users.push(...users);
+        // Filter by firstName, lastName, and email
+        const firstName = req.query.firstName || '';
+        const lastName = req.query.lastName || '';
+        const email = req.query.email || '';
+
+        const filter = {
+            organizationId: { $in: request_accounts.map(account => account._id) }
+        };
+
+        if (firstName) {
+            filter.firstName = { $regex: firstName, $options: 'i' };
         }
 
+        if (lastName) {
+            filter.lastName = { $regex: lastName, $options: 'i' };
+        }
+
+        if (email) {
+            filter.email = { $regex: email, $options: 'i' };
+        }
+
+        // Pagination
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+
+        const totalCount = await userModel.countDocuments(filter);
+        const totalPages = Math.ceil(totalCount / limit);
+
+        const request_users = await userModel.find(filter)
+            .skip(skip)
+            .limit(limit)
+            .populate('privileges');
+
         return res.status(200).send({
-            success: false,
-            message: 'users fetched successufully',
+            success: true,
+            message: 'Users fetched successfully',
             data: {
                 users: request_users
-            }
+            },
+            currentPage: page,
+            totalPages: totalPages
         });
-
 
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: error.message });
     }
 }
+
 
 async function getAllusersTiedToAnAccount(req, res) {
     try {
