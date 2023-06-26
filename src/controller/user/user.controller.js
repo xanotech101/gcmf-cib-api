@@ -176,26 +176,54 @@ const updateUserProfile = async (req, res) => {
   }
 };
 
-const updateUserPriviledge = async (req, res) => {
+const updateUserPrivilege = async (req, res) => {
   try {
     const { privileges, id } = req.body;
     const user = await User.findById(id);
+
+    if (!user) {
+      return res.status(400).send({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Check if user is already tied to a mandate as an authorizer
+    const checkUserMandatePrivilege = await Mandate.findOne({ authoriser: id });
+    if (checkUserMandatePrivilege) {
+      return res.status(400).send({
+        success: false,
+        message: 'This user is already an authorizer for one or more mandates'
+      });
+    }
+
+    // Check if user is already tied to a mandate as a verifier
+    const checkMandateVerifiers = await Mandate.findOne({ verifiers: { $in: [id] } });
+    if (checkMandateVerifiers) {
+      return res.status(400).send({
+        success: false,
+        message: 'This user is already a verifier for one or more mandates'
+      });
+    }
+
     user.privileges = privileges;
     await user.save();
+
     res.status(200).json({
-      message: "Successfully updated",
-      data: { user },
-      status: "success",
+      success: true,
+      message: 'Successfully updated',
+      data: { user }
     });
   } catch (error) {
     console.log(error);
     res.status(500).json({
+      success: false,
       message: error.message,
-      data: null,
-      status: "failed",
+      data: null
     });
   }
 };
+
 
 const changePassword = async (req, res) => {
   const { _id } = req.user;
