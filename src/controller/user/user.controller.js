@@ -722,7 +722,7 @@ module.exports = {
   deleteNonAdminUsers,
   deleteAnyUser,
   createSecurityQuestions,
-  updateUserPriviledge,
+  updateUserPrivilege,
   getUserProfileById,
   getAllAdmins,
   disableUser,
