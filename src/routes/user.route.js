@@ -8,7 +8,7 @@ const {
   deleteNonAdminUsers,
   deleteAnyUser,
   createSecurityQuestions,
-  updateUserPriviledge,
+  updateUserPrivilege,
   getUserProfileById,
   getAllAdmins,
   disableUser,
@@ -30,7 +30,7 @@ router.get("/profile", allUsersAuth, getUserProfile);
 router.get("/profile/:id", adminAuth, getUserProfileById);
 
 router.put("/profile", adminAuth, updateUserProfile);
-router.put("/userPrivilege", adminAuth, updateUserPriviledge);
+router.put("/userPrivilege", adminAuth, updateUserPrivilege);
 router.post("/change-password", allUsersAuth, validate(authSchemas.changePassword,"body"), changePassword);
 router.post("/secret-questions/create", createSecurityQuestions)
 
