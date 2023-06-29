@@ -505,7 +505,7 @@ const getAllAccountsByLabel = async (req, res) => {
     const perPage = parseInt(req.query.perPage) || 10;
     const page = parseInt(req.query.page) || 1;
     const skip = (page - 1) * perPage;
-    const filterAccountName = req.query.accountName || '';
+    const filterAccountName = req.query.name || '';
 
     const requestLabel = await Organization.findOne({ label: 'Grooming Centre' });
 
