@@ -505,29 +505,41 @@ const getAllAccountsByLabel = async (req, res) => {
     const perPage = parseInt(req.query.perPage) || 10;
     const page = parseInt(req.query.page) || 1;
     const skip = (page - 1) * perPage;
+    const filterAccountName = req.query.name || '';
 
     const requestLabel = await Organization.findOne({ label: 'Grooming Centre' });
 
-    if(!requestLabel){
+    if (!requestLabel) {
       return res.status(400).send({
         success: false,
         message: 'No organization with that label'
-      })
+      });
     }
 
-    // Find accounts based on organizationLabel
-    const accounts = await Account.find({ organizationLabel: requestLabel._id })
+    // Prepare the filter for accountName
+    const accountNameFilter = filterAccountName
+      ? { accountName: { $regex: filterAccountName, $options: 'i' } }
+      : {};
+
+    // Find accounts based on organizationLabel and accountName filter
+    const accounts = await Account.find({
+      organizationLabel: requestLabel._id,
+      ...accountNameFilter,
+    })
       .skip(skip)
       .limit(perPage)
       .sort({ _id: -1 })
-      .populate("adminID")
-      .populate("organizationLabel");
+      .populate('adminID')
+      .populate('organizationLabel');
 
-      const totalCount = await Account.countDocuments({ organizationLabel: requestLabel._id });
+    const totalCount = await Account.countDocuments({
+      organizationLabel: requestLabel._id,
+      ...accountNameFilter,
+    });
 
     // Return the accounts
     return res.status(200).json({
-      status: "Success",
+      status: 'Success',
       data: {
         currentPage: page,
         totalCount,
@@ -539,10 +551,11 @@ const getAllAccountsByLabel = async (req, res) => {
     console.log(error);
     return res.status(500).send({
       success: false,
-      messsage: error.message,
+      message: error.message,
     });
   }
 };
+
 
 const getOrganizationStats = async (req, res) => {
   try {
