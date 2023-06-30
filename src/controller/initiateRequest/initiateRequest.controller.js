@@ -965,6 +965,8 @@ const approveBulkRequest = async (req, res) => {
 
     await Promise.all(
       requests.map(async (request) => {
+        try {
+       
         if (request.status === "approved") {
           errors.push({
             message: `Transaction ${request._id} has already been approved`,
@@ -1070,6 +1072,10 @@ const approveBulkRequest = async (req, res) => {
 
         request.save();
         await Otp.findByIdAndDelete(otpDetails._id);
+           
+      } catch (error) {
+        console.log(`Error updating status for request ${request._id}:`, error);
+      }
       })
     );
 
