@@ -4,7 +4,9 @@ const { PER_PAGE } = require("../../utils/constants");
 const User = require("../../model/user.model");
 const Joi = require("joi");
 const InitiateRequest = require("../../model/initiateRequest.model")
-const Privilege = require("../../model/privilege.model")
+const Privilege = require("../../model/privilege.model");
+const { notificationService } = require("../../services");
+const { sendEmail } = require("../../utils/emailService");
 
 //@desc     register a mandate
 //@route    POST /mandate/register
@@ -135,15 +137,15 @@ const updateMandate = async (req, res) => {
       existingMandate.name = name;
     }
 
-    if(verifiers){
-      if(verifiers.length < 1){
+    if (verifiers) {
+      if (verifiers.length < 1) {
         return res.status(400).json({ message: "Please select at least one verifier" });
       }
       existingMandate.verifiers = verifiers;
       existingMandate.numberOfVerifiers = existingMandate.verifiers.length;
     }
 
-    if(authoriser){
+    if (authoriser) {
       existingMandate.authoriser = authoriser;
     }
 
@@ -347,7 +349,7 @@ const updateMandateAuthorizerVerifiers = async (req, res) => {
           });
         }
 
-        // Update all mandates with the incoming user as the authorizer
+        // Update all mandates with the incoming user as the verifier
         const PullMandateVerifier = await Mandate.updateMany(
           {
             organizationId: checkIncomingUser.organizationId,
@@ -357,17 +359,13 @@ const updateMandateAuthorizerVerifiers = async (req, res) => {
             $pull: { verifiers: req.body.outgoingUser }
           }
         );
-        console.log("🚀 ~ file: mandate.controller.js:329 ~ updateMandateAuthorizerVerifiers ~ PullMandateVerifier:", PullMandateVerifier)
+
         if (PullMandateVerifier.modifiedCount > 0) {
+          const addUser = await Mandate.updateMany(
+            { organizationId: checkIncomingUser.organizationId },
+            { $addToSet: { verifiers: req.body.incomingUser } }
+          );
 
-          const addUser = await Mandate.updateMany({
-            organizationId: checkIncomingUser.organizationId,
-          },
-
-            {
-              $addToSet: { verifiers: req.body.incomingUser }
-            }
-          )
           if (addUser.matchedCount < 1) {
             return res.status(500).send({
               success: false,
@@ -377,7 +375,7 @@ const updateMandateAuthorizerVerifiers = async (req, res) => {
 
           const updateVerifiersCount = await Mandate.find({
             organizationId: checkIncomingUser.organizationId,
-          });
+          })
 
           for (const mandate of updateVerifiersCount) {
             const numberOfVerifiers = mandate.verifiers.length;
@@ -385,17 +383,58 @@ const updateMandateAuthorizerVerifiers = async (req, res) => {
               { _id: mandate._id },
               { $set: { numberOfVerifiers: numberOfVerifiers } }
             );
+
+            // Check the InitiateRequest collection for requests tied to each mandate where status is 'in progress'
+            const checkInitiateRequests = await InitiateRequest.find({
+              mandate: mandate._id,
+              status: 'in progress'
+            }).populate('mandate');
+
+            for (const request of checkInitiateRequests) {
+              if (request.verifiersAction.length === mandate.verifiers.length) {
+                await InitiateRequest.updateOne(
+                  { _id: request._id },
+                  { $set: { status: 'awaiting authorization' } }
+                );
+              }
+   
+              await notificationService.createNotifications([
+                {
+                  identifier: request._id,
+                  user: request.mandate.authoriser,
+                  title: "Authorization Required",
+                  message: "New transaction request require your review",
+                },
+              ]);
+
+              //send mail to authoriser
+              const authoriserInfo = await User.findById(request.mandate.authoriser).select(
+                "email firstName _id"
+              );
+              const subject = "Authorization Required";
+
+              const message = {
+                firstName: authoriserInfo.firstName,
+                amount: request.amount,
+                reference: request.transactionReference,
+                message: 'The below request requires your authorization. Kindly login to your account to review',
+                year: new Date().getFullYear(),
+              };
+
+              await sendEmail(authoriserInfo.email, subject, "transfer-request", message);
+            }
           }
 
           return res.status(200).send({
             success: true,
-            message: 'verifier updated successfully'
+            message: 'Verifier updated successfully'
+          });
+        } else {
+          return res.status(500).send({
+            success: false,
+            message: 'Error updating this verifier'
           });
         }
-        res.status(500).send({
-          success: true,
-          message: 'Error update this verifier'
-        });
         break;
 
       default:
