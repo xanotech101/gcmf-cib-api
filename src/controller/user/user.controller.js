@@ -676,7 +676,7 @@ const editEmail = async (req, res) => {
     }
 
     // check for otp
-    const checkOtp = await otpModel.findOne({ user: req.user._id, otp: req.body.otp })
+    const checkOtp = await otpModel.findOne({ user: req.user._id, otp: req.body.otp, context: 'edit email' })
     if (!checkOtp) {
       return res.status(400).send({
         success: false,
