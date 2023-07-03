@@ -50,7 +50,7 @@ const preLogin = async (req, res) => {
     }
 
     if(user.disabled === true){
-      return res.status(400).send({
+      return res.status(422).send({
         data: null,
         message: "Sorry your account has been disabled and you can't login, if you think this is a mistake contact the administrator thank you",
         status: "failed",
