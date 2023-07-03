@@ -5,7 +5,7 @@ class BankOneService {
   async accountByAccountNo(accountNo, authToken) {
     try {
       const { data } = await axios.get(
-        `${config.getAccountByAccountNo}?authtoken=${authToken}&accountNumber=${accountNo}`
+        `${config.getAccountByAccountNo}?authtoken=${authToken}&accountNumber=${accountNo}&computewithdrawableBalance=true`
       );
       return data;
     } catch (error) {
