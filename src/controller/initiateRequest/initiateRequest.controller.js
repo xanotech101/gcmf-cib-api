@@ -1205,7 +1205,7 @@ const authoriserBulkaprove = async (req, res) => {
       // update and save request
 
       request.status = "approved";
-      request.transferStatus = "disburse pending";
+      request.transferStatus = "queued";
       request.authoriserAction = {
         status: "approved",
         reason: req.body.reason,
