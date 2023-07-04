@@ -675,6 +675,8 @@ const authoriserApproveRequest = async (req, res) => {
     // update and save request
     request.status = "approved";
     request.transferStatus = "queued";
+    request.updatedAt = new Date();
+
     request.authoriserAction = {
       status: "approved",
       reason: req.body.reason,
@@ -711,12 +713,9 @@ const authoriserApproveRequest = async (req, res) => {
 
     // delete otp from database
     await Otp.findByIdAndDelete(otpDetails._id);
+    
 
-    // update request date
-    request.updatedAt = new Date();
-
-    // send request to bank one
-
+    // send request to queue
     if (request.type === "inter-bank") {
       const payload = {
         _id: request._id,
@@ -749,9 +748,6 @@ const authoriserApproveRequest = async (req, res) => {
       };
       QueueTransfer(payload, 'intra-bank')
     }
-
-    request.transferStatus = "queued";
-    await request.save();
 
     return res.status(200).json({
       message: "Request approved successfully",
@@ -1205,7 +1201,9 @@ const authoriserBulkaprove = async (req, res) => {
       // update and save request
 
       request.status = "approved";
-      request.transferStatus = "disburse pending";
+      request.updatedAt = new Date();
+      request.transferStatus = "queued";
+
       request.authoriserAction = {
         status: "approved",
         reason: req.body.reason,
@@ -1243,14 +1241,6 @@ const authoriserBulkaprove = async (req, res) => {
 
       // delete otp from database
       await Otp.findByIdAndDelete(otpDetails._id);
-
-      // update request date
-      request.updatedAt = new Date();
-
-      request.transferStatus = "queued";
-      await request.save();
-
-      // send request to bank one
 
       if (request.type === "inter-bank") {
         const payload = {
