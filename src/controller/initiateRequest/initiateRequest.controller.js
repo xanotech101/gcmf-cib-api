@@ -38,7 +38,6 @@ const initiateRequest = async (req, res) => {
     });
 
     const account = await Account.findById(mine.organizationId.toString())
-    console.log("🚀 ~ file: initiateRequest.controller.js:41 ~ initiateRequest ~ account:", account)
 
     const mandate = await Mandate.findOne({
       organizationId: mine.organizationId.toString(),
@@ -60,6 +59,11 @@ const initiateRequest = async (req, res) => {
     request.initiator = req.user._id;
     request.narration = 'Transfer from ' + account?.accountName + ' to ' + req.body.beneficiaryAccountName + '\\\\' + req.body.narration
 
+    // the organization label from the organizationId to add the request
+    const getOrganizationLabel = await Account.findOne({ _id: mine.organizationId }).select('organizationLabel')
+    if (getOrganizationLabel.organizationLabel !== null) {
+      request.organizationLabel = getOrganizationLabel.organizationLabel
+    }
     const result = await request.save();
     const notificationsToCreate = [];
 
@@ -713,7 +717,7 @@ const authoriserApproveRequest = async (req, res) => {
 
     // delete otp from database
     await Otp.findByIdAndDelete(otpDetails._id);
-    
+
 
     // send request to queue
     if (request.type === "inter-bank") {
@@ -962,116 +966,116 @@ const approveBulkRequest = async (req, res) => {
     await Promise.all(
       requests.map(async (request) => {
         try {
-       
-        if (request.status === "approved") {
-          errors.push({
-            message: `Transaction ${request._id} has already been approved`,
-          });
-          return;
-        }
 
-        const otpDetails = await Otp.findOne({
-          otp: req.body.otp,
-          user: req.user._id,
-          transaction: mongoose.Types.ObjectId(request.batchVerificationID),
-        });
-
-        if (!otpDetails) {
-          errors.push({
-            message: `OTP is incorrect or used for transaction ${request._id}`,
-          });
-          return;
-        }
-
-        let duplicate = false;
-        for (let i = 0; i < request.verifiersAction.length; i++) {
-          let transaction = request.verifiersAction[i];
-          if (
-            transaction.verifierID == req.user._id &&
-            transaction.status === "verified"
-          ) {
+          if (request.status === "approved") {
             errors.push({
-              message: `You have already approved transaction ${request._id}`,
+              message: `Transaction ${request._id} has already been approved`,
             });
-            duplicate = true;
-            break;
-          } else if (
-            transaction.verifierID == req.user._id &&
-            transaction.status === "rejected"
-          ) {
-            transaction.reason = req.body.reason;
-            transaction.status = "verified";
-            duplicate = true;
+            return;
           }
-        }
 
-        if (duplicate === false) {
-          request.verifiersAction.push({
-            status: "verified",
-            verifierID: req.user._id,
-            reason: req.body.reason,
+          const otpDetails = await Otp.findOne({
+            otp: req.body.otp,
+            user: req.user._id,
+            transaction: mongoose.Types.ObjectId(request.batchVerificationID),
           });
-        }
 
-        verifierIds.push(request.mandate.authoriser);
+          if (!otpDetails) {
+            errors.push({
+              message: `OTP is incorrect or used for transaction ${request._id}`,
+            });
+            return;
+          }
 
-        // send notification to authorizer
-        notificationMessages.push({
-          transaction: requests[0].batchVerificationID,
-          user: request.initiator,
-          title: "Transaction Request Approved",
-          message: `A verifier has approved your transaction request for ${request.mandate.accountName}`,
-        });
+          let duplicate = false;
+          for (let i = 0; i < request.verifiersAction.length; i++) {
+            let transaction = request.verifiersAction[i];
+            if (
+              transaction.verifierID == req.user._id &&
+              transaction.status === "verified"
+            ) {
+              errors.push({
+                message: `You have already approved transaction ${request._id}`,
+              });
+              duplicate = true;
+              break;
+            } else if (
+              transaction.verifierID == req.user._id &&
+              transaction.status === "rejected"
+            ) {
+              transaction.reason = req.body.reason;
+              transaction.status = "verified";
+              duplicate = true;
+            }
+          }
 
-        request.status = "in progress";
+          if (duplicate === false) {
+            request.verifiersAction.push({
+              status: "verified",
+              verifierID: req.user._id,
+              reason: req.body.reason,
+            });
+          }
 
-        if (
-          request.verifiersAction.length ==
-          request.mandate.numberOfVerifiers
-        ) {
-          // send notification to authoriser
+          verifierIds.push(request.mandate.authoriser);
+
+          // send notification to authorizer
           notificationMessages.push({
             transaction: requests[0].batchVerificationID,
-            user: request.mandate.authoriser,
-            title: "Authorization Required",
-            message: "New transaction request requires your review",
+            user: request.initiator,
+            title: "Transaction Request Approved",
+            message: `A verifier has approved your transaction request for ${request.mandate.accountName}`,
           });
 
-          request.status = "awaiting authorization";
+          request.status = "in progress";
 
-          // send email to authoriser
-          const authoriserInfo = await User.findById(
-            request.mandate.authoriser
-          ).select("email firstName _id");
-          if (authoriserInfo) {
-            const message = {
-              firstName: authoriserInfo.firstName,
-              message: 'The below request requires your authorization. Kindly login to your account to review',
-              amount: request.amount,
-              reference: request.transactionReference,
-              year: new Date().getFullYear(),
-            };
-
-            authorisers_message.push({
-              receiver: authoriserInfo.email,
-              subject: "Authorization Required",
-              title: "transfer-request",
-              message: message,
+          if (
+            request.verifiersAction.length ==
+            request.mandate.numberOfVerifiers
+          ) {
+            // send notification to authoriser
+            notificationMessages.push({
+              transaction: requests[0].batchVerificationID,
+              user: request.mandate.authoriser,
+              title: "Authorization Required",
+              message: "New transaction request requires your review",
             });
+
+            request.status = "awaiting authorization";
+
+            // send email to authoriser
+            const authoriserInfo = await User.findById(
+              request.mandate.authoriser
+            ).select("email firstName _id");
+            if (authoriserInfo) {
+              const message = {
+                firstName: authoriserInfo.firstName,
+                message: 'The below request requires your authorization. Kindly login to your account to review',
+                amount: request.amount,
+                reference: request.transactionReference,
+                year: new Date().getFullYear(),
+              };
+
+              authorisers_message.push({
+                receiver: authoriserInfo.email,
+                subject: "Authorization Required",
+                title: "transfer-request",
+                message: message,
+              });
+            }
           }
+
+          // create audit trail message
+          auditMessages.push(
+            `${req.user.firstName} verified a transaction request for ${request.customerName}`
+          );
+
+          request.save();
+          await Otp.findByIdAndDelete(otpDetails._id);
+
+        } catch (error) {
+          console.log(`Error updating status for request ${request._id}:`, error);
         }
-
-        // create audit trail message
-        auditMessages.push(
-          `${req.user.firstName} verified a transaction request for ${request.customerName}`
-        );
-
-        request.save();
-        await Otp.findByIdAndDelete(otpDetails._id);
-           
-      } catch (error) {
-        console.log(`Error updating status for request ${request._id}:`, error);
-      }
       })
     );
 

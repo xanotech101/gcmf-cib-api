@@ -357,6 +357,184 @@ const gcAudit = async (req, res) => {
   }
 };
 
+async function getGcAnalytics(req, res) {
+  try {
+    const requestLabel = await organization.findOne({
+      label: "Grooming Centre",
+    });
+
+    if (!requestLabel) {
+      return res.status(400).send({
+        success: false,
+        message: "No organization with that label",
+      });
+    }
+
+    const year = req.query.year;
+
+    const getTotalCount = async () => {
+      return InitiateRequest.aggregate([
+        {
+          $match: {
+            organizationLabel: requestLabel._id,
+            status: { $in: ["approved", "pending", "declined", "in progress"] },
+          },
+        },
+        {
+          $group: {
+            _id: "$status",
+            count: { $sum: 1 },
+          },
+        },
+      ]);
+    };
+
+    const getDisbursementsPerYear = async () => {
+      return InitiateRequest.aggregate([
+        {
+          $match: {
+            organizationLabel: requestLabel._id,
+            transferStatus: "successful",
+            createdAt: {
+              $gte: new Date(year, 0, 1), // January 1st of the requested year
+              $lte: new Date(year, 11, 31), // December 31st of the requested year
+            },
+          },
+        },
+        {
+          $group: {
+            _id: {
+              month: { $month: "$createdAt" },
+            },
+            amount: { $sum: "$amount" },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            month: {
+              $switch: {
+                branches: [
+                  { case: { $eq: ["$_id.month", 1] }, then: "January" },
+                  { case: { $eq: ["$_id.month", 2] }, then: "February" },
+                  { case: { $eq: ["$_id.month", 3] }, then: "March" },
+                  { case: { $eq: ["$_id.month", 4] }, then: "April" },
+                  { case: { $eq: ["$_id.month", 5] }, then: "May" },
+                  { case: { $eq: ["$_id.month", 6] }, then: "June" },
+                  { case: { $eq: ["$_id.month", 7] }, then: "July" },
+                  { case: { $eq: ["$_id.month", 8] }, then: "August" },
+                  { case: { $eq: ["$_id.month", 9] }, then: "September" },
+                  { case: { $eq: ["$_id.month", 10] }, then: "October" },
+                  { case: { $eq: ["$_id.month", 11] }, then: "November" },
+                  { case: { $eq: ["$_id.month", 12] }, then: "December" },
+                ],
+                default: "Invalid Month",
+              },
+            },
+            amount: 1,
+          },
+        },
+      ]);
+    };
+
+    const getDisbursementsTotal = async () => {
+      return InitiateRequest.aggregate([
+        {
+          $match: {
+            organizationLabel: requestLabel._id,
+            transferStatus: "successful",
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            amount: { $sum: "$amount" },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+          },
+        },
+      ]);
+    };
+
+    const getPendingRequestTotal = async () => {
+      return InitiateRequest.aggregate([
+        {
+          $match: {
+            organizationLabel: requestLabel._id,
+            transfer: "disburse pending",
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            count: { $sum: 1 },
+          },
+        },
+      ]);
+    };
+
+    const totalApproved = async () => {
+      return InitiateRequest.countDocuments({
+        organizationLabel: requestLabel._id,
+        status: "approved",
+      });
+    };
+
+    const totalDeclined = async () => {
+      return InitiateRequest.countDocuments({
+        organizationLabel: requestLabel._id,
+        status: "declined",
+      });
+    };
+
+    const totalTransactions = async () => {
+      return InitiateRequest.countDocuments({
+        organizationLabel: requestLabel._id,
+        transferStatus: {
+          $in: ["successful"],
+        },
+      });
+    };
+
+    const [totalCount, disbursementsPerYear, disbursementsTotal, pendingRequestTotal, totalApprovedCount, totalDeclinedCount, totalSuccessfulTransactions] = await Promise.all([
+      getTotalCount(),
+      getDisbursementsPerYear(),
+      getDisbursementsTotal(),
+      getPendingRequestTotal(),
+      totalApproved(),
+      totalDeclined(),
+      totalTransactions(),
+    ]);
+
+    const reportData = {
+      data: {
+        getTotalCount: totalCount,
+        disbursements: {
+          year,
+          data: disbursementsPerYear,
+          total: disbursementsPerYear.reduce((acc, cur) => acc + cur.amount, 0),
+        },
+        totalDisbursements: disbursementsTotal[0] || { amount: 0 },
+        pendingRequest: pendingRequestTotal[0]?.count || 0,
+        totalApproved: totalApprovedCount,
+        totalDeclined: totalDeclinedCount,
+        totalSuccessfulTransactions: totalSuccessfulTransactions,
+      },
+      status: "success",
+    };
+
+    return res.status(200).json(reportData);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: error.message });
+  }
+}
+
+
+
 module.exports = {
   getAllusersTiedToGCAccount,
   getAllusersTiedToAnAccount,
