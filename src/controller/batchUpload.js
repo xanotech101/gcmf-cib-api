@@ -68,7 +68,7 @@ const VerifyBatchUpload = async (req, res) => {
 
                 request.mandate = mandate._id;
                 request.initiator = req.user._id;
-                request.narration = 'Transfer from ' + account?.accountName + ' to ' + item.data.Name + '\\\\' + item.narration
+                request.narration = ('Transfer from ' + account?.accountName + ' to ' + item.data.Name + '\\\\' + item.narration)?.slice(0, 100)
 
 
                 // the organization label from the organizationId to add the request
@@ -163,7 +163,7 @@ const VerifyBatchUpload = async (req, res) => {
 
                 request.mandate = mandate._id;
                 request.initiator = req.user._id;
-                request.narration = 'Transfer from ' + account?.accountName + ' to ' + item.data.Name + '\\\\' + item.narration
+                request.narration = ('Transfer from ' + account?.accountName + ' to ' + item.data.Name + '\\\\' + item.narration)?.slice(0, 100)
 
                  // the organization label from the organizationId to add the request
                  const getOrganizationLabel = await Account.findOne({ _id: mine.organizationId }).select('organizationLabel')
