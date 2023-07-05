@@ -410,7 +410,7 @@ async function getGcAnalytics(req, res) {
         {
           $match: {
             organizationLabel: requestLabel._id,
-            transfer: "disburse pending",
+            transferStatus: "disburse pending",
           },
         },
         {
