@@ -33,6 +33,10 @@ const initiateRequestSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectID,
       ref: "Account",
     },
+    organizationLabel: {
+      type: mongoose.Schema.Types.ObjectID,
+      ref: "organzationLabel",
+    },
     numberOfVerifiers: Number,
     transferStatus: {
       type: String,
