@@ -113,32 +113,33 @@ const getReportAnalysis = async (req, res) => {
 			}
 		});
 
-		const analytics = await Promise.all([
-			getTotalCount(),
-			getDisbursementsPerYear(),
-			getDisbursementsTotal(),
-			getPendingRequestTotal(),
-			totalApproved(),
-			totalDeclined(),
-			totalTransactions(),
-		]);
+		const [totalCount, disbursementsPerYear, disbursementsTotal, pendingRequestTotal, totalApprovedCount, totalDeclinedCount, totalSuccessfulTransactions] = await Promise.all([
+      getTotalCount(),
+      getDisbursementsPerYear(),
+      getDisbursementsTotal(),
+      getPendingRequestTotal(),
+      totalApproved(),
+      totalDeclined(),
+      totalTransactions(),
+    ]);
 
-    return res.status(200).json({
-      data: { 
-				getTotalCount: analytics[0],
-				disbursements: {
-					year,
-					data: analytics[1],
-					total: analytics[1].reduce((acc, cur) => acc + cur.amount, 0),
-				},
-				totalDisbursements: analytics[2][0] ?? 0,
-				pendingRequest: analytics[3][0] ?? 0,
-				totalApproved: analytics[4],
-				totalDeclined: analytics[5],
-				totalSuccessfulTransactions: analytics[6],
-			},
+		const reportData = {
+      data: {
+        getTotalCount: totalCount,
+        disbursements: {
+          year,
+          data: disbursementsPerYear,
+          total: disbursementsPerYear.reduce((acc, cur) => acc + cur.amount, 0),
+        },
+        totalDisbursements: disbursementsTotal[0] || { amount: 0 },
+        pendingRequest: pendingRequestTotal[0]?.count || 0,
+        totalApproved: totalApprovedCount,
+        totalDeclined: totalDeclinedCount,
+        totalSuccessfulTransactions: totalSuccessfulTransactions,
+      },
       status: "success",
-    });
+    };
+		return res.status(200).json(reportData);
   } catch (error) {
     return res.status(500).json({
       message: error.message,
