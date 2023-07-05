@@ -57,7 +57,7 @@ const initiateRequest = async (req, res) => {
 
     request.mandate = mandate._id;
     request.initiator = req.user._id;
-    request.narration = 'Transfer from ' + account?.accountName + ' to ' + req.body.beneficiaryAccountName + '\\\\' + req.body.narration
+    request.narration = ('Transfer from ' + account?.accountName + ' to ' + req.body.beneficiaryAccountName + '\\\\' + req.body.narration)?.slice(0, 100);
 
     // the organization label from the organizationId to add the request
     const getOrganizationLabel = await Account.findOne({ _id: mine.organizationId }).select('organizationLabel')
