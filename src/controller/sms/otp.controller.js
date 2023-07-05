@@ -62,7 +62,7 @@ const generateOTP = async (req, res) => {
 
     return res.status(200).json({
       message: "Successfully sent otp code",
-      data: otp,
+      data: null,
       status: "success",
     });
   } catch (error) {
@@ -157,7 +157,7 @@ const generateOtpForBatchUpload = async (req, res) => {
 
     return res.status(200).json({
       message: "Successfully sent otp code",
-      data: otp,
+      data: null,
       status: "success",
       batchID: newBatchverificationID
     });
@@ -225,7 +225,7 @@ const disableUserOtp = async(req, res) => {
 
     return res.status(200).json({
       message: "Successfully sent otp code",
-      data: otp,
+      data: null,
       status: "success",
     });
 
@@ -292,7 +292,7 @@ const enableUserOtp = async(req, res) => {
 
     return res.status(200).json({
       message: "Successfully sent otp code",
-      data: otp,
+      data: null,
       status: "success",
     });
 
@@ -360,7 +360,7 @@ const Update_emailOTP = async (req, res) => {
 
     return res.status(200).json({
       message: "Successfully sent otp code",
-      data: otp,
+      data: null,
       status: "success",
     });
   } catch (error) {
@@ -426,7 +426,7 @@ const disableAccountOtp = async(req, res) => {
 
     return res.status(200).json({
       message: "Successfully sent otp code",
-      data: otp,
+      data: null,
       status: "success",
     });
 
@@ -493,7 +493,7 @@ const enableAccountOtp = async(req, res) => {
 
     return res.status(200).json({
       message: "Successfully sent otp code",
-      data: otp,
+      data: null,
       status: "success",
     });
 
