@@ -70,6 +70,13 @@ const VerifyBatchUpload = async (req, res) => {
                 request.initiator = req.user._id;
                 request.narration = 'Transfer from ' + account?.accountName + ' to ' + item.data.Name + '\\\\' + item.narration
 
+
+                // the organization label from the organizationId to add the request
+                const getOrganizationLabel = await Account.findOne({ _id: mine.organizationId }).select('organizationLabel')
+                if (getOrganizationLabel.organizationLabel !== null) {
+                  request.organizationLabel = getOrganizationLabel.organizationLabel
+                }
+
                 const result = await request.save();
 
                 for (const verifier of mandate.verifiers) {
@@ -158,6 +165,11 @@ const VerifyBatchUpload = async (req, res) => {
                 request.initiator = req.user._id;
                 request.narration = 'Transfer from ' + account?.accountName + ' to ' + item.data.Name + '\\\\' + item.narration
 
+                 // the organization label from the organizationId to add the request
+                 const getOrganizationLabel = await Account.findOne({ _id: mine.organizationId }).select('organizationLabel')
+                 if (getOrganizationLabel.organizationLabel !== null) {
+                   request.organizationLabel = getOrganizationLabel.organizationLabel
+                 }
                 const result = await request.save();
 
                 for (const verifier of mandate.verifiers) {
