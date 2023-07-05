@@ -8,7 +8,7 @@ const router = express.Router();
 router.get("/accounts", gcAuth, getAllAccountsByLabel)
 router.get("/fetchAllusers", gcAuth, getAllusersTiedToGCAccount)
 router.get("/fetchusersByAccount/:account", gcAuth, getAllusersTiedToAnAccount)
-router.get("/anaylytics", gcAuth, getGcAnalytics)
+router.get("/analytics/:year", gcAuth, getGcAnalytics)
 router.get("/dashboard-analytics", gcAuth, dashBoardAnalytics)
 router.get("/transferRequest",gcAuth, transferRequest)
 router.get("/audit-trails", gcAuth, gcAudit)
