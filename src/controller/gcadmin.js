@@ -316,7 +316,7 @@ async function getGcAnalytics(req, res) {
       });
     }
 
-    const year = req.query.year;
+    const year = req.params.year;
 
     const getTotalCount = async () => {
       return InitiateRequest.aggregate([
