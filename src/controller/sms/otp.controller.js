@@ -4,7 +4,6 @@ const User = require("../../model/user.model");
 const { sendEmail } = require("../../utils/emailService");
 const Otp = require("../../model/otp.model");
 const initiateRequestModel = require("../../model/initiateRequest.model");
-const uuid = require("uuid");
 const { default: mongoose } = require("mongoose");
 
 const generateOTP = async (req, res) => {

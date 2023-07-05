@@ -468,7 +468,7 @@ const bulkOnboard = async (req, res) => {
       const accountEmail = input.accountDetails.email;
       const subject = "Account Verification";
       const messageData = {
-        firstName: admin.firstName,
+        firstName: input.accountDetails.accountName,
         url: `${process.env.FRONTEND_URL}/auth/account/verify-account/${token}`,
         message: "Click the link to verify your account",
         year: new Date().getUTCFullYear(),
