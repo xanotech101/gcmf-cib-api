@@ -88,7 +88,7 @@ const getReportAnalysis = async (req, res) => {
 		const getPendingRequestTotal = () =>  InitiateRequest.aggregate([
 			{
 				$match: {
-					transfer: "disburse pending",
+					transferStatus: "disburse pending",
 				},
 			},
 			{
