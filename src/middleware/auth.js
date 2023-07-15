@@ -178,7 +178,7 @@ function allUsersAuth(req, res, next) {
       !arr.includes("superUser") &&
       !arr.includes("admin") &&
       !arr.includes("initiator") &&
-      !arr.includes("authoriser")&&
+      !arr.includes("authoriser") &&
       !arr.includes("gcadmin")
     ) {
       return res.status(403).json({
@@ -249,7 +249,7 @@ async function validateThirdPartyAuthorization(req, res, next) {
 
     if (req.body.requestType === 'bvn') {
       await thirdPartyRequestCOuntModel.create({
-        userid:checkUser._id,
+        userid: checkUser._id,
         requestType: 'Bvn'
       })
       req.user = user
@@ -257,7 +257,7 @@ async function validateThirdPartyAuthorization(req, res, next) {
 
     } else {
       await thirdPartyRequestCOuntModel.create({
-        userid:checkUser._id,
+        userid: checkUser._id,
         requestType: 'NameEnquiry'
       })
       req.user = user
