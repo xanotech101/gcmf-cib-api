@@ -11,7 +11,7 @@ externalRoute.get('/bvnValidation', validateThirdPartyAuthorization, bvnEnquiry)
 externalRoute.get('/getthirdpartyOrganization', getAllThirdPartyOrganizations)
 externalRoute.get('/getthirdpartyAnalytics', getAllThirdPartyOrganizations)
 externalRoute.get('/thridpartyAnalytics/:userid', getthirdpartyAnalytics)
-externalRoute.post('/intrabankValidation', IntrabankAccountEnquiry)
+externalRoute.post('/intrabankValidation',validateThirdPartyAuthorization, IntrabankAccountEnquiry)
 
 
 module.exports = externalRoute
