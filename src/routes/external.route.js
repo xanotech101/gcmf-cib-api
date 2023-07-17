@@ -10,7 +10,7 @@ externalRoute.get('/requestNameEnquiry', validateThirdPartyAuthorization, getNam
 externalRoute.get('/bvnValidation', validateThirdPartyAuthorization, bvnEnquiry)
 externalRoute.get('/getthirdpartyOrganization', getAllThirdPartyOrganizations)
 externalRoute.get('/getthirdpartyAnalytics', getAllThirdPartyOrganizations)
-externalRoute.get('/thridpartyAnalytics/:userid', getthirdpartyAnalytics)
+externalRoute.get('/thirdpartyAnalytics/:userid', getthirdpartyAnalytics)
 externalRoute.post('/intrabankValidation',validateThirdPartyAuthorization, IntrabankAccountEnquiry)
 
 
