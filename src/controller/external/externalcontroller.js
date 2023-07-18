@@ -89,7 +89,7 @@ async function getAllThirdPartyOrganizations(req, res) {
           .find(query)
           .skip(skipNum)
           .limit(numPerPage)
-          .lean(); // Use lean() to retrieve plain JavaScript objects instead of Mongoose documents
+          .lean(); 
   
         // Fetch count for each user from thirdPartyRequestCOuntModel
         for (const result of results) {
@@ -110,7 +110,7 @@ async function getAllThirdPartyOrganizations(req, res) {
         }
       } else {
         // If numPerPage is not defined or 0, return all the data
-        results = await thirdPartyModel.find(query).lean(); // Use lean() to retrieve plain JavaScript objects instead of Mongoose documents
+        results = await thirdPartyModel.find(query).lean(); 
         totalCount = results.length;
         totalPages = 1;
       }
