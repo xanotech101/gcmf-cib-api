@@ -64,9 +64,9 @@ async function generateUserToken(req, res) {
 
 async function getAllThirdPartyOrganizations(req, res) {
     try {
-      const page = req.query.page || 1; 
-      const numPerPage = req.query.numPerPage || 10; 
-      const searchQuery = req.query.search; 
+      const page = req.query.page || 1;
+      const numPerPage = req.query.numPerPage || 10;
+      const searchQuery = req.query.search;
   
       let skipNum = 0;
       if (page > 1) {
@@ -78,17 +78,39 @@ async function getAllThirdPartyOrganizations(req, res) {
       let results = [];
   
       const query = searchQuery
-        ? { organization_name: { $regex: searchQuery, $options: 'i' } } 
+        ? { organization_name: { $regex: searchQuery, $options: 'i' } }
         : {};
   
       if (numPerPage && numPerPage !== '0') {
         // If numPerPage is defined and not 0, paginate the results
         totalCount = await thirdPartyModel.countDocuments(query);
         totalPages = Math.ceil(totalCount / numPerPage);
-        results = await thirdPartyModel.find(query).skip(skipNum).limit(numPerPage);
+        results = await thirdPartyModel
+          .find(query)
+          .skip(skipNum)
+          .limit(numPerPage)
+          .lean(); 
+  
+        // Fetch count for each user from thirdPartyRequestCOuntModel
+        for (const result of results) {
+          const { _id } = result;
+  
+          // Fetch count for Bvn
+          const bvnCount = await thirdPartyRequestCOuntModel
+            .countDocuments({ userid:_id, requestType: 'Bvn' })
+            .lean();
+  
+          // Fetch count for NameEnquiry
+          const nameEnquiryCount = await thirdPartyRequestCOuntModel
+            .countDocuments({ userid:_id, requestType: 'NameEnquiry' })
+            .lean();
+  
+          result.BvnCount = bvnCount; // Add Bvn count to the result object
+          result.NameEnquiryCount = nameEnquiryCount; // Add NameEnquiry count to the result object
+        }
       } else {
         // If numPerPage is not defined or 0, return all the data
-        results = await thirdPartyModel.find(query);
+        results = await thirdPartyModel.find(query).lean(); 
         totalCount = results.length;
         totalPages = 1;
       }
@@ -113,6 +135,7 @@ async function getAllThirdPartyOrganizations(req, res) {
       });
     }
   }
+  
   
 
 async function getthirdpartyAnalytics(req, res) {
