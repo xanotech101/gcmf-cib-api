@@ -29,8 +29,11 @@ const userSchema = new mongoose.Schema(
     organizationId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Account",
-    }
-    ,
+    },
+    organizationLabel: {
+      type: mongoose.Schema.Types.ObjectID,
+      ref: "organzationLabel",
+    },
     imageUrl: String,
     privileges: [
       {

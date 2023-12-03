@@ -104,6 +104,7 @@ const initiateRequest = async (req, res) => {
       transaction: result._id,
       message: `${user.firstName} ${user.lastName} initiated a transaction request on ${date} by ${time}`,
       organization: mine.organizationId,
+      organizationLabel: mine.organizationLabel
     });
 
     return res.status(201).json({
@@ -713,6 +714,7 @@ const authoriserApproveRequest = async (req, res) => {
       transaction: request._id,
       message: `${user.firstName} approved a transaction request on ${date} by ${time}`,
       organization: mine.organizationId,
+      organizationLabel: mine.organizationLabel
     });
 
     // delete otp from database
@@ -1241,6 +1243,7 @@ const authoriserBulkaprove = async (req, res) => {
         transaction: request._id,
         message: `${user.firstName} approved a transaction request on ${date} by ${time}`,
         organization: mine.organizationId,
+        organizationLabel: mine.organizationLabel
       });
 
       // delete otp from database
