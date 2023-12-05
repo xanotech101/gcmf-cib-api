@@ -197,7 +197,7 @@ function allUsersAuth(req, res, next) {
   }
 }
 
-function gcAuth(req, res, next) {
+function entityAuth(req, res, next) {
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(" ")[1];
   try {
@@ -212,7 +212,7 @@ function gcAuth(req, res, next) {
     const arr = decoded.privileges;
     const role = decoded.role
 
-    if (!arr.includes("gcadmin") && !arr.includes("superUser")) {
+    if (!arr.includes("entity") && !arr.includes("superUser")) {
       return res.status(403).json({
         message: "Access denied. You are not authorized to perform this action",
         data: null,
@@ -279,5 +279,5 @@ module.exports = {
   allUsersAuth,
   authoriserAuth,
   validateThirdPartyAuthorization,
-  gcAuth
+  entityAuth
 };

@@ -24,7 +24,7 @@ const bankoneRoute = require("./routes/bankone.route");
 const settingsRoute = require("./routes/settings.route")
 const organizationRoute = require('./routes/organization')
 const externalRoute = require('./routes/external.route')
-const gcadminRoute = require('./routes/gcadmin.route')
+const gcadminRoute = require('./routes/allentity')
 
 
 const cors = require("cors");
