@@ -179,7 +179,7 @@ function allUsersAuth(req, res, next) {
       !arr.includes("admin") &&
       !arr.includes("initiator") &&
       !arr.includes("authoriser") &&
-      !arr.includes("gcadmin")
+      !arr.includes("entity")
     ) {
       return res.status(403).json({
         message: "Access denied. You are not authorized to perform this action",
