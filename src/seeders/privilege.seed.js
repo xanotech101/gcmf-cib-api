@@ -24,7 +24,7 @@ const privileges = [
     _id: mongoose.Types.ObjectId('63f69765243023c496fe322d'),
   },
   {
-    name: "entity",
+    name: "organizationLabelAdmin",
     _id: mongoose.Types.ObjectId('63f69765243023c496fe322e'),
   }
 ] 

@@ -24,14 +24,13 @@ const bankoneRoute = require("./routes/bankone.route");
 const settingsRoute = require("./routes/settings.route")
 const organizationRoute = require('./routes/organization')
 const externalRoute = require('./routes/external.route')
-const allEntityRoute = require('./routes/allentity')
+const organizationLabelRoutes = require('./routes/organizationLabelAdmin')
 
 
 const cors = require("cors");
 const connectDB = require("./config/db");
 const { sendSMS } = require("./services/sms.service");
 const { setup } = require("./services/messageQueue/queueing_system");
-const { updateAuditTrail, updateTicketTrail, updateMandate, updateUser } = require("./controller/updatedb");
 
 
 let URI = process.env.MONGO_URI;
@@ -96,12 +95,8 @@ app.use("/api/bank", bankoneRoute);
 app.use("/api/settings", settingsRoute);
 app.use("/api/organization", organizationRoute);
 app.use('/api/thirdparty',externalRoute)
-app.use('/api/allentity',allEntityRoute)
+app.use('/api/organizationLabel',organizationLabelRoutes)
 app.use("/", (req, res) => {
-  // updateAuditTrail()
-  // updateTicketTrail()
-  // updateMandate()
-  // updateUser()
   return res.send("Server is connected")
 })
 

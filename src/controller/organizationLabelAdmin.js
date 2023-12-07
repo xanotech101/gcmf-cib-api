@@ -242,7 +242,7 @@ const transferRequest = async (req, res) => {
   }
 };
 
-const allEntityAudit = async (req, res) => {
+const organizationLabelAudit = async (req, res) => {
   try {
     const requestlabel = await organization.findOne({
       _id: req.user.organizationLabel,
@@ -303,7 +303,7 @@ const allEntityAudit = async (req, res) => {
   }
 };
 
-async function getallEntityAnalytics(req, res) {
+async function getallOrganizationLabelAnalytics(req, res) {
   try {
     const requestLabel = await organization.findOne({
       _id: req.user.organizationLabel,
@@ -485,8 +485,8 @@ async function getallEntityAnalytics(req, res) {
 module.exports = {
   getAllusersTiedToGCAccount,
   getAllusersTiedToAnAccount,
-  getallEntityAnalytics,
+  getallOrganizationLabelAnalytics,
   dashBoardAnalytics,
   transferRequest,
-  allEntityAudit,
+  organizationLabelAudit,
 };
