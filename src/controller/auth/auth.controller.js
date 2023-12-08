@@ -29,9 +29,9 @@ const preLogin = async (req, res) => {
       });
     }
 
-    const userOrganization = await Account.findOne({ _id: user.organizationId  });
+    const userOrganization = await Account.findOne({ _id: user.organizationId });
 
-    if(userOrganization?.disabled === true){
+    if (userOrganization?.disabled === true) {
       return res.status(422).send({
         data: null,
         message: "Sorry your organization has been disabled and you can't login, if you think this is a mistake contact the administrator thank you",
@@ -49,7 +49,7 @@ const preLogin = async (req, res) => {
       });
     }
 
-    if(user.disabled === true){
+    if (user.disabled === true) {
       return res.status(422).send({
         data: null,
         message: "Sorry your account has been disabled and you can't login, if you think this is a mistake contact the administrator thank you",
@@ -144,6 +144,7 @@ const login = async (req, res) => {
       type: "authentication",
       message: `${user.firstName} logged in on ${date} by ${time}`,
       organization: user.organizationId,
+      organizationLabel: user.organizationLabel
     });
 
     res.json({
@@ -226,7 +227,7 @@ const verifyUser = async (req, res) => {
       });
     }
 
-    const user = await User.findOne({ email: mail.user_email ?? mail.email, verificationToken:req.params.token });
+    const user = await User.findOne({ email: mail.user_email ?? mail.email, verificationToken: req.params.token });
 
     if (!user) {
       return res.status(400).json({
