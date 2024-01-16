@@ -373,6 +373,7 @@ const registerUser = async (req, res) => {
       data: { result },
     });
   } catch (error) {
+    console.log(error)
     return res.status(500).json({
       status: "failed",
       data: null,
