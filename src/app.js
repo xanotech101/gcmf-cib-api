@@ -31,8 +31,6 @@ const cors = require("cors");
 const connectDB = require("./config/db");
 const { sendSMS } = require("./services/sms.service");
 const { setup } = require("./services/messageQueue/queueing_system");
-const { updateAuditTrail, updateTicketTrail, updateMandate, updateUser } = require("./controller/updatedb");
-
 
 let URI = process.env.MONGO_URI;
 
