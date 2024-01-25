@@ -179,7 +179,7 @@ function allUsersAuth(req, res, next) {
       !arr.includes("admin") &&
       !arr.includes("initiator") &&
       !arr.includes("authoriser") &&
-      !arr.includes("gcadmin")
+      !arr.includes("organizationLabelAdmin")
     ) {
       return res.status(403).json({
         message: "Access denied. You are not authorized to perform this action",
@@ -197,7 +197,7 @@ function allUsersAuth(req, res, next) {
   }
 }
 
-function gcAuth(req, res, next) {
+function organizationLabelAdminAuth(req, res, next) {
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(" ")[1];
   try {
@@ -212,7 +212,7 @@ function gcAuth(req, res, next) {
     const arr = decoded.privileges;
     const role = decoded.role
 
-    if (!arr.includes("gcadmin") && !arr.includes("superUser")) {
+    if (!arr.includes("organizationLabelAdmin") && !arr.includes("superUser")) {
       return res.status(403).json({
         message: "Access denied. You are not authorized to perform this action",
         data: null,
@@ -279,5 +279,5 @@ module.exports = {
   allUsersAuth,
   authoriserAuth,
   validateThirdPartyAuthorization,
-  gcAuth
+  organizationLabelAdminAuth
 };

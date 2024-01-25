@@ -546,6 +546,8 @@ const disableUser = async (req, res) => {
         user: req.user._id,
         type: "disable account",
         message: `${user.firstName} ${user.lastName} disabled ${checkUser.firstName} ${checkUser.lastName} account on ${date} by ${time}`,
+        organization:user.organizationId,
+        organizationLabel: user.organizationLabel
       };
       await auditTrailService.createAuditTrail(auditTrail)
       checkOtp.delete()
@@ -602,6 +604,8 @@ const enableUser = async (req, res) => {
         user: req.user._id,
         type: "enable account",
         message: `${user.firstName} ${user.lastName} enabled ${checkUser.firstName} ${checkUser.lastName} account on ${date} by ${time}`,
+        organization:user.organizationId,
+        organizationLabel: user.organizationLabel
       };
 
       await auditTrailService.createAuditTrail(auditTrail)

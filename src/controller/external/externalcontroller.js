@@ -143,25 +143,39 @@ async function getthirdpartyAnalytics(req, res) {
         const userId = req.params.userid; // Assuming you get the user ID from req.params.userid
         const requestedYear = req.query.date; // Assuming you get the requested year from req.query.date
         const requestedRequestType = req.query.requesttype; // Assuming you get the requested request type from req.query.requesttype
+        const requestedMonth = req.query.month
 
-        const analytics = await thirdPartyRequestCOuntModel.aggregate([
-            {
-                $match: {
-                    userid: mongoose.Types.ObjectId(userId),
-                    createdAt: { $regex: new RegExp(requestedYear), $options: "i" },
-                    requestType: requestedRequestType
-                }
-            },
-            {
-                $group: {
-                    _id: {
-                        year: { $year: { $dateFromString: { dateString: "$createdAt" } } },
-                        month: { $month: { $dateFromString: { dateString: "$createdAt" } } }
-                    },
-                    numberOfRequests: { $sum: 1 }
-                }
-            }
-        ]);
+        const matchStage = {
+          userid: mongoose.Types.ObjectId(userId),
+          requestType: requestedRequestType
+      };
+      
+      if (requestedYear) {
+          let regexMonth = '';
+          
+          if (requestedMonth) {
+              const monthNum = new Date(`${requestedMonth} 1, 2000`).getMonth() + 1;
+              regexMonth = monthNum < 10 ? '0' + monthNum.toString() : monthNum.toString();
+          }
+      
+          matchStage.createdAt = { $regex: new RegExp(requestedYear + (regexMonth ? "-" + regexMonth : '')), $options: "i" };
+      }
+      
+      const analytics = await thirdPartyRequestCOuntModel.aggregate([
+          {
+              $match: matchStage
+          },
+          {
+              $group: {
+                  _id: {
+                      year: { $year: { $dateFromString: { dateString: "$createdAt" } } },
+                      month: { $month: { $dateFromString: { dateString: "$createdAt" } } }
+                  },
+                  numberOfRequests: { $sum: 1 }
+              }
+          }
+      ]);
+      
 
         const formattedAnalytics = analytics.map((item) => ({
             year: item._id.year,
@@ -182,6 +196,7 @@ async function getthirdpartyAnalytics(req, res) {
     }
 }
 
+
 function getMonthName(month) {
     const monthNames = [
         "January", "February", "March", "April",
@@ -190,5 +205,15 @@ function getMonthName(month) {
     ];
 
     return monthNames[month - 1];
+}
+
+function getMonthNumber(monthName) {
+  const monthNames = [
+      "January", "February", "March", "April",
+      "May", "June", "July", "August",
+      "September", "October", "November", "December"
+  ];
+
+  return monthNames.indexOf(monthName) + 1;
 }
 module.exports = { generateUserToken, getAllThirdPartyOrganizations, getthirdpartyAnalytics,getMonthName }

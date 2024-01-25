@@ -15,6 +15,10 @@ const auditTrailSchema = new mongoose.Schema(
     organization: {
       type: String
     },
+    organizationLabel: {
+      type: mongoose.Schema.Types.ObjectID,
+      ref: "organzationLabel",
+    },
     message: String,
     organizationId: String,
     createdAt: { type: String },

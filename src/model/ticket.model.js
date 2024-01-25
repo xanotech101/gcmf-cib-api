@@ -13,6 +13,10 @@ const ticketSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Account",
     },
+    organizationLabel: {
+      type: mongoose.Schema.Types.ObjectID,
+      ref: "organzationLabel",
+    },
     response: [
       {
         responseBy: {
