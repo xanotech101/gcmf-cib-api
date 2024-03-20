@@ -252,15 +252,19 @@ async function validateThirdPartyAuthorization(req, res, next) {
         userid: checkUser._id,
         requestType: 'Bvn'
       })
-      req.user = user
+      req.user = checkUser
       next()
 
-    } else {
+    }else if(req.body.requestType === 'transferRequest'){
+      req.user = checkUser
+      next()
+    } 
+    else {
       await thirdPartyRequestCOuntModel.create({
         userid: checkUser._id,
         requestType: 'NameEnquiry'
       })
-      req.user = user
+      req.user = checkUser
       next()
     }
   } catch (error) {

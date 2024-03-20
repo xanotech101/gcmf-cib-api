@@ -1,5 +1,5 @@
 const express = require("express")
-const { generateUserToken, getAllThirdPartyOrganizations, getthirdpartyAnalytics } = require("../controller/external/externalcontroller")
+const { generateUserToken, getAllThirdPartyOrganizations, getthirdpartyAnalytics, initiateRequest, getAllTransactionByThirdParty } = require("../controller/external/externalcontroller")
 const { validateThirdPartyAuthorization } = require("../middleware/auth")
 const { getNameEnquiry, bvnEnquiry, IntrabankAccountEnquiry } = require("../controller/bankone/bankDetails")
 
@@ -12,6 +12,8 @@ externalRoute.get('/getthirdpartyOrganization', getAllThirdPartyOrganizations)
 externalRoute.get('/getthirdpartyAnalytics', getAllThirdPartyOrganizations)
 externalRoute.get('/thirdpartyAnalytics/:userid', getthirdpartyAnalytics)
 externalRoute.post('/intrabankValidation',validateThirdPartyAuthorization, IntrabankAccountEnquiry)
+externalRoute.post("/initiate-transfer", validateThirdPartyAuthorization, initiateRequest )
+externalRoute.get("/get-transfers", validateThirdPartyAuthorization, getAllTransactionByThirdParty )
 
 
 module.exports = externalRoute

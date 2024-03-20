@@ -5,6 +5,7 @@ const mongoose = require("mongoose");
 const Privilege = require("../../model/privilege.model");
 const Mandate = require("../../model/mandate.model");
 const Account = require("../../model/account");
+const whiteListAccountModel = require('../../model/whitelistAccounts')
 const { auditTrailService, userService } = require("../../services");
 const { getDateAndTime } = require("../../utils/utils");
 const otpModel = require("../../model/otp.model");
@@ -717,6 +718,64 @@ const editEmail = async (req, res) => {
   }
 }
 
+const whiteListAccount = async(req, res) =>{
+  const checkWhiteList = await whiteListAccountModel.findOne({account_number: req.body.account_number})
+  if(checkWhiteList){
+    return res.status(400).send({
+      success: false,
+      message: 'Account number already whitelisted'
+    })
+  }
+
+  const whiteList = await whiteListAccountModel.create({
+    account_number:req.body.account_number,
+    userId:  req.user._id
+  })
+
+  if(!whiteList){
+    return res.status(500).send({success:false, message:'error whitelisting this account number'})
+  }
+
+  return res.status(201).send({success:true, message:'account number whitelisted'})
+}
+
+const allwhiteListAccount = async (req, res) => {
+  try {
+    let { page, limit, sortBy, sortOrder } = req.query;
+    page = parseInt(page) || 1;
+    limit = parseInt(limit) || 10;
+    sortBy = sortBy || '_id'; // Default sorting field
+    sortOrder = sortOrder === 'desc' ? -1 : 1;
+
+    const skip = (page - 1) * limit;
+
+    const totalRecords = await whiteListAccountModel.countDocuments({});
+    const totalPages = Math.ceil(totalRecords / limit);
+
+    const query = whiteListAccountModel.find({})
+        .sort({ [sortBy]: sortOrder })
+        .skip(skip)
+        .limit(limit);
+
+    const checkWhiteList = await query.exec();
+
+    return res.status(200).send({
+        success: true,
+        data:{
+          items: checkWhiteList,
+          page: page,
+          limit: limit,
+          total: totalRecords,
+          totalPages: totalPages,
+        },
+        message:'all whitelisted account numbers'
+    });
+  } catch (error) {
+      return res.status(500).send({ success: false, message: 'Internal Server Error' });
+  }
+};
+
+
 module.exports = {
   getOrganizationUsers,
   getUserProfile,
@@ -732,5 +791,7 @@ module.exports = {
   disableUser,
   enableUser,
   deleteAccount,
-  editEmail
+  editEmail,
+  whiteListAccount,
+  allwhiteListAccount
 };

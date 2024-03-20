@@ -386,6 +386,8 @@ const IntrabankAccountEnquiry = async (req, res) => {
   }
 };
 
+
+
 module.exports = {
   IntrabankAccountEnquiry,
   getAccountByAccountNo,

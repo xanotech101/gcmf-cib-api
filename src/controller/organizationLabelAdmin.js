@@ -481,7 +481,6 @@ async function getallOrganizationLabelAnalytics(req, res) {
 }
 
 
-
 module.exports = {
   getAllusersTiedToGCAccount,
   getAllusersTiedToAnAccount,
