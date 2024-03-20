@@ -133,7 +133,7 @@ class BankOneService {
     payload
   ) {
     try {
-      const { data } = await axios.post(`${config.interbankTransfer}`, payload);
+      const {data}  = await axios.post(`${config.interbankTransfer}`, payload);
       return data;
     } catch (error) {
       console.log('service', error.response.data);
