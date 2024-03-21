@@ -112,8 +112,13 @@ async function getAllThirdPartyOrganizations(req, res) {
           .countDocuments({ userid: _id, requestType: 'NameEnquiry' })
           .lean();
 
+          const transferRequestCount = await thirdPartyRequestCOuntModel
+          .countDocuments({ userid: _id, requestType: 'TransferRequest' })
+          .lean();
+
         result.BvnCount = bvnCount; // Add Bvn count to the result object
         result.NameEnquiryCount = nameEnquiryCount; // Add NameEnquiry count to the result object
+        result.TransferRequestCount = transferRequestCount
       }
     } else {
       // If numPerPage is not defined or 0, return all the data
