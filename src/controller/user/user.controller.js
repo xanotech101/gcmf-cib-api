@@ -6,6 +6,7 @@ const Privilege = require("../../model/privilege.model");
 const Mandate = require("../../model/mandate.model");
 const Account = require("../../model/account");
 const whiteListAccountModel = require('../../model/whitelistAccounts')
+const accountModel = require('../../model/account')
 const { auditTrailService, userService } = require("../../services");
 const { getDateAndTime } = require("../../utils/utils");
 const otpModel = require("../../model/otp.model");
@@ -547,7 +548,7 @@ const disableUser = async (req, res) => {
         user: req.user._id,
         type: "disable account",
         message: `${user.firstName} ${user.lastName} disabled ${checkUser.firstName} ${checkUser.lastName} account on ${date} by ${time}`,
-        organization:user.organizationId,
+        organization: user.organizationId,
         organizationLabel: user.organizationLabel
       };
       await auditTrailService.createAuditTrail(auditTrail)
@@ -605,7 +606,7 @@ const enableUser = async (req, res) => {
         user: req.user._id,
         type: "enable account",
         message: `${user.firstName} ${user.lastName} enabled ${checkUser.firstName} ${checkUser.lastName} account on ${date} by ${time}`,
-        organization:user.organizationId,
+        organization: user.organizationId,
         organizationLabel: user.organizationLabel
       };
 
@@ -718,26 +719,94 @@ const editEmail = async (req, res) => {
   }
 }
 
-const whiteListAccount = async(req, res) =>{
-  const checkWhiteList = await whiteListAccountModel.findOne({account_number: req.body.account_number})
-  if(checkWhiteList){
-    return res.status(400).send({
+const whiteListAccount = async (req, res) => {
+  const accounts = req.body.accounts;
+  const userId = req.user._id;
+  const invalidAccounts = [];
+
+  try {
+
+    const checkOtp = await otpModel.findOne({ user: req.user._id, otp: req.body.otp, context: 'whitelist-account' })
+    if (!checkOtp) {
+      return res.status(400).send({
+        success: false,
+        message: 'invalid otp'
+      })
+    }
+
+
+    // Check if accounts exist and are verified and not disabled
+    const existingValidAccounts = await accountModel.find({
+      accountNumber: { $in: accounts },
+      verified: true,
+      disabled: false,
+    });
+
+
+    // Get array of existing valid account numbers
+    const existingValidAccountNumbers = existingValidAccounts.map(
+      (account) => account.accountNumber[0]
+    );
+
+    // Iterate over accounts to check for invalid ones
+    accounts.forEach((account) => {
+      if (!existingValidAccountNumbers.includes(account)) {
+        invalidAccounts.push({
+          accountNumber: account,
+          message: "Account not found, or it's not verified or disabled",
+        });
+      }
+    });
+
+    if (invalidAccounts.length > 0) {
+      checkOtp.delete()
+      return res.status(400).send({
+        success: false,
+        message: "Invalid account numbers",
+        invalidAccounts: invalidAccounts,
+      });
+    }
+
+    // Check if any of the accounts are already whitelisted
+    const existingWhitelistedAccounts = await whiteListAccountModel.find({
+      account_number: { $in: accounts },
+    });
+
+    if (existingWhitelistedAccounts.length > 0) {
+      const existingWhitelistedAccountNumbers = existingWhitelistedAccounts.map(
+        (item) => item.account_number
+      );
+      checkOtp.delete()
+      return res.status(400).send({
+        success: false,
+        message: `Accounts ${existingWhitelistedAccountNumbers.join(
+          ", "
+        )} already whitelisted`,
+      });
+    }
+    
+    const whiteListDocuments = accounts.map((account) => ({
+      userId,
+      account_number: account,
+    }));
+
+    // Insert the documents
+    const whitelist = await whiteListAccountModel.insertMany(whiteListDocuments);
+    checkOtp.delete()
+
+    return res.status(201).send({
+      success: true,
+      message: "Accounts whitelisted successfully",
+      data: whitelist,
+    });
+  } catch (error) {
+    return res.status(500).send({
       success: false,
-      message: 'Account number already whitelisted'
-    })
+      message: "Internal server error",
+      error: error.message,
+    });
   }
-
-  const whiteList = await whiteListAccountModel.create({
-    account_number:req.body.account_number,
-    userId:  req.user._id
-  })
-
-  if(!whiteList){
-    return res.status(500).send({success:false, message:'error whitelisting this account number'})
-  }
-
-  return res.status(201).send({success:true, message:'account number whitelisted'})
-}
+};
 
 const allwhiteListAccount = async (req, res) => {
   try {
@@ -753,25 +822,44 @@ const allwhiteListAccount = async (req, res) => {
     const totalPages = Math.ceil(totalRecords / limit);
 
     const query = whiteListAccountModel.find({})
-        .sort({ [sortBy]: sortOrder })
-        .skip(skip)
-        .limit(limit);
+      .sort({ [sortBy]: sortOrder })
+      .skip(skip)
+      .limit(limit);
 
     const checkWhiteList = await query.exec();
 
     return res.status(200).send({
-        success: true,
-        data:{
-          items: checkWhiteList,
-          page: page,
-          limit: limit,
-          total: totalRecords,
-          totalPages: totalPages,
-        },
-        message:'all whitelisted account numbers'
+      success: true,
+      data: {
+        items: checkWhiteList,
+        page: page,
+        limit: limit,
+        total: totalRecords,
+        totalPages: totalPages,
+      },
+      message: 'all whitelisted account numbers'
     });
   } catch (error) {
-      return res.status(500).send({ success: false, message: 'Internal Server Error' });
+    return res.status(500).send({ success: false, message: 'Internal Server Error' });
+  }
+};
+
+const deleteWhitelistedAccounts = async (req, res) => {
+  try {
+  
+    const deleteResult = await whiteListAccountModel.deleteMany({
+      account_number: { $in: req.body.accounts }
+    });
+
+    if (deleteResult.deletedCount === 0) {
+      return res.status(400).send({ success: false, message: 'No accounts found to delete' });
+    }
+
+    return res.status(200).send({ success: true, message: 'Accounts removed successfully' });
+
+  } catch (error) {
+    console.error(error); 
+    return res.status(500).send({ success: false, message: 'Internal Server Error' });
   }
 };
 
@@ -793,5 +881,6 @@ module.exports = {
   deleteAccount,
   editEmail,
   whiteListAccount,
-  allwhiteListAccount
+  allwhiteListAccount,
+  deleteWhitelistedAccounts
 };
