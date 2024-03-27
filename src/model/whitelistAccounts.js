@@ -8,9 +8,9 @@ const whiteListSchema = new mongoose.Schema(
       ref: "User",
     },
     account_number: {
-      type: String,
-      required: true
-    },
+      type:String,
+      required:true
+    }
    },
 
 );

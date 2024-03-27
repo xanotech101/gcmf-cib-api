@@ -7,6 +7,7 @@ const { notificationService } = require("../../services");
 const initiateRequestModel = require("../../model/initiateRequest.model");
 const whitelistAccounts = require("../../model/whitelistAccounts");
 const { QueueTransfer } = require("../../services/messageQueue/queue");
+const bankOneService = require("../../services/bankOne.service");
 
 const authToken = process.env.AUTHTOKEN;
 
@@ -112,7 +113,7 @@ async function getAllThirdPartyOrganizations(req, res) {
           .countDocuments({ userid: _id, requestType: 'NameEnquiry' })
           .lean();
 
-          const transferRequestCount = await thirdPartyRequestCOuntModel
+        const transferRequestCount = await thirdPartyRequestCOuntModel
           .countDocuments({ userid: _id, requestType: 'TransferRequest' })
           .lean();
 
@@ -237,24 +238,39 @@ const initiateRequest = async (req, res) => {
         message: `${req.body.payerAccountNumber} is not authorized to make this transaction.`
       })
     }
+
+    let accountInfo
+
+    if (req.body.type == 'inter-bank') {
+      accountInfo = await bankOneService.getNameEnquiry(authToken, req.body.beneficiaryAccountName, req.body.beneficiaryBankCode)
+    } else {
+      accountInfo = await bankOneService.IntrabankAccountEnquiry(authToken, req.body.beneficiaryAccountName)
+    }
+    if (!accountInfo.IsSuccessful) {
+      return res.status(400).send({
+        success: false,
+        message: `Error getting beneficiary account information kindly check your beneficiary account number`
+      })
+    }
     const request = new initiateRequestModel({
-      NIPSessionID: req.body.NIPSessionID,
+      NIPSessionID: accountInfo.SessionID,
       amount: req.body.amount,
       narration: req.body.narration,
       payerAccountNumber: req.body.payerAccountNumber,
-      beneficiaryAccountName: req.body.beneficiaryAccountName,
+      beneficiaryAccountName: accountInfo.Name,
       beneficiaryAccountNumber: req.body.beneficiaryAccountNumber,
       beneficiaryAccountType: req.body.beneficiaryAccountType,
-      beneficiaryBVN: req.body.beneficiaryBVN,
+      beneficiaryBVN: accountInfo.BVN,
       beneficiaryBankCode: req.body.beneficiaryBankCode,
       beneficiaryBankName: req.body.beneficiaryBankName,
-      beneficiaryKYC: req.body.beneficiaryKYC,
-      beneficiaryPhoneNumber: req.body.beneficiaryPhoneNumber,
+      beneficiaryKYC: accountInfo.KYC,
+      beneficiaryPhoneNumber: accountInfo.PhoneNuber,
       transactionReference: mongoose.Types.ObjectId().toString().substr(0, 12),
       type: req.body.type,
       channel: 'third-party',
       userId: req.user._id
     });
+
 
     request.initiator = req.user._id;
     request.narration = ('Transfer from ' + req.user?.organization_name + ' to ' + req.body.beneficiaryAccountName + '\\\\' + req.body.narration)?.slice(0, 100);

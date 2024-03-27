@@ -16,7 +16,8 @@ const {
   deleteAccount,
   editEmail,
   whiteListAccount,
-  allwhiteListAccount
+  allwhiteListAccount,
+  deleteWhitelistedAccounts
 } = require("../controller/user/user.controller");
 const {
   adminAuth,
@@ -51,6 +52,7 @@ router.patch("/editEmail", superUserAuth, validate(authSchemas.updateEmail,"body
 
 router.post('/whiteListAccount', superUserAuth, whiteListAccount)
 router.get('/all/whiteListedAccounts', superUserAuth, allwhiteListAccount)
+router.delete('/remove/whiteListedAccounts', superUserAuth, deleteWhitelistedAccounts)
 
 module.exports = router;
 
