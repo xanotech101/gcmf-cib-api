@@ -16,7 +16,6 @@ async function consumeTransferRequest() {
                 const serializedMessage = message.content.toString();
                 try {
                     const { requestData, type } = JSON.parse(serializedMessage);
-
                     let transfer;
                     if (type === 'inter-bank') {
                         transfer = await bankOneService.doInterBankTransfer(requestData);
