@@ -8,13 +8,17 @@ const initiateRequestModel = require("../../model/initiateRequest.model");
 const whitelistAccounts = require("../../model/whitelistAccounts");
 const { QueueTransfer } = require("../../services/messageQueue/queue");
 const bankOneService = require("../../services/bankOne.service");
+const bcrypt = require('bcrypt')
 
 const authToken = process.env.AUTHTOKEN;
 
-async function generateUserToken(req, res) {
+const generateRandomNumber = () => {
+  return Math.floor(100000 + Math.random() * 900000); // Generates a number between 100000 and 999999
+};
+
+
+async function createExternalOrganization(req, res) {
   try {
-
-
     if (!req.body.organization_name) {
       return res.status(400).send({
         success: false,
@@ -24,43 +28,41 @@ async function generateUserToken(req, res) {
     //check if organization name already registered
     const requestname = await thirdPartyModel.findOne({ organization_name: req.body.organization_name })
     if (requestname) {
-      const genrateToken = jwt.sign(
-        { organization_name: req.body.organization_name },
-        process.env.JWT_SECRET,
-        {
-          expiresIn: "15d",
-        }
-      );
-
-      return res.status(200).send({
-        success: true,
-        message: 'this organization now have access',
-        data: genrateToken
-
+      return res.status(400).send({
+        success: false,
+        message: 'organization already registered to the system',
       })
     }
 
-    const genrateToken = jwt.sign(
-      { organization_name: req.body.organization_name },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: "15d",
-      }
-    );
+    const generateKey = generateRandomNumber().toString();
 
-    await thirdPartyModel.create({
+    const salt = await bcrypt.genSalt(15);
+    const hashKey = await bcrypt.hash(generateKey, salt);
+
+
+    const createOrg = await thirdPartyModel.create({
       organization_name: req.body.organization_name,
+      key: hashKey,
       requestCount: [],
       bvnCount: []
     })
 
+    if (!createOrg) {
+      return res.status(500).send({
+        success: false,
+        message: 'error creating organization'
+      })
+    }
 
     return res.status(200).send({
       success: true,
-      message: 'this organization now have access',
-      data: genrateToken
-
+      message: 'organization created, please note your key is revealed only this time, do well to save it privately.',
+      data: {
+        organization: createOrg,
+        key: generateKey
+      }
     })
+
   } catch (error) {
     console.log(error)
     res.status(500).send({
@@ -69,6 +71,95 @@ async function generateUserToken(req, res) {
     })
   }
 }
+
+async function generateUserToken(req, res) {
+  try {
+    if (!req.body.organization_name || !req.body.key) {
+      return res.status(400).send({
+        success: false,
+        message: 'Organization name and key are required'
+      });
+    }
+
+    const organization = await thirdPartyModel.findOne({ organization_name: req.body.organization_name });
+    if (!organization) {
+      return res.status(404).send({
+        success: false,
+        message: 'Organization does not exist'
+      });
+    }
+
+    const keyMatch = await bcrypt.compare(req.body.key, organization.key);
+    if (!keyMatch) {
+      return res.status(401).send({
+        success: false,
+        message: 'Invalid key, if you dont have a valid key please contact your administrator to get a key'
+      });
+    }
+
+    const token = jwt.sign(
+      { organization_name: req.body.organization_name },
+      process.env.JWT_SECRET,
+      { expiresIn: "15d" }
+    );
+
+    await thirdPartyModel.findOneAndUpdate(
+      { organization_name: req.body.organization_name },
+      { $set: { requestCount: [], bvnCount: [] } },
+      { upsert: true }
+    );
+
+    return res.status(200).send({
+      success: true,
+      message: 'Organization now has access',
+      data: token
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+}
+
+async function updateOrganizationKey(req, res) {
+  try {
+    const organizationName = req.body.organization_name;
+    const newKey = generateRandomNumber().toString(); 
+
+    const salt = await bcrypt.genSalt(15);
+    const hashKey = await bcrypt.hash(newKey, salt);
+
+    const organization = await thirdPartyModel.findOne({ organization_name: organizationName });
+    if (!organization) {
+      return res.status(404).send({
+        success: false,
+        message: 'Organization not found'
+      });
+    }
+
+    organization.key = hashKey;
+    await organization.save();
+
+    return res.status(200).send({
+      success: true,
+      message: 'Key updated successfully, please note your key is revealed only this time, do well to save it privately.',
+      data: {
+        organization: organizationName,
+        key: newKey 
+      }
+    });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+}
+
 
 async function getAllThirdPartyOrganizations(req, res) {
   try {
@@ -371,4 +462,7 @@ const getAllTransactionByThirdParty = async (req, res) => {
 };
 
 
-module.exports = { generateUserToken, getAllThirdPartyOrganizations, getthirdpartyAnalytics, getMonthName, initiateRequest, getAllTransactionByThirdParty }
+module.exports = { generateUserToken, getAllThirdPartyOrganizations, 
+  getthirdpartyAnalytics, getMonthName, initiateRequest, getAllTransactionByThirdParty, 
+  updateOrganizationKey,
+  createExternalOrganization }
