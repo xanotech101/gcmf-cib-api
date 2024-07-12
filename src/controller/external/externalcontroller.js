@@ -13,7 +13,7 @@ const bcrypt = require('bcrypt')
 const authToken = process.env.AUTHTOKEN;
 
 const generateRandomNumber = () => {
-  return Math.floor(100000 + Math.random() * 900000); // Generates a number between 100000 and 999999
+  return Math.floor(100000000000000 + Math.random() * 900000000000000); 
 };
 
 
