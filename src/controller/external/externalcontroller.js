@@ -125,6 +125,7 @@ async function getAllThirdPartyOrganizations(req, res) {
   }
     
 async function generateUserToken(req, res) {
+  console.log('test-generate-usertoken')
   try {
     if (!req.body.organization_name || !req.body.key) {
       return res.status(400).send({
