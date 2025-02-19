@@ -73,6 +73,7 @@ async function createExternalOrganization(req, res) {
 }
 
 async function generateUserToken(req, res) {
+  console.log('generate-token')
   try {
     if (!req.body.organization_name || !req.body.key) {
       return res.status(400).send({
