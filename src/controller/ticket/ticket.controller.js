@@ -172,7 +172,8 @@ const createTicket = async (req, res) => {
       topic: req.body.topic,
       message: req.body.message,
       meta: req.body.meta,
-      organization: mongoose.Types.ObjectId(req.user.organizationId)
+      organization: mongoose.Types.ObjectId(req.user.organizationId),
+      organizationLabel: mongoose.Types.ObjectId(req.user.organizationLabel)
     });
 
     const notifications = []
