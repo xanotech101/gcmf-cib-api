@@ -14,7 +14,10 @@ const {
   disableUser,
   enableUser,
   deleteAccount,
-  editEmail
+  editEmail,
+  whiteListAccount,
+  allwhiteListAccount,
+  deleteWhitelistedAccounts
 } = require("../controller/user/user.controller");
 const {
   adminAuth,
@@ -46,6 +49,10 @@ router.patch("/enable/:id", superUserAuth, enableUser)
 router.delete("/deleteAccount/:id", superUserAuth, deleteAccount)
 
 router.patch("/editEmail", superUserAuth, validate(authSchemas.updateEmail,"body"), editEmail)
+
+router.post('/whiteListAccount', superUserAuth, whiteListAccount)
+router.get('/all/whiteListedAccounts', superUserAuth, allwhiteListAccount)
+router.delete('/remove/whiteListedAccounts', superUserAuth, deleteWhitelistedAccounts)
 
 module.exports = router;
 

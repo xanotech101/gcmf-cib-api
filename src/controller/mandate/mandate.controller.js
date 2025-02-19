@@ -62,6 +62,7 @@ const registerMandate = async (req, res) => {
         authoriser: req.body.authoriser,
         organizationId: mine.organizationId.toString(),
         verifiers: req.body.verifiers,
+        organizationLabel: mine.organizationLabel
       });
 
       mandate.numberOfVerifiers = mandate.verifiers.length;
@@ -91,6 +92,7 @@ const registerMandate = async (req, res) => {
         authoriser: req.body.authoriser,
         organizationId: mine.organizationId.toString(),
         verifiers: req.body.verifiers,
+        organizationLabel: mine.organizationLabel
       });
 
       mandate.numberOfVerifiers = mandate.verifiers.length;

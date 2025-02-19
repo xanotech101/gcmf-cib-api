@@ -10,7 +10,7 @@ async function QueueTransfer(requestData, type) {
     await channel.assertQueue(queueName, { durable: false });
 
     const serializedData = JSON.stringify({requestData:requestData, type:type});
-
+                          
     setTimeout(async () => {
       channel.sendToQueue(queueName, Buffer.from(serializedData));
 

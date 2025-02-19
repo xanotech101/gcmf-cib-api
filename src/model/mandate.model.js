@@ -9,6 +9,10 @@ const mandateSchema = new mongoose.Schema(
     minAmount: Number,
     maxAmount: Number,
     organizationId: String,
+    organizationLabel: {
+      type: mongoose.Schema.Types.ObjectID,
+      ref: "organzationLabel",
+    },
     verifiers: [
       {
         type: mongoose.Schema.Types.ObjectId,

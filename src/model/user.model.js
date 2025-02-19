@@ -29,8 +29,11 @@ const userSchema = new mongoose.Schema(
     organizationId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Account",
-    }
-    ,
+    },
+    organizationLabel: {
+      type: mongoose.Schema.Types.ObjectID,
+      ref: "organzationLabel",
+    },
     imageUrl: String,
     privileges: [
       {
@@ -42,7 +45,7 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       required: true,
-      enum: ["system-admin", "super-admin", "admin", "user", "gcadmin"],
+      enum: ["system-admin", "super-admin", "admin", "user", "organizationLabelAdmin"],
     },
     disabled:{
       type:Boolean,

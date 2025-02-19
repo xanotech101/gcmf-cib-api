@@ -10,7 +10,7 @@ async function getAllusersTiedToGCAccount(req, res) {
   try {
     // Get gc organization label
     const requestlabel = await organization.findOne({
-      label: "Grooming Centre",
+      _id: req.user.organizationLabel,
     });
     if (!requestlabel) {
       return res.status(400).send({
@@ -118,7 +118,7 @@ async function getAllusersTiedToAnAccount(req, res) {
 
 const dashBoardAnalytics = async (req, res) => {
   //Get all gc accounts
-  const requestlabel = await organization.findOne({ label: "Grooming Centre" });
+  const requestlabel = await organization.findOne({  _id: req.user.organizationLabel });
   if (!requestlabel) {
     return res.status(400).send({
       success: false,
@@ -174,7 +174,7 @@ const transferRequest = async (req, res) => {
   try {
     // Get gc organization label
     const requestlabel = await organization.findOne({
-      label: "Grooming Centre",
+      _id: req.user.organizationLabel,
     });
     if (!requestlabel) {
       return res.status(400).send({
@@ -242,10 +242,10 @@ const transferRequest = async (req, res) => {
   }
 };
 
-const gcAudit = async (req, res) => {
+const organizationLabelAudit = async (req, res) => {
   try {
     const requestlabel = await organization.findOne({
-      label: "Grooming Centre",
+      _id: req.user.organizationLabel,
     });
     if (!requestlabel) {
       return res.status(400).send({
@@ -303,10 +303,10 @@ const gcAudit = async (req, res) => {
   }
 };
 
-async function getGcAnalytics(req, res) {
+async function getallOrganizationLabelAnalytics(req, res) {
   try {
     const requestLabel = await organization.findOne({
-      label: "Grooming Centre",
+      _id: req.user.organizationLabel,
     });
 
     if (!requestLabel) {
@@ -481,12 +481,11 @@ async function getGcAnalytics(req, res) {
 }
 
 
-
 module.exports = {
   getAllusersTiedToGCAccount,
   getAllusersTiedToAnAccount,
-  getGcAnalytics,
+  getallOrganizationLabelAnalytics,
   dashBoardAnalytics,
   transferRequest,
-  gcAudit,
+  organizationLabelAudit,
 };

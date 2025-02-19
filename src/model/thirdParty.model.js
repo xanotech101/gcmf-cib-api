@@ -7,6 +7,10 @@ const thirdPartyUser = new mongoose.Schema({
     type: String,
     required: true
   },
+  key:{
+    type: String,
+    required: true
+  },
   createdAt: { type: String},
   updatedAt: { type: String},
 }
