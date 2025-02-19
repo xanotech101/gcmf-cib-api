@@ -231,50 +231,65 @@ function organizationLabelAdminAuth(req, res, next) {
 async function validateThirdPartyAuthorization(req, res, next) {
   try {
     if (!req.headers.authorization) {
-      return res.status(401).send({
+      return res.status(401).json({
         success: false,
-        message: 'not authorized to make this request'
-      })
+        message: 'Unauthorized: No token provided'
+      });
     }
-    const decoded = jwt.verify(req.headers.authorization, process.env.JWT_SECRET);
-    const user = decoded.organization_name;
-    //check if user is authorize
-    const checkUser = await thirdPartyModel.findOne({ organization_name: user })
-    if (!checkUser) {
-      return res.status(401).send({
+
+    const token = req.headers.authorization;
+    
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      if (err.name === 'TokenExpiredError') {
+        return res.status(401).json({
+          success: false,
+          message: 'Unauthorized: Token has expired'
+        });
+      }
+      return res.status(401).json({
         success: false,
-        message: 'not authorized to make this request'
-      })
+        message: 'Unauthorized: Invalid token'
+      });
+    }
+
+    const user = decoded.organization_name;
+
+    const checkUser = await thirdPartyModel.findOne({ organization_name: user });
+    if (!checkUser) {
+      return res.status(401).json({
+        success: false,
+        message: 'Unauthorized: User not found'
+      });
     }
 
     if (req.body.requestType === 'bvn') {
       await thirdPartyRequestCOuntModel.create({
         userid: checkUser._id,
         requestType: 'Bvn'
-      })
-      req.user = checkUser
-      next()
-
-    }else if(req.body.requestType === 'transferRequest'){
-      req.user = checkUser
-      next()
-    } 
-    else {
+      });
+    } else if (req.body.requestType === 'transferRequest') {
+    } else {
       await thirdPartyRequestCOuntModel.create({
         userid: checkUser._id,
         requestType: 'NameEnquiry'
-      })
-      req.user = checkUser
-      next()
+      });
     }
+
+    req.user = checkUser;
+    next();
+    
   } catch (error) {
-    console.log(error)
-    res.status(500).send({
+    console.error('Authorization Error:', error);
+    res.status(500).json({
       success: false,
-      message: error.message
-    })
+      message: 'Internal Server Error'
+    });
   }
 }
+
 module.exports = {
   superUserAuth,
   adminAuth,
