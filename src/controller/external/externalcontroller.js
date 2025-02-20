@@ -144,7 +144,7 @@ async function generateUserToken(req, res) {
     const token = jwt.sign(
       { organization_name, organization_id: organization._id },
       process.env.JWT_SECRET,
-      { algorithm: "HS256", expiresIn: "15d" }
+      { expiresIn: "15d" }
     );
 
     await thirdPartyModel.updateOne(
