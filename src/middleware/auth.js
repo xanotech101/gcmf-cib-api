@@ -229,66 +229,52 @@ function organizationLabelAdminAuth(req, res, next) {
 }
 
 async function validateThirdPartyAuthorization(req, res, next) {
+  const authHeader = req.headers.authorization;
+  const token = authHeader && authHeader.split(" ")[1];
   try {
-    // if (!req.headers.authorization) {
-    //   return res.status(401).json({
-    //     success: false,
-    //     message: 'Unauthorized: No token provided'
-    //   });
-    // }
-
-    // const token = req.headers.authorization;
-    
-    // let decoded;
-    // try {
-    //   decoded = jwt.verify(token, process.env.JWT_SECRET);
-    // } catch (err) {
-    //   if (err.name === 'TokenExpiredError') {
-    //     return res.status(401).json({
-    //       success: false,
-    //       message: 'Unauthorized: Token has expired'
-    //     });
-    //   }
-    //   return res.status(401).json({
-    //     success: false,
-    //     message: 'Unauthorized: Invalid token'
-    //   });
-    // }
-
-    // const user = decoded.organization_name;
-
-    const checkUser = await thirdPartyModel.findOne({ organization_name: req.query.organization_name });
-    if (!checkUser) {
-      return res.status(401).json({
-        success: false,
-        message: 'Unauthorized: User not found'
+    if (!token) {
+      return res.status(401).send({
+        message: "Access denied. No token provided.",
+        data: null,
+        status: "failed",
       });
     }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // if (req.body.requestType === 'bvn') {
-    //   await thirdPartyRequestCOuntModel.create({
-    //     userid: checkUser._id,
-    //     requestType: 'Bvn'
-    //   });
-    // } else if (req.body.requestType === 'transferRequest') {
-    // } else {
-    //   await thirdPartyRequestCOuntModel.create({
-    //     userid: checkUser._id,
-    //     requestType: 'NameEnquiry'
-    //   });
-    // }
-
-    req.user = checkUser;
+    req.user = decoded;
     next();
     
   } catch (error) {
-    console.error('Authorization Error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal Server Error'
-    });
+    return res.status(400).json('Invalid token.');
   }
 }
+
+async function recordRequestCount(req, res, next) {
+  try {
+    
+    const requestType =
+      req.body.requestType === "bvn"
+        ? "Bvn"
+        : req.body.requestType === "transferRequest"
+        ? "TransferRequest"
+        : "NameEnquiry";
+
+    console.log(requestType.toLowerCase());
+
+    Promise.allSettled([
+      thirdPartyRequestCOuntModel.create({
+        userid: req.user.organization_id,
+        requestType,
+      }),
+    ]).catch(console.error);
+
+    next(); 
+  } catch (err) {
+    console.error(err);
+    return res.status(400).json("Invalid request.");
+  }
+}
+
 
 module.exports = {
   superUserAuth,
@@ -298,5 +284,6 @@ module.exports = {
   allUsersAuth,
   authoriserAuth,
   validateThirdPartyAuthorization,
-  organizationLabelAdminAuth
+  organizationLabelAdminAuth,
+  recordRequestCount
 };
