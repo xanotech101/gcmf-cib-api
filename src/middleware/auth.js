@@ -230,34 +230,34 @@ function organizationLabelAdminAuth(req, res, next) {
 
 async function validateThirdPartyAuthorization(req, res, next) {
   try {
-    if (!req.headers.authorization) {
-      return res.status(401).json({
-        success: false,
-        message: 'Unauthorized: No token provided'
-      });
-    }
+    // if (!req.headers.authorization) {
+    //   return res.status(401).json({
+    //     success: false,
+    //     message: 'Unauthorized: No token provided'
+    //   });
+    // }
 
-    const token = req.headers.authorization;
+    // const token = req.headers.authorization;
     
-    let decoded;
-    try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET);
-    } catch (err) {
-      if (err.name === 'TokenExpiredError') {
-        return res.status(401).json({
-          success: false,
-          message: 'Unauthorized: Token has expired'
-        });
-      }
-      return res.status(401).json({
-        success: false,
-        message: 'Unauthorized: Invalid token'
-      });
-    }
+    // let decoded;
+    // try {
+    //   decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // } catch (err) {
+    //   if (err.name === 'TokenExpiredError') {
+    //     return res.status(401).json({
+    //       success: false,
+    //       message: 'Unauthorized: Token has expired'
+    //     });
+    //   }
+    //   return res.status(401).json({
+    //     success: false,
+    //     message: 'Unauthorized: Invalid token'
+    //   });
+    // }
 
-    const user = decoded.organization_name;
+    // const user = decoded.organization_name;
 
-    const checkUser = await thirdPartyModel.findOne({ organization_name: user });
+    const checkUser = await thirdPartyModel.findOne({ organization_name: req.query.organization_name });
     if (!checkUser) {
       return res.status(401).json({
         success: false,
