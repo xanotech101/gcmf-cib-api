@@ -265,18 +265,18 @@ async function validateThirdPartyAuthorization(req, res, next) {
       });
     }
 
-    if (req.body.requestType === 'bvn') {
-      await thirdPartyRequestCOuntModel.create({
-        userid: checkUser._id,
-        requestType: 'Bvn'
-      });
-    } else if (req.body.requestType === 'transferRequest') {
-    } else {
-      await thirdPartyRequestCOuntModel.create({
-        userid: checkUser._id,
-        requestType: 'NameEnquiry'
-      });
-    }
+    // if (req.body.requestType === 'bvn') {
+    //   await thirdPartyRequestCOuntModel.create({
+    //     userid: checkUser._id,
+    //     requestType: 'Bvn'
+    //   });
+    // } else if (req.body.requestType === 'transferRequest') {
+    // } else {
+    //   await thirdPartyRequestCOuntModel.create({
+    //     userid: checkUser._id,
+    //     requestType: 'NameEnquiry'
+    //   });
+    // }
 
     req.user = checkUser;
     next();
