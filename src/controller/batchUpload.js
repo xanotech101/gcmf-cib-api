@@ -8,6 +8,8 @@ const emitter = require("../utils/emitters");
 const { userService, auditTrailService } = require("../services");
 const uuid = require('uuid');
 const Account = require("../model/account")
+const excelToJson = require("convert-excel-to-json");
+const { bulkTransferQueue } = require("../services/messageQueue/bulk-transfer/bulk-queue");
 
 
 const VerifyBatchUpload = async (req, res) => {
@@ -259,4 +261,77 @@ function generateRandomCode() {
   return code;
 }
 
-module.exports = { VerifyBatchUpload };
+const newBatchUpload = async (req, res) => {
+  // accept both csv and excel files
+  const file = req.file;
+
+  if(!file) {
+    return res.status(400).json({ message: "No file uploaded" });
+  }
+
+  const excelDocs = ["xlsx", "xls"];
+  const fileExtension = file.originalname.split(".").pop();
+
+  if(!excelDocs.includes(fileExtension)) {
+    return res.status(400).json({ message: "Invalid file format" });
+  }
+
+   if (!req.body.originatorAccountNumber) {
+     return res.status(400).json({
+       message: "originator account is required!",
+       status: "failed",
+     });
+   }
+
+  // const user = await User.findById(req.user._id);
+
+  try {
+    if(excelDocs.includes(fileExtension)) {
+      const result = excelToJson({
+        sourceFile: file.path,
+        header: { rows: 1 },
+        columnToKey: {
+          "*": "{{columnHeader}}",
+        },
+      });
+      const data = result.Sheet1;
+      const transactions = [];
+
+
+      for (const item of data) {
+        const transaction = {
+          amount: item["AMOUNT"],
+          bankName: item["BANK NAME"],
+          destinationBankCode: item["BANK CODE"],
+          destinationAccountNumber: item["ACCOUNT NUMBER"],
+          narration: item["NARRATION"],
+          destinationAccountType: item["ACCOUNT TYPE"],
+          transferType: item["TYPE"],
+          originatorAccountNumber: req.body.originatorAccountNumber,
+        };
+        transactions.push(transaction);
+      }
+
+      if(transactions.length < 1) {
+        return res.status(400).json({ message: "No data found in the file" });
+      }
+
+      const batchId = uuid.v4().substring(0, 8);
+
+      bulkTransferQueue({
+        tranferRequests: transactions,
+        batchId,
+        provider: "paystack",
+        user: {
+          organizationId: "67bd88129d60bdb9a97744a0"
+        }
+      })
+
+      return res.status(200).json({ message: "Transactions initiated successfully and are being processed" });
+    }
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { VerifyBatchUpload, newBatchUpload };

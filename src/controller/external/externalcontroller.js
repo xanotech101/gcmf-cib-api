@@ -6,7 +6,7 @@ const { default: mongoose } = require("mongoose");
 const { notificationService } = require("../../services");
 const initiateRequestModel = require("../../model/initiateRequest.model");
 const whitelistAccounts = require("../../model/whitelistAccounts");
-const { QueueTransfer } = require("../../services/messageQueue/queue");
+const { QueueTransfer } = require("../../services/messageQueue/single-transfer/queue");
 const bankOneService = require("../../services/bankOne.service");
 const bcrypt = require('bcrypt')
 

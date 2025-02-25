@@ -10,6 +10,7 @@ class PaystackService {
       return null;
     }
   }
+
   async resolveAccount(params) {
     try {
       const { data } = await axios.get(config.resolve_account, {
@@ -22,6 +23,27 @@ class PaystackService {
     } catch (error) {
       return null;
     }
+  }
+
+  async createPaystackTransferReceipient(data) {
+    try {
+      const response = await axios.post(
+        config.create_transfer_receipient,
+        data,
+        {
+          headers: {
+            Authorization: `Bearer ${config.secret_key}`,
+          },
+        }
+      );
+      return response.data;
+    }
+    catch (error) {
+      throw new Error('Error creating transfer receipient');
+    }
+  }
+
+  async bulkTransfers(data) {
   }
 }
 

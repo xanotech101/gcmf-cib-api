@@ -13,7 +13,7 @@ const {
 } = require("../../services");
 const { getDateAndTime } = require("../../utils/utils");
 const Account = require("../../model/account");
-const { QueueTransfer } = require("../../services/messageQueue/queue");
+const { QueueTransfer } = require("../../services/messageQueue/single-transfer/queue");
 const authToken = process.env.AUTHTOKEN;
 
 const initiateRequest = async (req, res) => {

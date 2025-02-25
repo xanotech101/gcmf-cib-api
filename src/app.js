@@ -34,9 +34,9 @@ const { setup } = require("./services/messageQueue/queueing_system");
 
 let URI = process.env.MONGO_URI;
 
-if (process.env.NODE_ENV == "development") {
-  URI = "mongodb://localhost/xanotech";
-}
+// if (process.env.NODE_ENV == "development") {
+//   URI = "mongodb://localhost/xanotech";
+// }
 
 connectDB(URI, () => {
   app.listen(process.env.PORT, () => {
