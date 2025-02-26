@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 
 services:
   app:
@@ -9,8 +9,6 @@ services:
       replicas: 3  # Run 3 instances of the app
       restart_policy:
         condition: on-failure
-    ports:
-      - "8000"
     networks:
       - gmfb
     depends_on:
@@ -19,14 +17,14 @@ services:
       rabbitmq2:
         condition: service_healthy
     environment:
-      - RABBIT_MQ_URL=amqp://rabbitmq1  # Update this based on your RabbitMQ setup
+      - RABBIT_MQ_URL=amqp://rabbitmq1
 
   rabbitmq1:
     image: rabbitmq:3-management
     container_name: rabbitmq1
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "5672:5672"     # AMQP
+      - "15672:15672"   # Management UI
     networks:
       - gmfb
     healthcheck:
@@ -36,7 +34,7 @@ services:
       timeout: 10s
     environment:
       - RABBITMQ_NODENAME=rabbit@rabbitmq1
-      - RABBITMQ_ERLANG_COOKIE=secretcookie  # Needed for clustering
+      - RABBITMQ_ERLANG_COOKIE=secretcookie
 
   rabbitmq2:
     image: rabbitmq:3-management
@@ -50,13 +48,13 @@ services:
       timeout: 10s
     environment:
       - RABBITMQ_NODENAME=rabbit@rabbitmq2
-      - RABBITMQ_ERLANG_COOKIE=secretcookie  # Same cookie for clustering
+      - RABBITMQ_ERLANG_COOKIE=secretcookie
 
   nginx:
     image: nginx
     container_name: nginx
     ports:
-      - "80:80"
+      - "8000:8000"  # Publicly expose port 8000
     networks:
       - gmfb
     volumes:
