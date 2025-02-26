@@ -35,6 +35,8 @@ const registerAccount = async (req, res) => {
 
     const privilege = await Privilege.findOne({ name: "admin" });
 
+    console.log(input.accountDetails.email, input.admin.email, 'random Email')
+
     // Validate account email
     if (!isValidEmail(input.accountDetails.email)) {
       const errorMessage = 'Invalid account email format';
