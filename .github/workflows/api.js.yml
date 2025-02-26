@@ -26,5 +26,5 @@ jobs:
     - run: cd /home/ubuntu/gcmf-cib-api/ && sudo git stash && sudo git pull origin master
     - run: sudo chmod -R 777 /home/ubuntu/gcmf-cib-api/
     - run: cd /home/ubuntu/gcmf-cib-api/ && npm ci 
-    - run: pm2 restart 12 --time 
+    - run: pm2 restart 14 --time 
     - run: sudo systemctl restart nginx
