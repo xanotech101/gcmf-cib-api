@@ -8,7 +8,7 @@ const initiateRequestModel = require("../../model/initiateRequest.model");
 const whitelistAccounts = require("../../model/whitelistAccounts");
 const { QueueTransfer } = require("../../services/messageQueue/queue");
 const bankOneService = require("../../services/bankOne.service");
-const bcrypt = require('bcrypt')
+const bcrypt = require('bcryptjs')
 
 const authToken = process.env.AUTHTOKEN;
 

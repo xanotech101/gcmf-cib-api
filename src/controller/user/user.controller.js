@@ -1,5 +1,5 @@
 const User = require("../../model/user.model");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const { PER_PAGE } = require("../../utils/constants");
 const mongoose = require("mongoose");
 const Privilege = require("../../model/privilege.model");
