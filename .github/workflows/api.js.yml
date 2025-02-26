@@ -26,5 +26,8 @@ jobs:
     - run: cd /home/ubuntu/gcmf-cib-api/ && sudo git stash && sudo git pull origin master
     - run: sudo chmod -R 777 /home/ubuntu/gcmf-cib-api/
     - run: cd /home/ubuntu/gcmf-cib-api/ && npm ci 
-    - run: pm2 restart all --time 
+    - run: pm2 save --force  # Save the current process list to prevent missing IDs
+    - run: pm2 resurrect     # Restore last saved state
+    - run: pm2 restart all --update-env --time  # Ensure updated environment variables are used
     - run: sudo systemctl restart nginx
+
