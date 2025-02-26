@@ -1,3 +1,34 @@
+# name: Api
+
+# on:
+#   push:
+#     branches: [ "master" ]
+#   pull_request:
+#     branches: [ "master" ]
+
+# jobs:
+#   build:
+
+#     runs-on: main
+
+#     strategy:
+#       matrix:
+#         node-version: [16.7]
+#         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+
+#     steps:
+#     - uses: actions/checkout@v3
+#     - name: Use Node.js ${{ matrix.node-version }}
+#       uses: actions/setup-node@v3
+#       with:
+#         node-version: ${{ matrix.node-version }}
+#         cache: 'npm'
+#     - run: cd /home/ubuntu/gcmf-cib-api/ && sudo git stash && sudo git pull origin master
+#     - run: sudo chmod -R 777 /home/ubuntu/gcmf-cib-api/
+#     - run: cd /home/ubuntu/gcmf-cib-api/ && npm ci 
+#     - run: pm2 restart 14 --time 
+#     - run: sudo systemctl restart nginx
+
 name: Api
 
 on:
@@ -11,20 +42,28 @@ jobs:
 
     runs-on: main
 
-    strategy:
-      matrix:
-        node-version: [16.7]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-
     steps:
-    - uses: actions/checkout@v3
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-    - run: cd /home/ubuntu/gcmf-cib-api/ && sudo git stash && sudo git pull origin master
-    - run: sudo chmod -R 777 /home/ubuntu/gcmf-cib-api/
-    - run: cd /home/ubuntu/gcmf-cib-api/ && npm ci 
-    - run: pm2 restart 14 --time 
-    - run: sudo systemctl restart nginx
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Pull Latest Code
+      run: |
+        cd /home/ubuntu/gcmf-cib-api/
+        sudo git stash
+        sudo git pull origin master
+
+    - name: Set Permissions
+      run: sudo chmod -R 777 /home/ubuntu/gcmf-cib-api/
+
+    - name: Rebuild the App Container Without Stopping Others
+      run: |
+        cd /home/ubuntu/gcmf-cib-api/
+        docker compose up -d --no-deps --build app
+
+    - name: Restart the App Container
+      run: |
+        cd /home/ubuntu/gcmf-cib-api/
+        docker compose restart app
+
+    - name: Restart Nginx
+      run: sudo systemctl restart nginx
