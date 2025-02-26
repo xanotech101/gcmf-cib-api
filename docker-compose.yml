@@ -1,36 +1,69 @@
-version: '3.7'
+version: '3'
 
 services:
-  zookeeper:
-    image: confluentinc/cp-zookeeper:6.2.0
-    container_name: zookeeper
-    hostname: zookeeper
-    ports:
-      - "2181:2181"
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-
-  kafka:
-    image: confluentinc/cp-kafka:6.2.0
-    container_name: kafka
-    hostname: kafka
-    ports:
-      - "9092:9092"
-    depends_on:
-      - zookeeper
-    environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-
-  nodejs-app:
+  app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: nodejs-app
+    deploy:
+      replicas: 3  # Run 3 instances of the app
+      restart_policy:
+        condition: on-failure
+    ports:
+      - "8000"
+    networks:
+      - gmfb
     depends_on:
-      - kafka
+      rabbitmq1:
+        condition: service_healthy
+      rabbitmq2:
+        condition: service_healthy
     environment:
-      KAFKA_BROKERS: kafka:9092
+      - RABBIT_MQ_URL=amqp://rabbitmq1  # Update this based on your RabbitMQ setup
+
+  rabbitmq1:
+    image: rabbitmq:3-management
+    container_name: rabbitmq1
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - gmfb
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      retries: 5
+      timeout: 10s
+    environment:
+      - RABBITMQ_NODENAME=rabbit@rabbitmq1
+      - RABBITMQ_ERLANG_COOKIE=secretcookie  # Needed for clustering
+
+  rabbitmq2:
+    image: rabbitmq:3-management
+    container_name: rabbitmq2
+    networks:
+      - gmfb
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      retries: 5
+      timeout: 10s
+    environment:
+      - RABBITMQ_NODENAME=rabbit@rabbitmq2
+      - RABBITMQ_ERLANG_COOKIE=secretcookie  # Same cookie for clustering
+
+  nginx:
+    image: nginx
+    container_name: nginx
+    ports:
+      - "80:80"
+    networks:
+      - gmfb
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - app
+
+networks:
+  gmfb:
+    name: gmfb
