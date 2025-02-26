@@ -93,7 +93,7 @@ app.use("/api/ticket", ticket);
 app.use("/api/bank", bankoneRoute);
 app.use("/api/settings", settingsRoute);
 app.use("/api/organization", organizationRoute);
-app.use('/api/thirdparty',externalRoute)
+// app.use('/api/thirdparty',externalRoute)
 app.use('/api/organizationLabel',organizationLabelRoutes)
 
 app.use(function (req, res, next) {
