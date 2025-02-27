@@ -1,4 +1,4 @@
-version: "3"
+version: "3.8"
 
 services:
   app:
@@ -9,14 +9,16 @@ services:
       - "8000"
     networks:
       - gmfb
+    deploy:
+      mode: replicated
+      replicas: 3  # Ensures 3 instances automatically
+      restart_policy:
+        condition: on-failure
     depends_on:
       rabbitmq:
         condition: service_healthy
     environment:
       - RABBIT_MQ_URL=amqp://rabbitmq  # Connect to RabbitMQ instance
-    deploy:
-      restart_policy:
-        condition: on-failure
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -49,4 +51,4 @@ services:
 
 networks:
   gmfb:
-    name: gmfb
+    driver: bridge
