@@ -2,7 +2,6 @@ const express = require("express");
 const bodyparser = require("body-parser");
 require("dotenv").config();
 const app = express();
-const createError = require("http-errors");
 const cookieParser = require("cookie-parser");
 const logger = require("morgan");
 const path = require("path");
@@ -34,10 +33,6 @@ const { setup } = require("./services/messageQueue/queueing_system");
 
 let URI = process.env.MONGO_URI;
 
-if (process.env.NODE_ENV == "development") {
-  URI = "mongodb://localhost/xanotech";
-}
-
 connectDB(URI, () => {
   app.listen(process.env.PORT, () => {
     console.log(
@@ -56,12 +51,6 @@ app.use(
   })
 );
 
-// ConnectMQ().then(() =>{
-//   ConsumeFromQueue()
-// }).catch((error) =>{
-//   console.log(error)
-// })
-
 setup().catch((error) => {
   console.error(error);
 });
@@ -76,6 +65,10 @@ app.use(cookieParser());
 app.use(bodyparser.urlencoded({ extended: false }));
 app.use(bodyparser.json());
 
+
+app.get("/health", (req, res) => {
+  res.send("Welcome to GMFB Banking API");
+});
 
 app.use("/api/token", tokenRoute);
 app.use("/api/auth", authRoute);
@@ -95,10 +88,6 @@ app.use("/api/settings", settingsRoute);
 app.use("/api/organization", organizationRoute);
 app.use('/api/thirdparty',externalRoute)
 app.use('/api/organizationLabel',organizationLabelRoutes)
-
-app.use(function (req, res, next) {
-  next(createError(404));
-});
 
 app.use(function (err, req, res, next) {
   res.locals.message = err.message;
