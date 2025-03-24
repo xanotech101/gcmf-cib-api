@@ -278,12 +278,10 @@ const newBatchUpload = async (req, res) => {
 
    if (!req.body.originatorAccountNumber) {
      return res.status(400).json({
-       message: "originator account is required!",
+       message: "originating account is required!",
        status: "failed",
      });
    }
-
-  // const user = await User.findById(req.user._id);
 
   try {
     if(excelDocs.includes(fileExtension)) {
@@ -319,7 +317,7 @@ const newBatchUpload = async (req, res) => {
       const batchId = uuid.v4().substring(0, 8);
 
       bulkTransferQueue({
-        tranferRequests: transactions,
+        transferRequests: transactions,
         batchId,
         provider: "paystack",
         user: {

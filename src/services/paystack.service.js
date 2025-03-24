@@ -21,6 +21,7 @@ class PaystackService {
       });
       return data;
     } catch (error) {
+      console.log("🚀 ~ PaystackService ~ resolveAccount ~ error:", error.response?.data)
       return null;
     }
   }
@@ -39,11 +40,26 @@ class PaystackService {
       return response.data;
     }
     catch (error) {
-      throw new Error('Error creating transfer receipient');
+      console.log("🚀 ~ PaystackService ~ createPaystackTransferReceipient ~ error:", error.response?.data)
+      return null
     }
   }
 
   async bulkTransfers(data) {
+    try {
+      const response = await axios.post(
+        config.bulk_transfer,
+        data,
+        {
+          headers: {
+            Authorization: `Bearer ${config.secret_key}`,
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error('Error initiating bulk transfer');
+    }
   }
 }
 

@@ -30,7 +30,7 @@ const organizationLabelRoutes = require('./routes/organizationLabelAdmin')
 const cors = require("cors");
 const connectDB = require("./config/db");
 const { sendSMS } = require("./services/sms.service");
-const { setup } = require("./services/messageQueue/queueing_system");
+const { consumeQueue } = require("./services/messageQueue/queueing_system");
 
 let URI = process.env.MONGO_URI;
 
@@ -62,7 +62,7 @@ app.use(
 //   console.log(error)
 // })
 
-setup().catch((error) => {
+consumeQueue().catch((error) => {
   console.error(error);
 });
 

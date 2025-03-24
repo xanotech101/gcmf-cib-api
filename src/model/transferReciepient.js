@@ -9,7 +9,7 @@ const transferReceipientSchema = new mongoose.Schema(
       type: String,
     },
     provider: {
-      type: Enum,
+      type: String,
       enum: ["paystack"],
       default: "paystack"
     },

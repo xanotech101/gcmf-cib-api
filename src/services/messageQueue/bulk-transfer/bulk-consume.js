@@ -3,20 +3,24 @@ const { bulkTransferQueueName } = require("../config");
 const mongoose = require("mongoose");
 const { InitiateRequest } = require("../../../model/initiateRequest.model");
 const bankOneService = require("../../bankOne.service");
-const { TransferReciepient } = ("../../../model/transferReciepient")
+const paystackService = require("../../paystack.service");
+const TransferReciepient = require("../../../model/transferReciepient");
 
 const authToken = process.env.AUTHTOKEN;
 
 async function consumeBulkTransferRequest() {
   try {
+    //todo: create a transfer request here also, there is no initiator also no approval needed
+    
     const connection = await amqp.connect(
       process.env.RABBIT_MQ_URL || "amqp://localhost"
     );
-    const channel = await connection.createChannel();
 
+    const channel = await connection.createChannel();
     await channel.assertQueue(bulkTransferQueueName, { durable: false });
 
     const unprocessedTransactions = [];
+    const transactionsToProcess = [];
     const collectionAccount = process.env.BULK_TRANSFER_COLLECTION_ACCOUNT;
 
     channel.consume(
@@ -25,59 +29,98 @@ async function consumeBulkTransferRequest() {
         if (message !== null) {
           const serializedMessage = message.content.toString();
           try {
+            const data = JSON.parse(serializedMessage)?.data ?? {};
             const {
-              transferRequest,
+              transferRequests,
               batchId,
               provider,
               originatingAccountNumber,
               user,
-            } = JSON.parse(serializedMessage);
+            } = data;
 
-            for (const request of transferRequest) {
+            for (const request of transferRequests) {
               const accountDetails = await paystackService.resolveAccount({
-                account_number: transferRequest.destinationAccountNumber,
-                bank_code: transferRequest.bankCode,
+                account_number: request.destinationAccountNumber,
+                bank_code: request.destinationBankCode,
               });
 
               if (!accountDetails) {
                 unprocessedTransactions.push({
-                  ...transferRequest,
+                  ...request,
                   message: "Unable to resolve account details",
                 });
                 continue;
               }
 
-              const transferResponse =
-                await bankOneService.doIntraBankTransfer({
+              const reference = mongoose.Types.ObjectId().toString().substr(0, 12);
+              const transferResponse = await bankOneService.doIntraBankTransfer(
+                {
                   Amount: Number(request.amount) * 100,
-                  RetrievalReference: mongoose.Types.ObjectId()
-                    .toString()
-                    .substr(0, 12),
+                  RetrievalReference: reference,
                   Narration: `Transfer to ${request.destinationAccountNumber}`,
                   AuthenticationKey: authToken,
-                  FromAccountNumber: originatingAccountNumber,
+                  FromAccountNumber: request.originatorAccountNumber,
                   ToAccountNumber: collectionAccount,
+                }
+              ).catch((error) => {
+                console.error("🚀 ~ transferResponse error:", error);
+                return null;
+              });
+
+              console.log("🚀 ~ transferResponse:", transferResponse);
+
+
+              if(transferResponse.IsSuccessful === true && transferResponse.ResponseCode === "06") {
+                const transferRecipient = await TransferReciepient.findOne({
+                  accountNumber: request.destinationAccountNumber,
+                  provider: "paystack",
                 });
 
-                if(!transferResponse) {
-                  unprocessedTransactions.push({
-                    ...transferRequest,
-                    message: "Transfer failed",
+                if(!transferRecipient) {
+                  const paystackRecipient = await paystackService.createTransferReciepient({
+                    account_number: request.destinationAccountNumber,
+                    bank_code: request.bankCode,
+                    name: accountDetails.account_name,
                   });
-                  continue;
-                }
+                  
+                  if(!paystackRecipient) {
+                    unprocessedTransactions.push({
+                      ...request,
+                      message: "Unable to create transfer reciepient on paystack",
+                    });
+                    continue;
+                  }
 
-                if(transferResponse.Status === "Successful" && transferResponse.ResponseCode === "00") {
-                  const transferReciepient = await TransferReciepient.findOne({
+                  // create the transfer reciepient in our database
+                  await TransferReciepient.create({
                     accountNumber: request.destinationAccountNumber,
+                    reciepientCode: paystackRecipient.recipient_code,
+                    provider: "paystack",
                   });
 
-                  // call paystack to create a transfer receipent for this account number
+                  // push to the bulk transfer array to be sent to paystack
+                  transactionsToProcess.push({
+                    amount: request.amount * 100,
+                    reference,
+                    recipient: transferRecipient.recipient_code,
+                  });
+                } else {
+                  transactionsToProcess.push({
+                    amount: request.amount * 100,
+                    reference,
+                    recipient: transferRecipient.reciepientCode,
+                  });
                 }
-
-              // send money using paystack to the destination account number
+                console.log("🚀 ~ transactionsToProcess:", transactionsToProcess);
+              } else {
+                unprocessedTransactions.push({
+                  ...request,
+                  message: "Transfer from originating account to collection account failed",
+                });
+              }
             }
-
+            console.log("🚀 ~ transactionsToProcess:", transactionsToProcess)
+            console.log("🚀 ~ unprocessedTransactions:", unprocessedTransactions);
             channel.ack(message);
           } catch (error) {
             console.error("Response processing error:", error);
