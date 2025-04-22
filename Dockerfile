@@ -1,18 +1,19 @@
 FROM node:alpine
 
-# Create app directory
+# Set working directory
 WORKDIR /usr/src/app
 
-# Copy package.json and package-lock.json
+# Copy package.json and install dependencies
 COPY package*.json ./
 
-RUN npm cache clear --force
+RUN npm cache clean --force
 RUN npm install
 
-# Copy app source code
+# Copy application files
 COPY . .
 
+# Expose port
 EXPOSE 8000
 
-# Start the server
+# Start the application
 CMD ["npm", "start"]

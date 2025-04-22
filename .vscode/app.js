@@ -22,20 +22,16 @@ const secretQuestionRoute = require("./routes/secretQuestion.route");
 const bankoneRoute = require("./routes/bankone.route");
 const settingsRoute = require("./routes/settings.route")
 const organizationRoute = require('./routes/organization')
-// const externalRoute = require('./routes/external.route')
+const externalRoute = require('./routes/external.route')
 const organizationLabelRoutes = require('./routes/organizationLabelAdmin')
 
 
 const cors = require("cors");
 const connectDB = require("./config/db");
 const { sendSMS } = require("./services/sms.service");
-const { consumeQueue } = require("./services/messageQueue/queueing_system");
+const { setup } = require("./services/messageQueue/queueing_system");
 
 let URI = process.env.MONGO_URI;
-
-// if (process.env.NODE_ENV == "development") {
-//   URI = "mongodb://localhost/xanotech";
-// }
 
 connectDB(URI, () => {
   app.listen(process.env.PORT, () => {
@@ -55,13 +51,7 @@ app.use(
   })
 );
 
-// ConnectMQ().then(() =>{
-//   ConsumeFromQueue()
-// }).catch((error) =>{
-//   console.log(error)
-// })
-
-consumeQueue().catch((error) => {
+setup().catch((error) => {
   console.error(error);
 });
 
@@ -96,7 +86,7 @@ app.use("/api/ticket", ticket);
 app.use("/api/bank", bankoneRoute);
 app.use("/api/settings", settingsRoute);
 app.use("/api/organization", organizationRoute);
-// app.use('/api/thirdparty',externalRoute)
+app.use('/api/thirdparty',externalRoute)
 app.use('/api/organizationLabel',organizationLabelRoutes)
 
 app.use(function (err, req, res, next) {
