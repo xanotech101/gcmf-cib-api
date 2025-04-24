@@ -22,7 +22,7 @@ const secretQuestionRoute = require("./routes/secretQuestion.route");
 const bankoneRoute = require("./routes/bankone.route");
 const settingsRoute = require("./routes/settings.route")
 const organizationRoute = require('./routes/organization')
-// const externalRoute = require('./routes/external.route')
+const externalRoute = require('./routes/external.route')
 const organizationLabelRoutes = require('./routes/organizationLabelAdmin')
 
 
@@ -86,7 +86,7 @@ app.use("/api/ticket", ticket);
 app.use("/api/bank", bankoneRoute);
 app.use("/api/settings", settingsRoute);
 app.use("/api/organization", organizationRoute);
-// app.use('/api/thirdparty',externalRoute)
+app.use('/api/thirdparty',externalRoute)
 app.use('/api/organizationLabel',organizationLabelRoutes)
 
 app.use(function (err, req, res, next) {
