@@ -3,8 +3,8 @@ const { WebClient } = require("@slack/web-api");
 const slackClient = new WebClient(process.env.SLACK_BOT_TOKEN);
 
 const sendSlackMessage = async (channel, message, blocks) => {
-  if (!channel || !message) {
-    console.error("Channel and message are required to send a Slack message.");
+  if (!channel) {
+    console.error("Channel is required to send a Slack message.");
     return;
   }
   
