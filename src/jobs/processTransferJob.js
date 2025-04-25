@@ -160,7 +160,7 @@ const processTransferJob = new CronJob("*/5 * * * *", async () => {
         };
 
         if (
-          apiResponse.Status === "Successful" &&
+          apiResponse.Status === "Successful" ||
           apiResponse.ResponseCode === "00"
         ) {
           transaction.transferStatus = "successful";
