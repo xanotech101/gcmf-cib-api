@@ -1,6 +1,8 @@
 var CronJob = require("cron").CronJob;
 const path = require("path");
 
+console.log("Cron job started");
+
 require("dotenv").config();
 const connectDB = require("../config/db");
 const InitiateRequest = require("../model/initiateRequest.model");
