@@ -24,7 +24,7 @@ const withTimeout = (promise, timeoutMs) => {
   });
 };
 
-const processTransferJob = new CronJob("*/5 * * * *", async () => {
+const processTransferJob = new CronJob("*/20 * * * *", async () => {
   const now = new Date();
   const timestamp = now.toLocaleString("en-NG", { timeZone: "Africa/Lagos" });
   await sendSlackMessage("#gmfb-transfer-cron", ``, [
