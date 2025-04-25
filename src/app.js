@@ -51,9 +51,11 @@ app.use(
   })
 );
 
-setup().catch((error) => {
-  console.error(error);
-});
+
+// todo: bring this back when rabbit mq is working
+// setup().catch((error) => {
+//   console.error(error);
+// });
 
 app.use('/static', express.static(path.join(__dirname, 'public')))
 

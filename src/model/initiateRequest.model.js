@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const { toISOLocal } = require("../utils/utils");
+const { required } = require("joi");
 
 const initiateRequestSchema = new mongoose.Schema(
   {
@@ -88,6 +89,12 @@ const initiateRequestSchema = new mongoose.Schema(
       type: String,
     },
     meta:{},
+    isProcessing: {
+      type: Boolean,
+      required: false,
+      default: false,
+      // "This field is used to check if the transaction is being processed",
+    },
     time: Date,
     createdAt: { type: String },
     updatedAt: { type: String },
