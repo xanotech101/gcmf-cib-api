@@ -1,3 +1,4 @@
+const dbLockModel = require('../model/dbLock.model');
 const DBLock = require('../model/dbLock.model');
 
 const acquireLock = async (lockName, expiryMinutes = 10) => {
@@ -46,7 +47,7 @@ const acquireLock = async (lockName, expiryMinutes = 10) => {
 const releaseLock = async (lockName) => {
   try {
     // release the lock at the end of the process
-    const result = await Lock.deleteOne({ name: lockName });
+    const result = await dbLockModel.deleteOne({ name: lockName });
     if (result.deletedCount > 0) {
       console.info(`Released lock for ${lockName}`);
       return true;
@@ -60,7 +61,7 @@ const releaseLock = async (lockName) => {
     console.error(`Error releasing lock: ${error.message}`);
     // try deleting the lock again
     try {
-      const retryResult = await Lock.deleteOne({ name: lockName });
+      const retryResult = await dbLockModel.deleteOne({ name: lockName });
       if (retryResult.deletedCount > 0) {
         console.info(`Released lock for job ${jobId} on retry`);
         return true;
