@@ -1,7 +1,6 @@
 var CronJob = require("cron").CronJob;
 const path = require("path");
-
-console.log("Cron job started");
+const { DateTime } = require("luxon");
 
 require("dotenv").config();
 const connectDB = require("../config/db");
@@ -63,6 +62,7 @@ const processTransferJob = new CronJob("*/20 * * * *", async () => {
 
   const cursor = InitiateRequest.find({
     transferStatus: "queued",
+    isProcessing: false,
   })
     .batchSize(50)
     .cursor();
@@ -73,10 +73,13 @@ const processTransferJob = new CronJob("*/20 * * * *", async () => {
   let disbursePendingCount = 0;
 
   for await (const transaction of cursor) {
+    transaction.isProcessing = true;
+    await transaction.save();
+
     processedCount++;
     try {
       let payload = {};
-      transaction.updatedAt = new Date();
+      transaction.updatedAt = DateTime.now().setZone("Africa/Lagos").toISO();
 
       const account = await Account.findById(transaction.organizationId);
       if (!account) {

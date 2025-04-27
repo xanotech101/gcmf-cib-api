@@ -46,7 +46,7 @@ const initiateRequestSchema = new mongoose.Schema(
     numberOfVerifiers: Number,
     transferStatus: {
       type: String,
-      enum: ["disburse pending", "pending", "queued", "successful", "failed", "Awaiting confirmation status"],
+      enum: ["disburse pending", "pending", "queued", "successful", "failed", "awaiting confirmation status"],
       default: 'pending'
     },
     status: {
@@ -101,11 +101,13 @@ const initiateRequestSchema = new mongoose.Schema(
   }
 );
 
+initiateRequestSchema.index({ transferStatus: 1 });
+
+
 // Set the createdAt and updatedAt values before saving the document
 initiateRequestSchema.pre("save", function (next) {
   const currentDate = toISOLocal();
   this.createdAt = currentDate;
-  this.updatedAt = currentDate;
   next();
 })
 
