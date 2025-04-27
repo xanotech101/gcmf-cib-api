@@ -130,7 +130,7 @@ const processTransferJob = new CronJob("*/20 * * * *", async () => {
           Narration: transaction.narration,
         };
       } else {
-        logger.error(
+        console.error(
           `Unsupported transaction type: ${transaction.type} for transaction ${transaction._id}`
         );
         transaction.transferStatus = "failed";

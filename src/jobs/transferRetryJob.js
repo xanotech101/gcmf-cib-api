@@ -1,6 +1,7 @@
 var CronJob = require('cron').CronJob;
 const fs = require('fs')
 const path = require('path')
+const { DateTime } = require("luxon");
 
 require("dotenv").config();
 const connectDB = require('../config/db');
@@ -38,7 +39,7 @@ const transferRetryJob = new CronJob("*/45 * * * *", async () => {
       if(response.IsSuccessful && response.Status === 'Successful') {
         transaction.transferStatus = "successful"
         transaction.retryCount = transaction.retryCount + 1
-        transaction.updatedAt = new Date();
+        transaction.updatedAt = DateTime.now().setZone("Africa/Lagos").toISO();
         transaction.meta = {
           ...(transaction.meta ?? {}),
           tsqResponse: {
@@ -56,7 +57,7 @@ const transferRetryJob = new CronJob("*/45 * * * *", async () => {
       if(response.IsSuccessful && response.Status === 'Failed') {
         transaction.transferStatus = "failed"
         transaction.retryCount = transaction.retryCount + 1
-        transaction.updatedAt = new Date();
+        transaction.updatedAt = DateTime.now().setZone("Africa/Lagos").toISO();
         transaction.meta = {
           ...(transaction.meta ?? {}),
           tsqResponse: {
