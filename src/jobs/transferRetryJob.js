@@ -6,11 +6,22 @@ require("dotenv").config();
 const connectDB = require('../config/db');
 const InitiateRequest = require("../model/initiateRequest.model");
 const bankOneService = require('../services/bankOne.service');
+const { sendSlackMessage } = require("../services/slack.service");
 
 const filePath = path.join(__dirname, '../transferRetryJob.log')
 
-const transferRetryJob = new CronJob("*/15 * * * *", async () => {
-  console.info('transfer retry job started')
+const transferRetryJob = new CronJob("*/45 * * * *", async () => {
+ await sendSlackMessage("#gmfb-transfer-cron", ``, [
+    {
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: `*GMFB Transfer retry job started*`,
+      },
+    },
+    { type: "divider" },
+  ]);
+
   await connectDB(process.env.MONGO_URI, () => {
     console.info('connected to db for transfer retry job')
   });
@@ -27,31 +38,37 @@ const transferRetryJob = new CronJob("*/15 * * * *", async () => {
       if(response.IsSuccessful && response.Status === 'Successful') {
         transaction.transferStatus = "successful"
         transaction.retryCount = transaction.retryCount + 1
+        transaction.updatedAt = new Date();
         transaction.meta = {
           ...(transaction.meta ?? {}),
-          Status: response.Status,
-          IsSuccessful: response.IsSuccessful,
-          ResponseCode: response.ResponseCode,
-          ResponseMessage: response.ResponseMessage,
-          ResponseDescription: response.ResponseMessage,
-          StatusDescription: response.Status,
-          ResponseStatus: response.ResponseStatus
-        }
+          tsqResponse: {
+            Status: response.Status,
+            IsSuccessful: response.IsSuccessful,
+            ResponseCode: response.ResponseCode,
+            ResponseMessage: response.ResponseMessage,
+            ResponseDescription: response.ResponseMessage,
+            StatusDescription: response.Status,
+            ResponseStatus: response.ResponseStatus,
+          },
+        };
         await transaction.save()
       }
       if(response.IsSuccessful && response.Status === 'Failed') {
         transaction.transferStatus = "failed"
         transaction.retryCount = transaction.retryCount + 1
+        transaction.updatedAt = new Date();
         transaction.meta = {
           ...(transaction.meta ?? {}),
-          Status: response.Status,
-          IsSuccessful: response.IsSuccessful,
-          ResponseMessage: response.ResponseMessage,
-          ResponseCode: response.ResponseCode,
-          ResponseDescription: response.ResponseMessage,
-          StatusDescription: response.Status,
-          ResponseStatus: response.ResponseStatus,
-        }
+          tsqResponse: {
+            Status: response.Status,
+            IsSuccessful: response.IsSuccessful,
+            ResponseMessage: response.ResponseMessage,
+            ResponseCode: response.ResponseCode,
+            ResponseDescription: response.ResponseMessage,
+            StatusDescription: response.Status,
+            ResponseStatus: response.ResponseStatus,
+          },
+        };
         await transaction.save()
       }
       const message = {

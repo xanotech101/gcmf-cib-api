@@ -220,21 +220,21 @@ const processTransferJob = new CronJob("*/20 * * * *", async () => {
       type: "section",
       text: {
         type: "mrkdwn",
-        text: `Successful: ${successCount}`,
+        text: `✅ Successful: ${successCount}`,
       },
     },
     {
       type: "section",
       text: {
         type: "mrkdwn",
-        text: `Disburse Pending: ${disbursePendingCount}`,
+        text: `⏳ Disburse Pending: ${disbursePendingCount}`,
       },
     },
     {
       type: "section",
       text: {
         type: "mrkdwn",
-        text: `Failed: ${failedCount}`,
+        text: `❌ Failed: ${failedCount}`,
       },
     },
     {
