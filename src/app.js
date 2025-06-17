@@ -24,11 +24,11 @@ const settingsRoute = require("./routes/settings.route")
 const organizationRoute = require('./routes/organization')
 const externalRoute = require('./routes/external.route')
 const organizationLabelRoutes = require('./routes/organizationLabelAdmin')
+const bulkTransferProvider = require("./routes/bulkTransferProvider/bulkTransferProvider.route");
 
 
 const cors = require("cors");
 const connectDB = require("./config/db");
-const { sendSMS } = require("./services/sms.service");
 const { setup } = require("./services/messageQueue/queueing_system");
 
 let URI = process.env.MONGO_URI;
@@ -86,10 +86,11 @@ app.use("/api/ticket", ticket);
 app.use("/api/bank", bankoneRoute);
 app.use("/api/settings", settingsRoute);
 app.use("/api/organization", organizationRoute);
-app.use('/api/thirdparty',externalRoute)
+app.use('/api/thirdparty', externalRoute)
 app.use('/api/organizationLabel',organizationLabelRoutes)
+app.use("/api/settings/bulkTransferProvider", bulkTransferProvider);
 
-app.use(function (err, req, res, next) {
+app.use(function (err, req, res) {
   res.locals.message = err.message;
   res.locals.error = req.app.get("env") === "development" ? err : {};
   res.status(err.status || 500);
