@@ -6,6 +6,11 @@ const bulkTransferProvider = new mongoose.Schema({
     required: true,
     unique: true,
   },
+  slug: {
+    type: String,
+    required: true,
+    unique: true,
+  },
   isActive: {
     type: Boolean,
     default: false,
