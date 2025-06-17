@@ -1,9 +1,7 @@
 const jwt = require("jsonwebtoken");
 const thirdPartyModel = require("../../model/thirdParty.model");
-const organization = require("../../model/organization");
 const thirdPartyRequestCOuntModel = require("../../model/thirdpartyCount.model");
 const { default: mongoose } = require("mongoose");
-const { notificationService } = require("../../services");
 const initiateRequestModel = require("../../model/initiateRequest.model");
 const whitelistAccounts = require("../../model/whitelistAccounts");
 const { QueueTransfer } = require("../../services/messageQueue/queue");
@@ -300,16 +298,6 @@ function getMonthName(month) {
   ];
 
   return monthNames[month - 1];
-}
-
-function getMonthNumber(monthName) {
-  const monthNames = [
-    "January", "February", "March", "April",
-    "May", "June", "July", "August",
-    "September", "October", "November", "December"
-  ];
-
-  return monthNames.indexOf(monthName) + 1;
 }
 
 const initiateRequest = async (req, res) => {

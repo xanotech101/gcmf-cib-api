@@ -24,11 +24,11 @@ const settingsRoute = require("./routes/settings.route")
 const organizationRoute = require('./routes/organization')
 const externalRoute = require('./routes/external.route')
 const organizationLabelRoutes = require('./routes/organizationLabelAdmin')
+const bulkTransferProvider = require("./routes/bulkTransferProvider.route");
 
 
 const cors = require("cors");
 const connectDB = require("./config/db");
-const { sendSMS } = require("./services/sms.service");
 const { setup } = require("./services/messageQueue/queueing_system");
 
 let URI = process.env.MONGO_URI;
@@ -88,27 +88,29 @@ app.use("/api/ticket", ticket);
 app.use("/api/bank", bankoneRoute);
 app.use("/api/settings", settingsRoute);
 app.use("/api/organization", organizationRoute);
-app.use('/api/thirdparty',externalRoute)
+app.use('/api/thirdparty', externalRoute)
 app.use('/api/organizationLabel',organizationLabelRoutes)
+app.use("/api/settings/bulkTransferProviders", bulkTransferProvider);
 
 app.use(function (err, req, res, next) {
-  res.locals.message = err.message;
-  res.locals.error = req.app.get("env") === "development" ? err : {};
-  res.status(err.status || 500);
-  res.render("error");
+  console.error(err.stack);
+  res.status(500).json({
+    message: "Internal Server Error",
+    error: err.message || "An unexpected error occurred",
+  });
 });
 
+app.use(function (err, req, res, next) {
+  console.error(err.stack);
 
-app.use((req, res, next) => {
   if (res.headersSent) {
-    return next();
+    return next(err);
   }
-  res
-    .status(404)
-    .json({
-      message:
-        "404 error! The endpoint is not available on the server. Kindly cross check the url",
-    });
+
+  res.status(404).json({
+    message:
+      "404 error! The endpoint is not available on the server. Kindly cross check the url",
+  });
 });
 
 
