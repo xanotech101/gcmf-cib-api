@@ -25,6 +25,7 @@ const organizationRoute = require('./routes/organization')
 const externalRoute = require('./routes/external.route')
 const organizationLabelRoutes = require('./routes/organizationLabelAdmin')
 const bulkTransferProvider = require("./routes/bulkTransferProvider.route");
+const eazyPayRoutes = require("./routes/eazy-pay.routes");
 
 
 const cors = require("cors");
@@ -89,8 +90,9 @@ app.use("/api/bank", bankoneRoute);
 app.use("/api/settings", settingsRoute);
 app.use("/api/organization", organizationRoute);
 app.use('/api/thirdparty', externalRoute)
-app.use('/api/organizationLabel',organizationLabelRoutes)
+app.use('/api/organizationLabel', organizationLabelRoutes)
 app.use("/api/settings/bulkTransferProviders", bulkTransferProvider);
+app.use("/api/eazyPay", eazyPayRoutes);
 
 app.use(function (err, req, res, next) {
   console.error(err.stack);
