@@ -1,4 +1,4 @@
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const SecretQuestion = require('../model/secretQuestions.model');
 
 class SecretQuestionService {

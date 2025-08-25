@@ -6,12 +6,12 @@ const initiateRequestModel = require("../../model/initiateRequest.model");
 const whitelistAccounts = require("../../model/whitelistAccounts");
 const { QueueTransfer } = require("../../services/messageQueue/queue");
 const bankOneService = require("../../services/bankOne.service");
-const bcrypt = require('bcrypt')
+const bcrypt = require('bcryptjs')
 
 const authToken = process.env.AUTHTOKEN;
 
 const generateRandomNumber = () => {
-  return Math.floor(100000000000000 + Math.random() * 900000000000000); 
+  return Math.floor(100000000000000 + Math.random() * 900000000000000);
 };
 
 
@@ -23,7 +23,7 @@ async function createExternalOrganization(req, res) {
         message: 'please your organization name is required'
       })
     }
-    //check if organization name already registered
+
     const requestname = await thirdPartyModel.findOne({ organization_name: req.body.organization_name })
     if (requestname) {
       return res.status(400).send({
@@ -34,7 +34,7 @@ async function createExternalOrganization(req, res) {
 
     const generateKey = generateRandomNumber().toString();
 
-    const salt = await bcrypt.genSalt(15);
+    const salt = await bcrypt.genSalt(10);
     const hashKey = await bcrypt.hash(generateKey, salt);
 
 
@@ -72,59 +72,53 @@ async function createExternalOrganization(req, res) {
 
 async function generateUserToken(req, res) {
   try {
-    if (!req.body.organization_name || !req.body.key) {
-      return res.status(400).send({
-        success: false,
-        message: 'Organization name and key are required'
-      });
+    const { organization_name, key } = req.body;
+    if (!organization_name || !key) {
+      return res.status(400).json({ success: false, message: 'Organization name and key are required' });
     }
 
-    const organization = await thirdPartyModel.findOne({ organization_name: req.body.organization_name });
+    const organization = await thirdPartyModel
+      .findOne({ organization_name })
+      .select('_id key')
+      .lean();
+
     if (!organization) {
-      return res.status(404).send({
-        success: false,
-        message: 'Organization does not exist'
-      });
+      return res.status(404).json({ success: false, message: 'Organization does not exist' });
     }
 
-    const keyMatch = await bcrypt.compare(req.body.key, organization.key);
-    if (!keyMatch) {
-      return res.status(401).send({
-        success: false,
-        message: 'Invalid key, if you dont have a valid key please contact your administrator to get a key'
-      });
+    const isMatch = bcrypt.compareSync(key, organization.key);
+    if (!isMatch) {
+      return res.status(401).json({ success: false, message: 'Invalid key' });
     }
 
     const token = jwt.sign(
-      { organization_name: req.body.organization_name },
+      { organization_name, organization_id: organization._id },
       process.env.JWT_SECRET,
       { expiresIn: "15d" }
     );
 
-    await thirdPartyModel.findOneAndUpdate(
-      { organization_name: req.body.organization_name },
-      { $set: { requestCount: [], bvnCount: [] } },
-      { upsert: true }
+    await thirdPartyModel.updateOne(
+      { _id: organization._id },
+      { requestCount: [], bvnCount: [] },
+      { writeConcern: { w: 0, j: false } }
     );
 
-    return res.status(200).send({
+    return res.status(200).json({
       success: true,
       message: 'Organization now has access',
-      data: token
+      data: { token }
     });
+
   } catch (error) {
-    console.error(error);
-    return res.status(500).send({
-      success: false,
-      message: 'Internal server error'
-    });
+    console.error('Error generating token:', error);
+    return res.status(500).json({ success: false, message: 'Internal server error' });
   }
 }
 
 async function updateOrganizationKey(req, res) {
   try {
     const organizationName = req.body.organization_name;
-    const newKey = generateRandomNumber().toString(); 
+    const newKey = generateRandomNumber().toString();
 
     const salt = await bcrypt.genSalt(15);
     const hashKey = await bcrypt.hash(newKey, salt);
@@ -145,7 +139,7 @@ async function updateOrganizationKey(req, res) {
       message: 'Key updated successfully, please note your key is revealed only this time, do well to save it privately.',
       data: {
         organization: organizationName,
-        key: newKey 
+        key: newKey
       }
     });
 
@@ -450,7 +444,9 @@ const getAllTransactionByThirdParty = async (req, res) => {
 };
 
 
-module.exports = { generateUserToken, getAllThirdPartyOrganizations, 
-  getthirdpartyAnalytics, getMonthName, initiateRequest, getAllTransactionByThirdParty, 
+module.exports = {
+  generateUserToken, getAllThirdPartyOrganizations,
+  getthirdpartyAnalytics, getMonthName, initiateRequest, getAllTransactionByThirdParty,
   updateOrganizationKey,
-  createExternalOrganization }
+  createExternalOrganization
+}

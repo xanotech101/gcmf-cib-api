@@ -229,52 +229,52 @@ function organizationLabelAdminAuth(req, res, next) {
 }
 
 async function validateThirdPartyAuthorization(req, res, next) {
+  const token = req.headers.authorization;
   try {
-    if (!req.headers.authorization) {
+    if (!token) {
       return res.status(401).send({
-        success: false,
-        message: 'not authorized to make this request'
-      })
+        message: "Access denied. No token provided.",
+        data: null,
+        status: "failed",
+      });
     }
-    const decoded = jwt.verify(req.headers.authorization, process.env.JWT_SECRET);
-    const user = decoded.organization_name;
-    //check if user is authorize
-    const checkUser = await thirdPartyModel.findOne({ organization_name: user })
-    if (!checkUser) {
-      return res.status(401).send({
-        success: false,
-        message: 'not authorized to make this request'
-      })
-    }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    if (req.body.requestType === 'bvn') {
-      await thirdPartyRequestCOuntModel.create({
-        userid: checkUser._id,
-        requestType: 'Bvn'
-      })
-      req.user = checkUser
-      next()
-
-    }else if(req.body.requestType === 'transferRequest'){
-      req.user = checkUser
-      next()
-    } 
-    else {
-      await thirdPartyRequestCOuntModel.create({
-        userid: checkUser._id,
-        requestType: 'NameEnquiry'
-      })
-      req.user = checkUser
-      next()
-    }
+    req.user = decoded;
+    next();
+    
   } catch (error) {
-    console.log(error)
-    res.status(500).send({
-      success: false,
-      message: error.message
-    })
+    return res.status(400).json('Invalid token.');
   }
 }
+
+async function recordRequestCount(req, res, next) {
+  try {
+    
+    const requestType =
+      req.body.requestType === "bvn"
+        ? "Bvn"
+        : req.body.requestType === "transferRequest"
+        ? "TransferRequest"
+        : "NameEnquiry";
+
+    console.log(requestType.toLowerCase());
+
+    Promise.allSettled([
+      thirdPartyRequestCOuntModel.create({
+        userid: req.user.organization_id,
+        requestType,
+      }),
+    ]).catch(console.error);
+
+    next(); 
+  } catch (err) {
+    console.error(err);
+    return res.status(400).json("Invalid request.");
+  }
+}
+
+
 module.exports = {
   superUserAuth,
   adminAuth,
@@ -283,5 +283,6 @@ module.exports = {
   allUsersAuth,
   authoriserAuth,
   validateThirdPartyAuthorization,
-  organizationLabelAdminAuth
+  organizationLabelAdminAuth,
+  recordRequestCount
 };

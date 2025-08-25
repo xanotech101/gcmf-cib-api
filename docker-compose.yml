@@ -1,36 +1,54 @@
-version: '3.7'
+version: "3.8"
 
 services:
-  zookeeper:
-    image: confluentinc/cp-zookeeper:6.2.0
-    container_name: zookeeper
-    hostname: zookeeper
-    ports:
-      - "2181:2181"
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-
-  kafka:
-    image: confluentinc/cp-kafka:6.2.0
-    container_name: kafka
-    hostname: kafka
-    ports:
-      - "9092:9092"
-    depends_on:
-      - zookeeper
-    environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-
-  nodejs-app:
+  app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: nodejs-app
+    ports:
+      - "8000"
+    networks:
+      - gmfb
+    deploy:
+      mode: replicated
+      replicas: 3  # Ensures 3 instances automatically
+      restart_policy:
+        condition: on-failure
     depends_on:
-      - kafka
+      rabbitmq:
+        condition: service_healthy
     environment:
-      KAFKA_BROKERS: kafka:9092
+      - RABBIT_MQ_URL=amqp://rabbitmq  # Connect to RabbitMQ instance
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"     # AMQP
+      - "15672:15672"   # Management UI
+    networks:
+      - gmfb
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      retries: 5
+      timeout: 10s
+    environment:
+      - RABBITMQ_NODENAME=rabbit@rabbitmq
+      - RABBITMQ_ERLANG_COOKIE=secretcookie
+
+  nginx:
+    image: nginx
+    container_name: nginx
+    ports:
+      - "8000:8000"
+    networks:
+      - gmfb
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - app
+
+networks:
+  gmfb:
+    driver: bridge

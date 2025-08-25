@@ -18,7 +18,7 @@ const Organization = require("../model/organization");
 
 
 function isValidEmail(email) {
-  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   return emailPattern.test(email);
 }
 
@@ -34,6 +34,8 @@ const registerAccount = async (req, res) => {
     let role = "admin";
 
     const privilege = await Privilege.findOne({ name: "admin" });
+
+    console.log(input.accountDetails.email, input.admin.email, 'random Email')
 
     // Validate account email
     if (!isValidEmail(input.accountDetails.email)) {

@@ -1,4 +1,3 @@
-const bcrypt = require('bcrypt');
 const BulkTransferProvider = require('../model/bulkTransferProviders.model');
 
 class BulkTransferProviderService {

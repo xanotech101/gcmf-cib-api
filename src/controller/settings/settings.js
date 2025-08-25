@@ -1,5 +1,5 @@
 const Usermodel = require("../../model/user.model")
-const bcrypt = require("bcrypt")
+const bcrypt = require("bcryptjs")
 const UpdateSecrete = async (req, res) => {
 
     try {

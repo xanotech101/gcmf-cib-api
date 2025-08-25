@@ -24,12 +24,11 @@ const settingsRoute = require("./routes/settings.route")
 const organizationRoute = require('./routes/organization')
 const externalRoute = require('./routes/external.route')
 const organizationLabelRoutes = require('./routes/organizationLabelAdmin')
-const bulkTransferProvider = require("./routes/bulkTransferProvider.route");
-const eazyPayRoutes = require("./routes/eazy-pay.routes");
 
 
 const cors = require("cors");
 const connectDB = require("./config/db");
+const { sendSMS } = require("./services/sms.service");
 const { setup } = require("./services/messageQueue/queueing_system");
 
 let URI = process.env.MONGO_URI;
@@ -52,11 +51,9 @@ app.use(
   })
 );
 
-
-// todo: bring this back when rabbit mq is working
-// setup().catch((error) => {
-//   console.error(error);
-// });
+setup().catch((error) => {
+  console.error(error);
+});
 
 app.use('/static', express.static(path.join(__dirname, 'public')))
 
@@ -89,30 +86,27 @@ app.use("/api/ticket", ticket);
 app.use("/api/bank", bankoneRoute);
 app.use("/api/settings", settingsRoute);
 app.use("/api/organization", organizationRoute);
-app.use('/api/thirdparty', externalRoute)
-app.use('/api/organizationLabel', organizationLabelRoutes)
-app.use("/api/settings/bulkTransferProviders", bulkTransferProvider);
-app.use("/api/eazyPay", eazyPayRoutes);
+app.use('/api/thirdparty',externalRoute)
+app.use('/api/organizationLabel',organizationLabelRoutes)
 
 app.use(function (err, req, res, next) {
-  console.error(err.stack);
-  res.status(500).json({
-    message: "Internal Server Error",
-    error: err.message || "An unexpected error occurred",
-  });
+  res.locals.message = err.message;
+  res.locals.error = req.app.get("env") === "development" ? err : {};
+  res.status(err.status || 500);
+  res.render("error");
 });
 
-app.use(function (err, req, res, next) {
-  console.error(err.stack);
 
+app.use((req, res, next) => {
   if (res.headersSent) {
-    return next(err);
+    return next();
   }
-
-  res.status(404).json({
-    message:
-      "404 error! The endpoint is not available on the server. Kindly cross check the url",
-  });
+  res
+    .status(404)
+    .json({
+      message:
+        "404 error! The endpoint is not available on the server. Kindly cross check the url",
+    });
 });
 
 
