@@ -651,7 +651,7 @@ const approveRequest = async (req, res) => {
 
 const authoriserApproveRequest = async (req, res) => {
   const user = await User.findById(req.user._id);
-  const organization = await Account.findById(user.organizationId);
+  const accountInfo = await Account.findById(user.organizationId);
   try {
     const _id = req.params.id;
     const userId = req.user._id;
@@ -715,15 +715,8 @@ const authoriserApproveRequest = async (req, res) => {
     });
 
     await Otp.findByIdAndDelete(otpDetails._id);
-
-    publishTransfer(
-      [
-        {
-          originatingAccountName: organization.accountName, 
-          transactionId: request._id
-        }
-      ]
-    );
+    
+    publishTransfer([{ originatingAccount: accountInfo.accountName, transactionId: request._id }]);
 
     return res.status(200).json({
       message: "Request approved successfully",
@@ -890,13 +883,14 @@ const getAllTransferRequests = async (req, res) => {
         $unwind: "$meta",
       },
     ]);
+
+    const { data, meta } = request[0] || {};
     return res.status(200).json({
       message: "Request fetched successfully",
       status: "success",
       data: {
-        requests: request[0]?.data || [],
-
-        meta: request[0]?.meta || {},
+        requests: data || [],
+        meta: meta || {},
       },
     });
   } catch (error) {
