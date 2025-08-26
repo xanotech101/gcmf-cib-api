@@ -5,6 +5,7 @@ const transferProviderService = require("../../transferProvider.service");
 const bankOneService = require("../../bankOne.service");
 const InitiateRequest = require("../../../model/initiateRequest.model");
 const { TRANSFER_STATUS } = require("../../../model/initiateRequest.model");
+const { eazypayProcessor } = require("./easypay.process");
 
 const EXCHANGE_NAME = "transfer_exchange";
 const EXCHANGE_TYPE = "topic";
@@ -144,7 +145,7 @@ const processSingleTransfer = async (data) => {
     };
     const result = await bankOneService.doInterBankTransfer(interBankPayload);
 
-    if(result.isSuccessful === false) {
+    if (result.isSuccessful === false) {
       transaction.status = TRANSFER_STATUS.AWAITING_CONFIRMATION;
       return await transaction.save();
     }
@@ -163,8 +164,8 @@ const processSingleTransfer = async (data) => {
       Narration: transaction.narration,
     };
     const result = await bankOneService.doIntraBankTransfer(intraBankPayload);
-    
-    if(result.isSuccessful === false) {
+
+    if (result.isSuccessful === false) {
       transaction.status = TRANSFER_STATUS.AWAITING_CONFIRMATION;
       return await transaction.save();
     }
@@ -198,6 +199,7 @@ const processBulkTransfer = async (data) => {
 
 const processBulkTransferWithEazyPay = async (data) => {
   logger.info("Processing bulk transfer with EazyPay");
+  eazypayProcessor(data)
   // EazyPay specific processing logic
 };
 
