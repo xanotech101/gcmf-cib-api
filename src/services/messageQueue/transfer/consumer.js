@@ -1,31 +1,34 @@
 // Unified consumer for single and bulk transfers using a topic exchange
-const amqp = require('amqplib');
-const logger = require('../../../utils/logger');
-const transferProviderService = require('../../transferProvider.service');
-const bankOneService = require('../../bankOne.service');
+const amqp = require("amqplib");
+const logger = require("../../../utils/logger");
+const transferProviderService = require("../../transferProvider.service");
+const bankOneService = require("../../bankOne.service");
+const InitiateRequest = require("../../../model/initiateRequest.model");
+const { TRANSFER_STATUS } = require("../../../model/initiateRequest.model");
 
-const EXCHANGE_NAME = 'transfer_exchange';
-const EXCHANGE_TYPE = 'topic';
+const EXCHANGE_NAME = "transfer_exchange";
+const EXCHANGE_TYPE = "topic";
 
-
-
-async function consumeTransfer(type = 'single') {
-
+async function consumeTransfer(type = "single") {
   const queueName = `transfer_${type}_queue`;
   const dlqName = `transfer_${type}_dlq`;
   const routingKey = `transfer.${type}`;
-  
+
   try {
-    const connection = await amqp.connect(process.env.RABBIT_MQ_URL || 'amqp://localhost');
+    const connection = await amqp.connect(
+      process.env.RABBIT_MQ_URL || "amqp://localhost"
+    );
     const channel = await connection.createChannel();
-    await channel.assertExchange(EXCHANGE_NAME, EXCHANGE_TYPE, { durable: true });
-   
+    await channel.assertExchange(EXCHANGE_NAME, EXCHANGE_TYPE, {
+      durable: true,
+    });
+
     await channel.assertQueue(dlqName, { durable: true });
     await channel.assertQueue(queueName, {
       durable: true,
       arguments: {
-        'x-dead-letter-exchange': '',
-        'x-dead-letter-routing-key': dlqName,
+        "x-dead-letter-exchange": "",
+        "x-dead-letter-routing-key": dlqName,
       },
     });
 
@@ -34,44 +37,48 @@ async function consumeTransfer(type = 'single') {
 
     logger.info(`Waiting for ${type} transfer messages in queue: ${queueName}`);
 
-    channel.consume(queueName, async (message) => {
-      if (message !== null) {
-        try {
-          const data = JSON.parse(message.content.toString());
+    channel.consume(
+      queueName,
+      async (message) => {
+        if (message !== null) {
+          try {
+            const data = JSON.parse(message.content.toString());
 
-          if(!Array.isArray(data) || data?.length < 1) {
-            logger.warn({ data }, 'Invalid data format');
-            channel.nack(message, false, false); // dead-letter
-            return;
+            if (!Array.isArray(data) || data?.length < 1) {
+              logger.warn({ data }, "Invalid data format");
+              channel.nack(message, false, false); // dead-letter
+              return;
+            }
+
+            switch (type) {
+              case "single":
+                await processSingleTransfer(data[0]);
+                break;
+              case "bulk":
+                await processBulkTransfer(data);
+                break;
+              default:
+                logger.warn({ type }, "Unknown transfer type received");
+            }
+
+            channel.ack(message);
+          } catch (err) {
+            logger.error({ err }, `Error processing ${type} transfer message`);
+            channel.nack(message, false, false); // send to dead-letter queue
           }
-
-          switch (type) {
-            case 'single':
-              await processSingleTransfer(data[0]);
-              break;
-            case 'bulk':
-              await processBulkTransfer(data);
-              break;
-            default:
-              logger.warn({ type }, 'Unknown transfer type received');
-          }
-
-          channel.ack(message);
-        } catch (err) {
-          logger.error({ err }, `Error processing ${type} transfer message`);
-          channel.nack(message, false, false); // send to dead-letter queue
         }
-      }
-    }, { noAck: false });
+      },
+      { noAck: false }
+    );
 
     // Graceful shutdown
-    process.on('SIGINT', async () => {
+    process.on("SIGINT", async () => {
       logger.info(`${type} transfer consumer shutting down (SIGINT)`);
       await channel.close();
       await connection.close();
       process.exit(0);
     });
-    process.on('SIGTERM', async () => {
+    process.on("SIGTERM", async () => {
       logger.info(`${type} transfer consumer shutting down (SIGTERM)`);
       await channel.close();
       await connection.close();
@@ -82,20 +89,43 @@ async function consumeTransfer(type = 'single') {
   }
 }
 
-module.exports = { consumeTransfer, processSingleTransfer, processBulkTransfer };
+function getTransferStatus(status, responseCode) {
+  if (status === "Successful" && responseCode === "00") {
+    return "successful";
+  }
 
+  if (status === "SuccessfulButFeeNotTaken") {
+    return "successful"; // but log fee issue separately if needed
+  }
+
+  if (
+    status === "Pending" ||
+    ["06", "91", "X06", "08", "09"].includes(responseCode)
+  ) {
+    return "awaiting confirmation";
+  }
+
+  if (status === "Reversed") {
+    return "reversed";
+  }
+  return "failed";
+}
 
 const processSingleTransfer = async (data) => {
   logger.info(`Processing single transfer`);
   const { originatingAccountName, transactionId } = data;
-  const transaction = await InitiateRequest.findById(transactionId);
-  
+  const transaction = await InitiateRequest.findOneAndUpdate(
+    { _id: transactionId },
+    { $set: { status: "processing" } },
+    { new: true }
+  );
+
   if (!transaction) {
-    logger.warn({ transactionId }, 'Transaction not found');
+    logger.warn({ transactionId }, "Transaction not found");
     return;
   }
 
-  if(transaction.type === "inter-bank") {
+  if (transaction.type === "inter-bank") {
     const interBankPayload = {
       Amount: transaction.amount * 100,
       Payer: originatingAccountName,
@@ -113,9 +143,17 @@ const processSingleTransfer = async (data) => {
       Narration: transaction.narration,
     };
     const result = await bankOneService.doInterBankTransfer(interBankPayload);
+
+    if(result.isSuccessful === false) {
+      transaction.status = TRANSFER_STATUS.AWAITING_CONFIRMATION;
+      return await transaction.save();
+    }
+
+    const transferstatus = getTransferStatus(result.Status, result.ResponseCode);
+    transaction.status = transferstatus;
   }
 
-  if(transaction.type === "intra-bank") {
+  if (transaction.type === "intra-bank") {
     const intraBankPayload = {
       Amount: transaction.amount * 100,
       RetrievalReference: transaction.transactionReference,
@@ -125,6 +163,16 @@ const processSingleTransfer = async (data) => {
       Narration: transaction.narration,
     };
     const result = await bankOneService.doIntraBankTransfer(intraBankPayload);
+    
+    if(result.isSuccessful === false) {
+      transaction.status = TRANSFER_STATUS.AWAITING_CONFIRMATION;
+      return await transaction.save();
+    }
+
+    const transferstatus = getTransferStatus(result.Status, result.ResponseCode);
+    transaction.status = transferstatus;
+
+    await transaction.save();
   }
 
   logger.info(`Processed single transfer: ${transactionId}`);
@@ -132,7 +180,8 @@ const processSingleTransfer = async (data) => {
 
 const processBulkTransfer = async (data) => {
   logger.info(`Processing ${data.length} bulk transfer`);
-  const activeProvider = await transferProviderService.getActiveProviders()?.slug ?? "bankone";
+  const activeProvider =
+    (await transferProviderService.getActiveProviders()?.slug) ?? "bankone";
 
   switch (activeProvider) {
     case "eazypay":
@@ -147,9 +196,8 @@ const processBulkTransfer = async (data) => {
   }
 };
 
-
 const processBulkTransferWithEazyPay = async (data) => {
-  logger.info('Processing bulk transfer with EazyPay');
+  logger.info("Processing bulk transfer with EazyPay");
   // EazyPay specific processing logic
 };
 
@@ -163,3 +211,10 @@ const processBulkTransferWithBankOne = async (data) => {
   // BankOne specific processing logic
 };
 
+
+
+module.exports = {
+  consumeTransfer,
+  processSingleTransfer,
+  processBulkTransfer,
+};
