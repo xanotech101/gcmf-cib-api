@@ -5,6 +5,7 @@ const http = require("http");
 const https = require("https");
 const Bottleneck = require("bottleneck");
 const CircuitBreaker = require("opossum");
+const logger = require("../utils/logger");
 
 const api = axios.create({
   timeout: 5000,
@@ -54,11 +55,10 @@ class BankOneService {
       );
       return data;
     } catch (error) {
-      console.log('service', error.response.data);
-      throw error.response.data;;
+      console.log("service", error.response.data);
+      throw error.response.data;
     }
   }
-
 
   async accountByAccountNoV2(accountNo, authToken) {
     try {
@@ -67,7 +67,7 @@ class BankOneService {
       );
       return data;
     } catch (error) {
-      throw error.response.data;;
+      throw error.response.data;
     }
   }
 
@@ -78,7 +78,7 @@ class BankOneService {
       );
       return data;
     } catch (error) {
-      console.log(error.response.data)
+      console.log(error.response.data);
     }
   }
 
@@ -89,42 +89,43 @@ class BankOneService {
       );
       return data;
     } catch (error) {
-      console.log('service', error.response.data);
+      console.log("service", error.response.data);
       throw error.response.data;
     }
   }
 
   async transactionHistory(params) {
     try {
-
       const { data } = await axios.get(config.transactionHistory, {
-        params
+        params,
       });
       return data;
     } catch (error) {
-      console.log('service', error.response.data);
-      throw error.response.data;;
+      console.log("service", error.response.data);
+      throw error.response.data;
     }
   }
 
-  getAccountDetails = withBreaker(async (authToken, accountNumber, bankCode) => {
-    try {
-      const { data } = await limiter.schedule(() =>
-        api.post(config.nameEnquiry, {
-          AccountNumber: accountNumber,
-          BankCode: bankCode,
-          Token: authToken,
-        })
-      );
-      return data;
-    } catch (error) {
-      console.error("getAccountDetails error", {
-        status: error.response?.status,
-        message: error.message,
-      });
-      throw error.response?.data || { message: "Service unavailable" };
+  getAccountDetails = withBreaker(
+    async (authToken, accountNumber, bankCode) => {
+      try {
+        const { data } = await limiter.schedule(() =>
+          api.post(config.nameEnquiry, {
+            AccountNumber: accountNumber,
+            BankCode: bankCode,
+            Token: authToken,
+          })
+        );
+        return data;
+      } catch (error) {
+        console.error("getAccountDetails error", {
+          status: error.response?.status,
+          message: error.message,
+        });
+        throw error.response?.data || { message: "Service unavailable" };
+      }
     }
-  });
+  );
 
   getNameEnquiry = withBreaker(async (authToken, accountNumber, bankCode) => {
     try {
@@ -144,7 +145,6 @@ class BankOneService {
       throw error.response?.data || { message: "Service unavailable" };
     }
   });
-
 
   getBVNEnquiry = withBreaker(async (authToken, bvn) => {
     try {
@@ -172,8 +172,8 @@ class BankOneService {
       });
       return data;
     } catch (error) {
-      console.log('service', error.response.data);
-      throw error.response.data;;
+      console.log("service", error.response.data);
+      throw error.response.data;
     }
   }
 
@@ -185,19 +185,17 @@ class BankOneService {
       return data;
     } catch (error) {
       // return null;
-      console.log('service', error.response.data);
+      console.log("service", error.response.data);
       throw error.response.data;
     }
   }
 
-  async doInterBankTransfer(
-    payload
-  ) {
+  async doInterBankTransfer(payload) {
     try {
       const { data } = await axios.post(`${config.interbankTransfer}`, payload);
       return data;
     } catch (error) {
-      console.log('service', error.response.data);
+      logger.error({ err: error }, "Error in doInterBankTransfer");
       throw error.response.data;
     }
   }
@@ -207,13 +205,13 @@ class BankOneService {
       const { data } = await axios.post(`${config.intrabankTransfer}`, payload);
       return data;
     } catch (error) {
-      console.log('service', error.response.data);
+      logger.error({ err: error }, "Error in doIntraBankTransfer");
       throw error.response.data;
     }
   }
 
   async getTransactionsPaginated(
-    authToken,
+    authtoken,
     accountNumber,
     fromDate,
     toDate,
@@ -222,24 +220,36 @@ class BankOneService {
     PageSize
   ) {
     try {
-      const { data } = await axios.get(
-        `${config.nameEnquiry}?authtoken=${authToken}&accountNumber=${accountNumber}&fromDate=${fromDate}&toDate=${toDate}&institutionCode=${institutionCode}&pageNo=${pageNo}&PageSize=${PageSize}`
-      );
+      const { data } = await axios.get(config.nameEnquiry, {
+        params: {
+          authtoken,
+          accountNumber,
+          fromDate,
+          toDate,
+          institutionCode,
+          pageNo,
+          PageSize,
+        },
+      });
       return data;
     } catch (error) {
-      console.log('service', error.response.data);
+      logger.error({ err: error }, "Error in getTransactionsPaginated");
       throw error.response.data;
     }
   }
 
   async getAccountInfo(authtoken, accountNumber, institutionCode) {
     try {
-      const { data } = await axios.get(
-        `${config.getAccountInfo}?authtoken=${authToken}&accountNumber=${accountNumber}&institutionCode=${institutionCode}`
-      );
+      const { data } = await axios.get(config.getAccountInfo, {
+        params: {
+          authtoken,
+          accountNumber,
+          institutionCode,
+        },
+      });
       return data;
     } catch (error) {
-      console.log('service', error.response.data);
+      logger.error({ err: error }, "Error in getAccountInfo");
       throw error.response.data;
     }
   }
@@ -261,7 +271,7 @@ class BankOneService {
       });
       return data;
     } catch (error) {
-      console.log('service', error.response.data);
+      console.log("service", error.response.data);
       throw error.response.data;
     }
   }
@@ -273,22 +283,20 @@ class BankOneService {
       );
       return data;
     } catch (error) {
-      console.log('service', error.response.data);
+      console.log("service", error.response.data);
       throw error.response.data;
     }
   }
 
   async IntrabankAccountEnquiry(authToken, accountNumber) {
     try {
-      const { data } = await axios.post(
-        `${config.intraBankAccountEnquiry}`, {
+      const { data } = await axios.post(`${config.intraBankAccountEnquiry}`, {
         AccountNo: accountNumber,
-        AuthenticationCode: authToken
-      }
-      );
+        AuthenticationCode: authToken,
+      });
       return data;
     } catch (error) {
-      console.log('service', error.response.data);
+      console.log("service", error.response.data);
       throw error.response.data;
     }
   }
