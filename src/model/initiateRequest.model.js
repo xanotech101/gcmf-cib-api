@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const { toISOLocal } = require("../utils/utils");
 
 
-module.exports.TRANSFER_STATUS = Object.freeze({
+const TRANSFER_STATUS = Object.freeze({
   PENDING: "pending",
   QUEUED: "queued",
   PROCESSING: "processing",
@@ -12,12 +12,17 @@ module.exports.TRANSFER_STATUS = Object.freeze({
   REVERSED: "reversed",
 });
 
-module.exports.APPROVAL_STATUS = Object.freeze({
+const APPROVAL_STATUS = Object.freeze({
   PENDING: "pending",
   IN_PROGRESS: "in progress",
   APPROVED: "approved",
   DECLINED: "declined",
 });
+
+module.exports = {
+  TRANSFER_STATUS,
+  APPROVAL_STATUS,
+};
 
 const initiateRequestSchema = new mongoose.Schema({
   mandate: {
