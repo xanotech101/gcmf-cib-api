@@ -851,9 +851,6 @@ const getAllTransferRequests = async (req, res) => {
         $unwind: "$organization",
       },
       {
-        $unwind: "$organization",
-      },
-      {
         $facet: {
           data: [
             {
