@@ -1,4 +1,6 @@
 const EazyPayService = require("../../eazypay.service");
+const InitiateRequest = require("../../../model/initiateRequest.model");
+const logger = require("../../../utils/logger");
 
 function generateBatchId() {
     const prefix = "AE458361787634223232381";
@@ -11,12 +13,12 @@ function generateTransactionId(prefix = "TXN") {
     return `${prefix}${random}`;
 }
 
-
-const eazyPayService = EazyPayService
+const eazyPayService = new EazyPayService(); // ✅ fixed instantiation
 
 const authToken = process.env.EAZYPAY_TOKEN;
 const debitAccountNumber = process.env.EAZYPAY_DEBIT_ACCOUNT;
 const debitBankCode = process.env.EAZYPAY_DEBIT_BANK_CODE;
+
 /**
  * Pure processor: processes bulk transfer data with EazyPay
  */
@@ -41,13 +43,13 @@ async function eazypayProcessor(data) {
         await eazyPayService.openBatch(openBatchPayload, authToken);
         logger.info(`✅ Batch Opened: ${batchId}`);
 
-        // collect all transactionIds for later
-        const transactionIds = [];
+        // map requestId → transactionId
+        const requestMap = {};
 
         // STEP 2: Add Items
         for (const request of transferRequests) {
             const transactionId = generateTransactionId("PAY");
-            transactionIds.push(transactionId);
+            requestMap[request._id] = transactionId;
 
             const itemPayload = {
                 accountName: request.accountName,
@@ -82,41 +84,32 @@ async function eazypayProcessor(data) {
 
         // STEP 5: Get Batch Status
         const status = await eazyPayService.Tsq(batchId, authToken);
-        logger.info("📊 Batch Status:", {
-            batchId: status.batchId,
-            failed: status.failed,
-            itemCount: status.itemCount,
-            message: status.message,
-            pending: status.pending,
-            processing: status.processing,
-            status: status.status,
-            successful: status.successful,
-            timestamp: status.timestamp,
-            totalAmount: status.totalAmount,
-        });
+        logger.info("Batch Status:", status);
 
-        // STEP 6: Get Transaction Details for each item
-        const transactionDetails = [];
-        for (const tId of transactionIds) {
-            const details = await eazyPayService.TransactionDetails(batchId, tId, authToken);
-            const logDetails = {
-                accountName: details.accountName,
-                accountNumber: details.accountNumber,
-                amount: details.amount,
-                bankCode: details.bankCode,
-                batchId: details.batchId,
-                message: details.message,
-                narration: details.narration,
-                nipResponseCode: details.nipResponseCode,
-                status: details.status,
-                timestamp: details.timestamp,
-                transactionId: details.transactionId,
-            };
-            logger.info("Transaction Details:", logDetails);
-            transactionDetails.push(logDetails);
+        // STEP 6: Get Transaction Details and update DB
+        for (const request of transferRequests) {
+            const transactionId = requestMap[request._id];
+            const details = await eazyPayService.TransactionDetails(batchId, transactionId, authToken);
+
+            let transferStatus = "failed";
+            if (details?.nipResponseCode === "00") {
+                transferStatus = "successful";
+            } else if (["06", "91", "x06"].includes(details?.nipResponseCode) || details?.status === "Pending") {
+                transferStatus = "pending";
+            } else if (details?.status === "404") {
+                transferStatus = "not_found";
+            }
+
+            const reqDoc = await InitiateRequest.findById(request._id);
+            if (reqDoc) {
+                reqDoc.transferStatus = transferStatus;
+                reqDoc.meta = details;
+                reqDoc.updatedAt = new Date();
+                await reqDoc.save();
+                logger.info(`📌 Updated DB for request ${request._id} with status: ${transferStatus}`);
+            }
         }
 
-        // Return structured response
         return {
             batchStatus: {
                 batchId: status.batchId,
@@ -130,7 +123,6 @@ async function eazypayProcessor(data) {
                 timestamp: status.timestamp,
                 totalAmount: status.totalAmount,
             },
-            transactionDetails,
         };
     } catch (error) {
         logger.error("Error processing bulk transfer:", error);
