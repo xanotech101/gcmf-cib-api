@@ -14,6 +14,7 @@ const {
 const { getDateAndTime } = require("../../utils/utils");
 const Account = require("../../model/account");
 const { QueueTransfer } = require("../../services/messageQueue/queue");
+const { publishTransfer } = require("../../services/messageQueue/transfer/publisher");
 const authToken = process.env.AUTHTOKEN;
 
 const initiateRequest = async (req, res) => {
@@ -649,8 +650,8 @@ const approveRequest = async (req, res) => {
 };
 
 const authoriserApproveRequest = async (req, res) => {
-  const mine = await User.findById(req.user._id);
-  const organization = await Account.findById(mine.organizationId);
+  const user = await User.findById(req.user._id);
+  const organization = await Account.findById(user.organizationId);
   try {
     const _id = req.params.id;
     const userId = req.user._id;
@@ -680,7 +681,6 @@ const authoriserApproveRequest = async (req, res) => {
     // update and save request
     request.status = "approved";
     request.transferStatus = "queued";
-    request.updatedAt = new Date();
 
     request.authoriserAction = {
       status: "approved",
@@ -688,7 +688,6 @@ const authoriserApproveRequest = async (req, res) => {
     };
     await request.save();
 
-    // notify initiator and verifiers
     const verifiers = request.mandate.verifiers;
     await notificationService.createNotifications([
       {
@@ -705,55 +704,26 @@ const authoriserApproveRequest = async (req, res) => {
       })),
     ]);
 
-    // create audit trail
-    const user = await User.findById(req.user._id);
     const { date, time } = getDateAndTime();
     await auditTrailService.createAuditTrail({
-      user: req.user._id,
+      user: user._id,
       type: "transaction",
       transaction: request._id,
       message: `${user.firstName} approved a transaction request on ${date} by ${time}`,
-      organization: mine.organizationId,
-      organizationLabel: mine.organizationLabel
+      organization: user.organizationId,
+      organizationLabel: user.organizationLabel
     });
 
-    // delete otp from database
     await Otp.findByIdAndDelete(otpDetails._id);
 
-
-    // send request to queue
-    if (request.type === "inter-bank") {
-      const payload = {
-        _id: request._id,
-        Amount: request.amount * 100,
-        Payer: organization.accountName,
-        PayerAccountNumber: request.payerAccountNumber,
-        ReceiverAccountNumber: request.beneficiaryAccountNumber,
-        ReceiverAccountType: request.beneficiaryAccountType,
-        ReceiverBankCode: request.beneficiaryBankCode,
-        ReceiverPhoneNumber: request.beneficiaryPhoneNumber,
-        ReceiverName: request.beneficiaryBankName,
-        ReceiverBVN: "",
-        ReceiverKYC: "",
-        TransactionReference: request.transactionReference,
-        NIPSessionID: request.NIPSessionID,
-        Token: authToken,
-        Narration: request.narration,
-      };
-
-      QueueTransfer(payload, 'inter-bank')
-    } else {
-      const payload = {
-        _id: request._id,
-        Amount: request.amount * 100,
-        RetrievalReference: request.transactionReference,
-        FromAccountNumber: request.payerAccountNumber,
-        ToAccountNumber: request.beneficiaryAccountNumber,
-        AuthenticationKey: authToken,
-        Narration: request.narration,
-      };
-      QueueTransfer(payload, 'intra-bank')
-    }
+    publishTransfer(
+      [
+        {
+          originatingAccountName: organization.accountName, 
+          transactionId: request._id
+        }
+      ]
+    );
 
     return res.status(200).json({
       message: "Request approved successfully",
