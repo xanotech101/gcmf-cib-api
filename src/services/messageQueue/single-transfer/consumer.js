@@ -1,6 +1,6 @@
 const amqp = require('amqplib');
-const InitiateRequest = require("../../model/initiateRequest.model");
-const bankOneService = require('../bankOne.service');
+const InitiateRequest = require("../../../model/initiateRequest.model");
+const bankOneService = require('../../bankOne.service');
 const queueName = 'Transfer';
 
 async function consumeTransferRequest() {
@@ -50,7 +50,6 @@ async function consumeTransferRequest() {
                             await request.save();
                         }
                     }
-                    console.log(`resolved transfer ${requestData._id} ${type}`)
                     channel.ack(message);
                 } catch (error) {
                     console.error('Response processing error:', error);

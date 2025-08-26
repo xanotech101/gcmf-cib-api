@@ -1,105 +1,114 @@
 const mongoose = require("mongoose");
 const { toISOLocal } = require("../utils/utils");
-const { required } = require("joi");
 
-const initiateRequestSchema = new mongoose.Schema(
-  {
-    mandate: {
-      type: mongoose.Schema.Types.ObjectID,
-      ref: "Mandate",
-    },
-    amount: Number,
-    retryCount: {
-      type: Number,
-      default: 0,
-    },
-    payerAccountNumber: String,
-    beneficiaryBankCode: String,
-    beneficiaryAccountNumber: String,
-    beneficiaryBankName: String,
-    beneficiaryAccountName: String,
-    beneficiaryPhoneNumber: String,
-    narration: String,
-    batchVerificationID: String,
-    channel: String,
-    userId: {
-      type: mongoose.Schema.Types.ObjectID,
-      ref: "thirdparty",
-    },
-    beneficiaryAccountType: {
-      type: String,
-      enum: ["savings", "current"],
-    },
-    beneficiaryKYC: String,
-    beneficiaryBVN: String,
-    NIPSessionID: String,
-    transactionReference: String,
-    batchId: String,
-    organizationId: {
-      type: mongoose.Schema.Types.ObjectID,
-      ref: "Account",
-    },
-    organizationLabel: {
-      type: mongoose.Schema.Types.ObjectID,
-      ref: "organzationLabel",
-    },
-    numberOfVerifiers: Number,
-    transferStatus: {
-      type: String,
-      enum: ["disburse pending", "pending", "queued", "successful", "failed", "Awaiting confirmation status", "reversed"],
-      default: 'pending'
-    },
-    status: {
-      type: String,
-      enum: [
-        "pending",
-        "in progress",
-        "awaiting authorization",
-        "approved",
-        "declined"
-      ],
-      default: "pending",
-    },
-    initiator: {
-      type: mongoose.Schema.Types.ObjectID,
-      ref: "User",
-    },
-    verifiersAction: [
-      {
-        status: {
-          type: String,
-          enum: ["verified", "rejected"],
-        },
-        verifierID: {
-          type: mongoose.Schema.Types.ObjectID,
-          ref: "User",
-        },
-        reason: String,
-      },
-    ],
-    authoriserAction: {
+
+const TRANSFER_STATUS = Object.freeze({
+  PENDING: "pending",
+  QUEUED: "queued",
+  PROCESSING: "processing",
+  SUCCESSFUL: "successful",
+  FAILED: "failed",
+  AWAITING_CONFIRMATION: "Awaiting confirmation",
+  REVERSED: "reversed",
+});
+
+const APPROVAL_STATUS = Object.freeze({
+  PENDING: "pending",
+  IN_PROGRESS: "in progress",
+  APPROVED: "approved",
+  DECLINED: "declined",
+});
+
+module.exports = {
+  TRANSFER_STATUS,
+  APPROVAL_STATUS,
+};
+
+const initiateRequestSchema = new mongoose.Schema({
+  mandate: {
+    type: mongoose.Schema.Types.ObjectID,
+    ref: "Mandate",
+  },
+  amount: Number,
+  retryCount: {
+    type: Number,
+    default: 0,
+  },
+  payerAccountNumber: String,
+  beneficiaryBankCode: String,
+  beneficiaryAccountNumber: String,
+  beneficiaryBankName: String,
+  beneficiaryAccountName: String,
+  beneficiaryPhoneNumber: String,
+  narration: String,
+  batchVerificationID: String,
+  channel: String,
+  userId: {
+    type: mongoose.Schema.Types.ObjectID,
+    ref: "thirdparty",
+  },
+  beneficiaryAccountType: {
+    type: String,
+    enum: ["savings", "current"],
+  },
+  beneficiaryKYC: String,
+  beneficiaryBVN: String,
+  NIPSessionID: String,
+  transactionReference: String,
+  batchId: String,
+  organizationId: {
+    type: mongoose.Schema.Types.ObjectID,
+    ref: "Account",
+  },
+  organizationLabel: {
+    type: mongoose.Schema.Types.ObjectID,
+    ref: "organzationLabel",
+  },
+  numberOfVerifiers: Number,
+  transferStatus: {
+    type: String,
+    enum: Object.values(TRANSFER_STATUS),
+    default: TRANSFER_STATUS.PENDING,
+  },
+  status: {
+    type: String,
+    enum: Object.values(APPROVAL_STATUS),
+    default: APPROVAL_STATUS.PENDING,
+  },
+  initiator: {
+    type: mongoose.Schema.Types.ObjectID,
+    ref: "User",
+  },
+  verifiersAction: [
+    {
       status: {
         type: String,
-        enum: ["approved", "declined"],
+        enum: ["verified", "rejected"],
+      },
+      verifierID: {
+        type: mongoose.Schema.Types.ObjectID,
+        ref: "User",
       },
       reason: String,
     },
-    type: {
-      enum: ["inter-bank", "intra-bank"],
+  ],
+  authoriserAction: {
+    status: {
       type: String,
+      enum: ["approved", "declined"],
     },
-    meta:{},
-    isProcessing: {
-      type: Boolean,
-      required: false,
-      default: false,
-      // "This field is used to check if the transaction is being processed",
-    },
-    time: Date,
-    createdAt: { type: String },
-    updatedAt: { type: String },
-  }
-);
+    reason: String,
+  },
+  type: {
+    enum: ["inter-bank", "intra-bank"],
+    type: String,
+  },
+  meta: {},
+  // providerResponse: [],
+  time: Date,
+  createdAt: { type: String },
+  updatedAt: { type: String },
+});
 
 initiateRequestSchema.index({ transferStatus: 1 });
 

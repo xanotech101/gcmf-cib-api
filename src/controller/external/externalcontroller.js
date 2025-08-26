@@ -355,6 +355,8 @@ const initiateRequest = async (req, res) => {
       requestType: 'TransferRequest'
     })
 
+    publishTransfer([{ originatingAccount: request.payerAccountNumber, transactionId: request._id }]);
+
     if (result.type === "inter-bank") {
       const payload = {
         _id: result._id,
