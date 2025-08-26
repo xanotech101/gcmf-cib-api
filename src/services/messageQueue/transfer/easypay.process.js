@@ -36,46 +36,106 @@ async function eazypayProcessor(data) {
             itemCount,
             debitAccountNumber,
             debitBankCode,
-            debitNarration: `Bulk transfer initiated by for GMFB`,
+            debitNarration: `Bulk transfer initiated for GMFB`,
         };
-        const batchOpen = await eazyPayService.openBatch(openBatchPayload, authToken);
-        logger.info("✅ Batch Opened:", batchOpen);
+        await eazyPayService.openBatch(openBatchPayload, authToken);
+        logger.info(`✅ Batch Opened: ${batchId}`);
+
+        // collect all transactionIds for later
+        const transactionIds = [];
 
         // STEP 2: Add Items
         for (const request of transferRequests) {
+            const transactionId = generateTransactionId("PAY");
+            transactionIds.push(transactionId);
+
             const itemPayload = {
                 accountName: request.accountName,
                 accountNumber: request.destinationAccountNumber,
                 bankCode: request.destinationBankCode,
                 amount: Number(request.amount),
-                transactionId: generateTransactionId("PAY"),
+                transactionId,
                 narration: request.narration || "Bulk Payment",
             };
 
-            const added = await eazyPayService.addItemToBatch(batchId, [itemPayload], authToken);
-            logger.info("Item Added:", added);
+            await eazyPayService.addItemToBatch(batchId, [itemPayload], authToken);
+            logger.info(`Item Added for ${request.accountName}, TXN: ${transactionId}`);
         }
 
         // STEP 3: Close Batch
-        const batchClosed = await eazyPayService.closeBatch(batchId, authToken);
-        logger.info("Batch Closed:", batchClosed);
+        await eazyPayService.closeBatch(batchId, authToken);
+        logger.info(`Batch Closed: ${batchId}`);
 
         // STEP 4: Submit Batch
-        const submitPayload = {
-            batchId,
-            totalAmount,
-            itemCount,
-            debitAccountNumber,
-            debitBankCode,
-            debitNarration: openBatchPayload.debitNarration,
-        };
-        const submitted = await eazyPayService.submitBatch(submitPayload, authToken);
-        logger.info("Batch Submitted:", submitted);
+        await eazyPayService.submitBatch(
+            {
+                batchId,
+                totalAmount,
+                itemCount,
+                debitAccountNumber,
+                debitBankCode,
+                debitNarration: openBatchPayload.debitNarration,
+            },
+            authToken
+        );
+        logger.info(`Batch Submitted: ${batchId}`);
 
-        return submitted;
+        // STEP 5: Get Batch Status
+        const status = await eazyPayService.Tsq(batchId, authToken);
+        logger.info("📊 Batch Status:", {
+            batchId: status.batchId,
+            failed: status.failed,
+            itemCount: status.itemCount,
+            message: status.message,
+            pending: status.pending,
+            processing: status.processing,
+            status: status.status,
+            successful: status.successful,
+            timestamp: status.timestamp,
+            totalAmount: status.totalAmount,
+        });
+
+        // STEP 6: Get Transaction Details for each item
+        const transactionDetails = [];
+        for (const tId of transactionIds) {
+            const details = await eazyPayService.TransactionDetails(batchId, tId, authToken);
+            const logDetails = {
+                accountName: details.accountName,
+                accountNumber: details.accountNumber,
+                amount: details.amount,
+                bankCode: details.bankCode,
+                batchId: details.batchId,
+                message: details.message,
+                narration: details.narration,
+                nipResponseCode: details.nipResponseCode,
+                status: details.status,
+                timestamp: details.timestamp,
+                transactionId: details.transactionId,
+            };
+            logger.info("Transaction Details:", logDetails);
+            transactionDetails.push(logDetails);
+        }
+
+        // Return structured response
+        return {
+            batchStatus: {
+                batchId: status.batchId,
+                failed: status.failed,
+                itemCount: status.itemCount,
+                message: status.message,
+                pending: status.pending,
+                processing: status.processing,
+                status: status.status,
+                successful: status.successful,
+                timestamp: status.timestamp,
+                totalAmount: status.totalAmount,
+            },
+            transactionDetails,
+        };
     } catch (error) {
         logger.error("Error processing bulk transfer:", error);
         throw error;
     }
 }
+
 module.exports = { eazypayProcessor };

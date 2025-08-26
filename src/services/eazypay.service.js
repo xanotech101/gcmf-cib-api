@@ -61,6 +61,29 @@ class EazyPayService {
         }
     }
 
+    async Tsq(batchId, token) {
+        try {
+            const url = `${eazyPayConfig.transfer_status}/${batchId}`;
+            const res = await this.http.get(url, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            return res.data;
+        } catch (err) {
+            throw new Error(`Error checking transaction status: ${err.message}`);
+        }
+    }
+
+    async TransactionDetails(batchId, transactionId, token) {
+        try {
+            const url = `${eazyPayConfig.transaction_details}/${batchId}/${transactionId}`;
+            const res = await this.http.get(url, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            return res.data;
+        } catch (err) {
+            throw new Error(`Error checking transaction details: ${err.message}`);
+        }
+    }
 
 }
 
