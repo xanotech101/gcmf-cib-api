@@ -11,7 +11,7 @@ const bcrypt = require('bcryptjs')
 const authToken = process.env.AUTHTOKEN;
 
 const generateRandomNumber = () => {
-  return Math.floor(100000000000000 + Math.random() * 900000000000000); 
+  return Math.floor(100000000000000 + Math.random() * 900000000000000);
 };
 
 
@@ -80,13 +80,13 @@ async function generateUserToken(req, res) {
     const organization = await thirdPartyModel
       .findOne({ organization_name })
       .select('_id key')
-      .lean();  
+      .lean();
 
     if (!organization) {
       return res.status(404).json({ success: false, message: 'Organization does not exist' });
     }
 
-    const isMatch = bcrypt.compareSync(key, organization.key); 
+    const isMatch = bcrypt.compareSync(key, organization.key);
     if (!isMatch) {
       return res.status(401).json({ success: false, message: 'Invalid key' });
     }
@@ -100,7 +100,7 @@ async function generateUserToken(req, res) {
     await thirdPartyModel.updateOne(
       { _id: organization._id },
       { requestCount: [], bvnCount: [] },
-      { writeConcern: { w: 0, j: false } } 
+      { writeConcern: { w: 0, j: false } }
     );
 
     return res.status(200).json({
@@ -118,7 +118,7 @@ async function generateUserToken(req, res) {
 async function updateOrganizationKey(req, res) {
   try {
     const organizationName = req.body.organization_name;
-    const newKey = generateRandomNumber().toString(); 
+    const newKey = generateRandomNumber().toString();
 
     const salt = await bcrypt.genSalt(15);
     const hashKey = await bcrypt.hash(newKey, salt);
@@ -139,7 +139,7 @@ async function updateOrganizationKey(req, res) {
       message: 'Key updated successfully, please note your key is revealed only this time, do well to save it privately.',
       data: {
         organization: organizationName,
-        key: newKey 
+        key: newKey
       }
     });
 
@@ -444,7 +444,9 @@ const getAllTransactionByThirdParty = async (req, res) => {
 };
 
 
-module.exports = { generateUserToken, getAllThirdPartyOrganizations, 
-  getthirdpartyAnalytics, getMonthName, initiateRequest, getAllTransactionByThirdParty, 
+module.exports = {
+  generateUserToken, getAllThirdPartyOrganizations,
+  getthirdpartyAnalytics, getMonthName, initiateRequest, getAllTransactionByThirdParty,
   updateOrganizationKey,
-  createExternalOrganization }
+  createExternalOrganization
+}

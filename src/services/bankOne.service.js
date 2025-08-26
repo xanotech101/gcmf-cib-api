@@ -1,5 +1,50 @@
 const config = require("../config/bankone");
 const axios = require("axios");
+const axiosRetry = require("axios-retry").default;
+const http = require("http");
+const https = require("https");
+const Bottleneck = require("bottleneck");
+const CircuitBreaker = require("opossum");
+
+const api = axios.create({
+  timeout: 5000,
+  httpAgent: new http.Agent({ keepAlive: true, maxSockets: 50 }),
+  httpsAgent: new https.Agent({ keepAlive: true, maxSockets: 50 }),
+  validateStatus: (status) => status >= 200 && status < 500,
+});
+
+axiosRetry(api, {
+  retries: 3,
+  retryDelay: axiosRetry.exponentialDelay,
+  retryCondition: (err) =>
+    axiosRetry.isNetworkOrIdempotentRequestError(err) ||
+    err.response?.status >= 500,
+});
+
+const limiter = new Bottleneck({
+  maxConcurrent: 5,
+  minTime: 100,
+});
+
+const breakerOptions = {
+  timeout: 6000,
+  errorThresholdPercentage: 50,
+  resetTimeout: 10000,
+};
+
+function withBreaker(fn) {
+  const breaker = new CircuitBreaker(fn, breakerOptions);
+
+  breaker.fallback(() => {
+    return { error: true, message: "Service unavailable (circuit breaker open)" };
+  });
+
+  breaker.on("open", () => console.warn("⚠️ Circuit breaker OPEN"));
+  breaker.on("halfOpen", () => console.info("🔄 Circuit breaker HALF-OPEN"));
+  breaker.on("close", () => console.info("✅ Circuit breaker CLOSED"));
+
+  return breaker.fire.bind(breaker);
+}
 
 class BankOneService {
   async accountByAccountNo(accountNo, authToken) {
@@ -62,46 +107,62 @@ class BankOneService {
     }
   }
 
-  async getAccountDetails(authToken, accountNumber, bankCode) {
+  getAccountDetails = withBreaker(async (authToken, accountNumber, bankCode) => {
     try {
-      const { data } = await axios.post(`${config.nameEnquiry}`, {
-        AccountNumber: accountNumber,
-        BankCode: bankCode,
-        Token: authToken,
-      });
+      const { data } = await limiter.schedule(() =>
+        api.post(config.nameEnquiry, {
+          AccountNumber: accountNumber,
+          BankCode: bankCode,
+          Token: authToken,
+        })
+      );
       return data;
     } catch (error) {
-      console.log('service', error.response.data);
-      throw error.response.data;;
+      console.error("getAccountDetails error", {
+        status: error.response?.status,
+        message: error.message,
+      });
+      throw error.response?.data || { message: "Service unavailable" };
     }
-  }
+  });
 
-  async getNameEnquiry(authToken, accountNumber, bankCode) {
+  getNameEnquiry = withBreaker(async (authToken, accountNumber, bankCode) => {
     try {
-      const { data } = await axios.post(`${config.nameEnquiry}`, {
-        AccountNumber: accountNumber,
-        BankCode: bankCode,
-        Token: authToken,
-      });
+      const { data } = await limiter.schedule(() =>
+        api.post(config.nameEnquiry, {
+          AccountNumber: accountNumber,
+          BankCode: bankCode,
+          Token: authToken,
+        })
+      );
       return data;
     } catch (error) {
-      console.log('service', error.response.data);
-      throw error.response.data;;
+      console.error("getNameEnquiry error", {
+        status: error.response?.status,
+        message: error.message,
+      });
+      throw error.response?.data || { message: "Service unavailable" };
     }
-  }
+  });
 
-  async getBVNEnquiry(authToken, bvn) {
+
+  getBVNEnquiry = withBreaker(async (authToken, bvn) => {
     try {
-      const { data } = await axios.post(`${config.bvnEnquiry}`, {
-        BVN: bvn,
-        Token: authToken,
-      });
+      const { data } = await limiter.schedule(() =>
+        api.post(config.bvnEnquiry, {
+          BVN: bvn,
+          Token: authToken,
+        })
+      );
       return data;
     } catch (error) {
-      console.log('service', error.response.data);
-      throw error.response.data;;
+      console.error("getBVNEnquiry error", {
+        status: error.response?.status,
+        message: error.message,
+      });
+      throw error.response?.data || { message: "Service unavailable" };
     }
-  }
+  });
 
   async getbankDetails(authToken, accountNumber) {
     try {
@@ -133,7 +194,7 @@ class BankOneService {
     payload
   ) {
     try {
-      const {data}  = await axios.post(`${config.interbankTransfer}`, payload);
+      const { data } = await axios.post(`${config.interbankTransfer}`, payload);
       return data;
     } catch (error) {
       console.log('service', error.response.data);
