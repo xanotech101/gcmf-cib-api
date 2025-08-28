@@ -22,7 +22,7 @@ class TransferProviderService {
         throw new Error('Provider not found');
     }
 
-    async getActiveProviders() {
+    async getActiveProvider() {
         return await TransferProvider.findOne({ isActive: true });
     }
 }

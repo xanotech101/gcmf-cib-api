@@ -96,7 +96,7 @@ function getTransferStatus(status, responseCode) {
   }
 
   if (status === "SuccessfulButFeeNotTaken") {
-    return "successful"; // but log fee issue separately if needed
+    return "successful";
   }
 
   if (
@@ -182,7 +182,7 @@ const processSingleTransfer = async (data) => {
 const processBulkTransfer = async (data) => {
   logger.info(`Processing ${data.length} bulk transfer`);
   const activeProvider =
-    (await transferProviderService.getActiveProviders()?.slug) ?? "bankone";
+    (await transferProviderService.getActiveProvider()?.slug) ?? "bankone";
 
   switch (activeProvider) {
     case "eazypay":
@@ -200,17 +200,14 @@ const processBulkTransfer = async (data) => {
 const processBulkTransferWithEazyPay = async (data) => {
   logger.info("Processing bulk transfer with EazyPay");
   eazypayProcessor(data)
-  // EazyPay specific processing logic
 };
 
 const processBulkTransferWithPaystack = async (data) => {
   logger.info(`Processing ${data.length} bulk transfer with Paystack`);
-  // Paystack specific processing logic
 };
 
 const processBulkTransferWithBankOne = async (data) => {
   logger.info(`Processing ${data.length} bulk transfer with BankOne`);
-  // BankOne specific processing logic
 };
 
 

@@ -1,7 +1,3 @@
-
-// Logger utility using Pino
-// Usage: const logger = require('./logger'); logger.info('message');
-
 const pino = require('pino');
 
 const logger = pino({

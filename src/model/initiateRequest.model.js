@@ -17,6 +17,7 @@ const APPROVAL_STATUS = Object.freeze({
   IN_PROGRESS: "in progress",
   APPROVED: "approved",
   DECLINED: "declined",
+  AWAITING_AUTHORIZATION: "Awaiting authorization",
 });
 
 module.exports = {
