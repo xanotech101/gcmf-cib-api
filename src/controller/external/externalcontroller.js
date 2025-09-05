@@ -302,6 +302,10 @@ function getMonthName(month) {
 
 const initiateRequest = async (req, res) => {
   try {
+    return res.status(503).json({
+      message: "Service is currently under maintenance. Please try again later.",
+      status: "failed",
+    });
 
     // check if payerAccountNumber is whitelisted
     const check_whitelisted = await whitelistAccounts.findOne({ account_number: req.body.payerAccountNumber })
