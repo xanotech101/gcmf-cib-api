@@ -6,6 +6,8 @@ const bankOneService = require("../../bankOne.service");
 const InitiateRequest = require("../../../model/initiateRequest.model");
 const { TRANSFER_STATUS } = require("../../../model/initiateRequest.model");
 const { eazypayProcessor } = require("./easypay.process");
+const TransferReciepient = require("../../../model/transferReciepient");
+const paystackService = require("../../paystack.service");
 
 const EXCHANGE_NAME = "transfer_exchange";
 const EXCHANGE_TYPE = "topic";
@@ -150,7 +152,10 @@ const processSingleTransfer = async (data) => {
       return await transaction.save();
     }
 
-    const transferstatus = getTransferStatus(result.Status, result.ResponseCode);
+    const transferstatus = getTransferStatus(
+      result.Status,
+      result.ResponseCode
+    );
     transaction.status = transferstatus;
   }
 
@@ -170,7 +175,10 @@ const processSingleTransfer = async (data) => {
       return await transaction.save();
     }
 
-    const transferstatus = getTransferStatus(result.Status, result.ResponseCode);
+    const transferstatus = getTransferStatus(
+      result.Status,
+      result.ResponseCode
+    );
     transaction.status = transferstatus;
 
     await transaction.save();
@@ -199,18 +207,75 @@ const processBulkTransfer = async (data) => {
 
 const processBulkTransferWithEazyPay = async (data) => {
   logger.info("Processing bulk transfer with EazyPay");
-  eazypayProcessor(data)
+  eazypayProcessor(data);
 };
 
 const processBulkTransferWithPaystack = async (data) => {
   logger.info(`Processing ${data.length} bulk transfer with Paystack`);
+
+  const BATCH_SIZE = 100;
+  for (let i = 0; i < data.length; i += BATCH_SIZE) {
+    const batch = data.slice(i, i + BATCH_SIZE);
+    logger.info(`Processing Paystack batch: ${i / BATCH_SIZE + 1}`);
+
+    const transactions = await InitiateRequest.find({
+      _id: { $in: batch.map((item) => item.transactionId) },
+    });
+
+    const intraBankTransfers = [];
+    const interBankTransfers = [];
+
+    transactions.forEach((transaction) => {
+      if (transaction.type === "intra-bank") {
+        intraBankTransfers.push(transaction);
+      } else if (transaction.type === "inter-bank") {
+        interBankTransfers.push(transaction);
+      }
+    });
+
+    if (intraBankTransfers.length > 0) {
+      for (const transfer of intraBankTransfers) {
+        await processSingleTransfer({
+          originatingAccountName: transfer.payerAccountName,
+          transactionId: transfer._id,
+        });
+        await new Promise((resolve) => setTimeout(resolve, 5000)); // 5 seconds delay
+      }
+    }
+
+    const preparedTransactions = [];
+
+    for (const transfer of interBankTransfers) {
+      const recipient = await TransferReciepient.findOne({
+        accountNumber: transfer.beneficiaryAccountNumber,
+      });
+
+      if (!recipient) {
+        const newRecipient =
+          await paystackService.createPaystackTransferReceipient({
+            type: "nuban",
+            account_number: transfer.beneficiaryAccountNumber,
+            bank_code: transfer.beneficiaryBankCode,
+            ncurrency: "NGN"
+          });
+        console.log(newRecipient, "New Paystack recipient created");
+      } else {
+        // send to GMFB, when successful, add to preparedTransactions
+        preparedTransactions.push({
+          amount: transfer.amount * 100,
+          reference: transfer.transactionReference,
+          reason: transfer.narration,
+          recipient: recipient.reciepientCode,
+        });
+      }
+    }
+    // Optionally: process preparedTransactions here if needed
+  }
 };
 
 const processBulkTransferWithBankOne = async (data) => {
   logger.info(`Processing ${data.length} bulk transfer with BankOne`);
 };
-
-
 
 module.exports = {
   consumeTransfer,

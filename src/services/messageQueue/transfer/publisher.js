@@ -8,7 +8,7 @@ const EXCHANGE_TYPE = 'topic';
 /**
  * Publishes a transfer message (single or bulk) to the topic exchange
  * @param {Object[]} data - Array of transfer objects. For both 'single' and 'bulk', always use an array:
- *   [{ originatingAccountName: string, transactionId: string }]
+ *   [{ originatingAccount: string, transactionId: string }]
  * @param {string} type - 'single' or 'bulk'
  */
 async function publishTransfer(data, type = 'single') {
