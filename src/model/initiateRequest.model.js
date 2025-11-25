@@ -20,11 +20,6 @@ const APPROVAL_STATUS = Object.freeze({
   AWAITING_AUTHORIZATION: "Awaiting authorization",
 });
 
-module.exports = {
-  TRANSFER_STATUS,
-  APPROVAL_STATUS,
-};
-
 const initiateRequestSchema = new mongoose.Schema({
   mandate: {
     type: mongoose.Schema.Types.ObjectID,
@@ -122,4 +117,9 @@ initiateRequestSchema.pre("save", function (next) {
 })
 
 
-module.exports = mongoose.model("InitiateRequest", initiateRequestSchema);
+const InitiateRequest = mongoose.model("InitiateRequest", initiateRequestSchema);
+
+InitiateRequest.TRANSFER_STATUS = TRANSFER_STATUS;
+InitiateRequest.APPROVAL_STATUS = APPROVAL_STATUS;
+
+module.exports = InitiateRequest;

@@ -25,7 +25,7 @@ const organizationRoute = require('./routes/organization')
 const externalRoute = require('./routes/external.route')
 const organizationLabelRoutes = require('./routes/organizationLabelAdmin')
 const transferProvider = require("./routes/transferProvider.route");
-const eazyPayRoutes = require("./routes/eazy-pay.routes");
+const eazyPayRoutes = require("./routes/eazyPay.routes");
 
 
 const cors = require("cors");
@@ -54,9 +54,9 @@ app.use(
 
 
 // todo: move this to a worker in the background maybe
-// setup().catch((error) => {
-//   console.error(error);
-// });
+setup().catch((error) => {
+  console.error(error);
+});
 
 app.use('/static', express.static(path.join(__dirname, 'public')))
 

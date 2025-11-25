@@ -945,6 +945,7 @@ const approveBulkRequest = async (req, res) => {
     await Promise.all(
       requests.map(async (request) => {
         try {
+
           if (request.status === InitiateRequest.APPROVAL_STATUS.APPROVED) {
             errors.push({
               message: `Transaction ${request._id} has already been approved`,
@@ -1104,20 +1105,20 @@ const authoriserBulkApprove = async (req, res) => {
       _id: { $in: transactionIds },
     }).populate("mandate");
 
-    const otpDetails = await Otp.findOne({
-      otp: req.body.otp,
-      user: user._id,
-      transaction: req.body.batchId,
-    });
+    // const otpDetails = await Otp.findOne({
+    //   otp: req.body.otp,
+    //   user: user._id,
+    //   transaction: req.body.batchId,
+    // });
 
-    if (!otpDetails) {
-      return res.status(404).json({
-        message: "OTP is incorrect or used",
-        status: "failed",
-      });
-    }
+    // if (!otpDetails) {
+    //   return res.status(404).json({
+    //     message: "OTP is incorrect or used",
+    //     status: "failed",
+    //   });
+    // }
 
-    await Otp.findByIdAndDelete(otpDetails._id);
+    // await Otp.findByIdAndDelete(otpDetails._id);
     const transfersToQueue = [];
 
     await Promise.all(
@@ -1140,6 +1141,7 @@ const authoriserBulkApprove = async (req, res) => {
           status: "approved",
           reason: req.body.reason,
         };
+
         await request.save();
 
         const verifiers = request.mandate.verifiers;
@@ -1176,7 +1178,7 @@ const authoriserBulkApprove = async (req, res) => {
         });
       })
     );
-    await publishTransfer(transfersToQueue);
+    await publishTransfer(transfersToQueue, 'bulk');
     return res.status(200).json({
       message: "Request approved successfully",
       status: "success",
