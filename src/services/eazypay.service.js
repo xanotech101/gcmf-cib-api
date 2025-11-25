@@ -1,6 +1,6 @@
 const { default: axios } = require("axios");
 const eazyPayConfig = require("../config/eazy-pay");
-
+const qs = require("querystring");
 const CLIENT_CODE = "GROOMINGTEST";
 
 class EazyPayService {
@@ -82,6 +82,40 @@ class EazyPayService {
             return res.data;
         } catch (err) {
             throw new Error(`Error checking transaction details: ${err.message}`);
+        }
+    }
+
+
+    async resetToken() {
+        try {
+            const formData = {
+                client_id: process.env.MULIPAY_CLIENT_ID,
+                scope: process.env.MULIPAY_SCOPE,
+                client_secret: process.env.MULIPAY_CLIENT_SECRET,
+                grant_type: process.env.MULIPAY_GRANT_TYPE,
+            };
+
+            const res = await this.http.post(
+                eazyPayConfig.reset_token,
+                qs.stringify(formData),
+                {
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        "apiKey": process.env.MULIPAY_API_KEY
+                    }
+                }
+            );
+
+            const { access_token } = res.data;
+
+            if (!access_token) {
+                throw new Error("No access_token returned from EazyPay");
+            }
+
+            return access_token;
+
+        } catch (err) {
+            throw new Error(`Error resetting token: ${err.message}`);
         }
     }
 

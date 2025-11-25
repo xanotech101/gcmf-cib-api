@@ -4,7 +4,8 @@ const eazyPayConfig = {
     close_batch: "https://apitest.nibss-plc.com.ng/nipbulk/v1/api/batch/close",
     submit_batch: "https://apitest.nibss-plc.com.ng/nipbulk/v1/api/batch",
     transfer_status: "https://apitest.nibss-plc.com.ng/nipbulk/v1/api/batch/summary",
-    transaction_details: "https://apitest.nibss-plc.com.ng/nipbulk/v1/api/transaction/details"
+    transaction_details: "https://apitest.nibss-plc.com.ng/nipbulk/v1/api/transaction/details",
+    reset_token: "https://apitest.nibss-plc.com.ng/v2/reset"
 };
 
 module.exports = eazyPayConfig;

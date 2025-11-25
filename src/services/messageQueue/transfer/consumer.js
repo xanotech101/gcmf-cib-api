@@ -12,85 +12,90 @@ const paystackService = require("../../paystack.service");
 const EXCHANGE_NAME = "transfer_exchange";
 const EXCHANGE_TYPE = "topic";
 
-async function consumeTransfer(type = "single") {
+async function consumeTransfer(type = 'bulk') {
   const queueName = `transfer_${type}_queue`;
   const dlqName = `transfer_${type}_dlq`;
   const routingKey = `transfer.${type}`;
 
-  try {
-    const connection = await amqp.connect(
-      process.env.RABBIT_MQ_URL || "amqp://localhost"
-    );
-    const channel = await connection.createChannel();
-    await channel.assertExchange(EXCHANGE_NAME, EXCHANGE_TYPE, {
-      durable: true,
-    });
+  async function startConsumer() {
+    let connection;
+    let channel;
 
-    await channel.assertQueue(dlqName, { durable: true });
-    await channel.assertQueue(queueName, {
-      durable: true,
-      arguments: {
-        "x-dead-letter-exchange": "",
-        "x-dead-letter-routing-key": dlqName,
-      },
-    });
+    try {
+      connection = await amqp.connect(process.env.RABBIT_MQ_URL || 'amqp://localhost');
+      channel = await connection.createChannel();
 
-    await channel.bindQueue(queueName, EXCHANGE_NAME, routingKey);
-    channel.prefetch(1);
+      await channel.assertExchange(EXCHANGE_NAME, EXCHANGE_TYPE, { durable: true });
+      await channel.assertQueue(dlqName, { durable: true });
+      await channel.assertQueue(queueName, {
+        durable: true,
+        arguments: {
+          "x-dead-letter-exchange": "",
+          "x-dead-letter-routing-key": dlqName,
+        },
+      });
+      await channel.bindQueue(queueName, EXCHANGE_NAME, routingKey);
+      channel.prefetch(1);
 
-    logger.info(`Waiting for ${type} transfer messages in queue: ${queueName}`);
+      logger.info(`Waiting for ${type} transfer messages in queue: ${queueName}`);
 
-    channel.consume(
-      queueName,
-      async (message) => {
-        if (message !== null) {
-          try {
-            const data = JSON.parse(message.content.toString());
+      channel.consume(queueName, async (message) => {
+        if (!message) return;
 
-            if (!Array.isArray(data) || data?.length < 1) {
-              logger.warn({ data }, "Invalid data format");
-              channel.nack(message, false, false); // dead-letter
-              return;
-            }
+        try {
+          const data = JSON.parse(message.content.toString());
 
-            switch (type) {
-              case "single":
-                await processSingleTransfer(data[0]);
-                break;
-              case "bulk":
-                await processBulkTransfer(data);
-                break;
-              default:
-                logger.warn({ type }, "Unknown transfer type received");
-            }
-
-            channel.ack(message);
-          } catch (err) {
-            logger.error({ err }, `Error processing ${type} transfer message`);
-            channel.nack(message, false, false); // send to dead-letter queue
+          if (!Array.isArray(data) || data.length < 1) {
+            logger.warn({ data }, 'Invalid data format');
+            channel.nack(message, false, false);
+            return;
           }
-        }
-      },
-      { noAck: false }
-    );
 
-    // Graceful shutdown
-    process.on("SIGINT", async () => {
-      logger.info(`${type} transfer consumer shutting down (SIGINT)`);
-      await channel.close();
-      await connection.close();
-      process.exit(0);
-    });
-    process.on("SIGTERM", async () => {
-      logger.info(`${type} transfer consumer shutting down (SIGTERM)`);
-      await channel.close();
-      await connection.close();
-      process.exit(0);
-    });
-  } catch (error) {
-    logger.error({ err: error }, `Fatal error in ${type} transfer consumer`);
+          switch (type) {
+            case 'single':
+              await processSingleTransfer(data[0]);
+              break;
+            case 'bulk':
+              await processBulkTransfer(data);
+              break;
+            default:
+              logger.warn({ type }, 'Unknown transfer type');
+          }
+
+          channel.ack(message);
+        } catch (err) {
+          logger.error({ err }, 'Error processing message');
+          channel.nack(message, false, false); // dead-letter
+        }
+      }, { noAck: false });
+
+      connection.on('error', async (err) => {
+        logger.error({ err }, 'RabbitMQ connection error, retrying...');
+        await reconnect();
+      });
+      connection.on('close', async () => {
+        logger.warn('RabbitMQ connection closed, retrying...');
+        await reconnect();
+      });
+
+      async function reconnect() {
+        try {
+          if (channel) await channel.close();
+          if (connection) await connection.close();
+        } catch (_) { }
+        await new Promise(res => setTimeout(res, 5000)); // wait 5s
+        startConsumer(); // restart consumer
+      }
+
+    } catch (err) {
+      logger.error({ err }, 'Failed to start consumer, retrying in 5s...');
+      setTimeout(startConsumer, 5000);
+    }
   }
+
+  startConsumer();
 }
+
 
 function getTransferStatus(status, responseCode) {
   if (status === "Successful" && responseCode === "00") {
@@ -189,8 +194,9 @@ const processSingleTransfer = async (data) => {
 
 const processBulkTransfer = async (data) => {
   logger.info(`Processing ${data.length} bulk transfer`);
-  const activeProvider =
-    (await transferProviderService.getActiveProvider()?.slug) ?? "bankone";
+  const provider = await transferProviderService.getActiveProvider();
+
+  const activeProvider = provider ? provider.slug : "bankone";
 
   switch (activeProvider) {
     case "eazypay":
@@ -207,7 +213,8 @@ const processBulkTransfer = async (data) => {
 
 const processBulkTransferWithEazyPay = async (data) => {
   logger.info("Processing bulk transfer with EazyPay");
-  eazypayProcessor(data);
+  const transferData = JSON.stringify(data, null, 2)
+  eazypayProcessor(transferData);
 };
 
 const processBulkTransferWithPaystack = async (data) => {

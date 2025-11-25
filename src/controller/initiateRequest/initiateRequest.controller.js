@@ -1105,20 +1105,20 @@ const authoriserBulkApprove = async (req, res) => {
       _id: { $in: transactionIds },
     }).populate("mandate");
 
-    // const otpDetails = await Otp.findOne({
-    //   otp: req.body.otp,
-    //   user: user._id,
-    //   transaction: req.body.batchId,
-    // });
+    const otpDetails = await Otp.findOne({
+      otp: req.body.otp,
+      user: user._id,
+      transaction: req.body.batchId,
+    });
 
-    // if (!otpDetails) {
-    //   return res.status(404).json({
-    //     message: "OTP is incorrect or used",
-    //     status: "failed",
-    //   });
-    // }
+    if (!otpDetails) {
+      return res.status(404).json({
+        message: "OTP is incorrect or used",
+        status: "failed",
+      });
+    }
 
-    // await Otp.findByIdAndDelete(otpDetails._id);
+    await Otp.findByIdAndDelete(otpDetails._id);
     const transfersToQueue = [];
 
     await Promise.all(
@@ -1175,10 +1175,15 @@ const authoriserBulkApprove = async (req, res) => {
         transfersToQueue.push({
           originatingAccount: organization.accountName,
           transactionId: request._id,
+          amount: request.amount,
+          narration: request.narration,
+          bankCode: request.beneficiaryBankCode,
+          accountName: request.beneficiaryAccountName,
+          accountNumber: request.beneficiaryAccountNumber
         });
       })
     );
-    await publishTransfer(transfersToQueue, 'bulk');
+    await publishTransfer(transfersToQueue);
     return res.status(200).json({
       message: "Request approved successfully",
       status: "success",

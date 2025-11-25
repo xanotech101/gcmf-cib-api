@@ -6,7 +6,7 @@ class TransferProviderService {
         const provider = new TransferProvider({ name, slug });
         await provider.save();
         return provider;
-    } 
+    }
 
     async getProviders() {
         return await TransferProvider.find();

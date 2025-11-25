@@ -100,7 +100,7 @@ const initiateRequestSchema = new mongoose.Schema({
     type: String,
   },
   meta: {},
-  // providerResponse: [],
+  provider_type: String,
   time: Date,
   createdAt: { type: String },
   updatedAt: { type: String },

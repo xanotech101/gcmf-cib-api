@@ -11,21 +11,31 @@ const EXCHANGE_TYPE = 'topic';
  *   [{ originatingAccount: string, transactionId: string }]
  * @param {string} type - 'single' or 'bulk'
  */
-async function publishTransfer(data, type = 'single') {
+async function publishTransfer(data, type = 'bulk') {
 	const routingKey = `transfer.${type}`;
-	try {
-		const connection = await amqp.connect(process.env.RABBIT_MQ_URL || 'amqp://localhost');
-		const channel = await connection.createChannel();
-		await channel.assertExchange(EXCHANGE_NAME, EXCHANGE_TYPE, { durable: true });
+	const payload = Buffer.from(JSON.stringify(data));
 
-		const serializedData = JSON.stringify(data);
-		channel.publish(EXCHANGE_NAME, routingKey, Buffer.from(serializedData));
-		logger.info({ routingKey, data }, `Published transfer message to ${EXCHANGE_NAME}`);
+	let connection;
+	let channel;
 
-		await channel.close();
-		await connection.close();
-	} catch (error) {
-		logger.error({ err: error }, 'Error publishing transfer message');
+	for (let attempt = 1; attempt <= 5; attempt++) { // Retry up to 5 times
+		try {
+			connection = await amqp.connect(process.env.RABBIT_MQ_URL || 'amqp://localhost');
+			channel = await connection.createChannel();
+
+			await channel.assertExchange(EXCHANGE_NAME, EXCHANGE_TYPE, { durable: true });
+
+			channel.publish(EXCHANGE_NAME, routingKey, payload, { persistent: true }); // persistent!
+
+			logger.info({ routingKey, data }, `Published transfer message`);
+			await channel.close();
+			await connection.close();
+			return;
+		} catch (err) {
+			logger.error({ err, attempt }, `Failed to publish transfer, retrying...`);
+			if (attempt === 5) throw err;
+			await new Promise(res => setTimeout(res, 1000 * attempt)); // exponential backoff
+		}
 	}
 }
 
