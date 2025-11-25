@@ -70,7 +70,11 @@ app.use(bodyparser.json());
 
 
 app.get("/health", (req, res) => {
-  res.send("Welcome to GMFB Banking API");
+  res.status(200).json({
+    message: "Server is healthy",
+    version: "1.0.0",
+    status: "OK"
+  });
 });
 
 app.use("/api/token", tokenRoute);
