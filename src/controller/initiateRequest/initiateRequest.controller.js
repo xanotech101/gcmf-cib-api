@@ -13,8 +13,10 @@ const {
 } = require("../../services");
 const { getDateAndTime } = require("../../utils/utils");
 const Account = require("../../model/account");
-const { QueueTransfer } = require("../../services/messageQueue/queue");
-const authToken = process.env.AUTHTOKEN;
+const {
+  publishTransfer,
+} = require("../../services/messageQueue/transfer/publisher");
+const logger = require("../../utils/logger");
 
 const initiateRequest = async (req, res) => {
   try {
@@ -34,10 +36,10 @@ const initiateRequest = async (req, res) => {
       beneficiaryPhoneNumber: req.body.beneficiaryPhoneNumber,
       organizationId: mine.organizationId.toString(),
       transactionReference: mongoose.Types.ObjectId().toString().substr(0, 12),
-      type: req.body.type
+      type: req.body.type,
     });
 
-    const account = await Account.findById(mine.organizationId.toString())
+    const account = await Account.findById(mine.organizationId.toString());
 
     const mandate = await Mandate.findOne({
       organizationId: mine.organizationId.toString(),
@@ -57,12 +59,21 @@ const initiateRequest = async (req, res) => {
 
     request.mandate = mandate._id;
     request.initiator = req.user._id;
-    request.narration = ('Transfer from ' + account?.accountName + ' to ' + req.body.beneficiaryAccountName + '\\\\' + req.body.narration)?.slice(0, 100);
+    request.narration = (
+      "Transfer from " +
+      account?.accountName +
+      " to " +
+      req.body.beneficiaryAccountName +
+      "\\\\" +
+      req.body.narration
+    )?.slice(0, 100);
 
     // the organization label from the organizationId to add the request
-    const getOrganizationLabel = await Account.findOne({ _id: mine.organizationId }).select('organizationLabel')
+    const getOrganizationLabel = await Account.findOne({
+      _id: mine.organizationId,
+    }).select("organizationLabel");
     if (getOrganizationLabel.organizationLabel !== null) {
-      request.organizationLabel = getOrganizationLabel.organizationLabel
+      request.organizationLabel = getOrganizationLabel.organizationLabel;
     }
     const result = await request.save();
     const notificationsToCreate = [];
@@ -83,7 +94,8 @@ const initiateRequest = async (req, res) => {
 
       const message = {
         firstName: verifier.firstName,
-        message: 'The below request was initiated for your verification. Kindly login to your account to review',
+        message:
+          "The below request was initiated for your verification. Kindly login to your account to review",
         amount: result.amount,
         reference: result.transactionReference,
         year: new Date().getFullYear(),
@@ -104,7 +116,7 @@ const initiateRequest = async (req, res) => {
       transaction: result._id,
       message: `${user.firstName} ${user.lastName} initiated a transaction request on ${date} by ${time}`,
       organization: mine.organizationId,
-      organizationLabel: mine.organizationLabel
+      organizationLabel: mine.organizationLabel,
     });
 
     return res.status(201).json({
@@ -371,11 +383,9 @@ const getRequestById = async (req, res) => {
 };
 
 const declineRequest = async (req, res) => {
-  const mine = await User.findById(req.user._id);
+  const user = await User.findById(req.user._id);
   try {
     const _id = req.params.id;
-    const userId = req.user._id;
-
     const request = await InitiateRequest.findById(_id).populate("mandate");
 
     if (!request) {
@@ -387,7 +397,7 @@ const declineRequest = async (req, res) => {
 
     const otpDetails = await Otp.findOne({
       otp: req.body.otp,
-      user: userId,
+      user: user._id,
       transaction: request._id,
     });
 
@@ -398,7 +408,7 @@ const declineRequest = async (req, res) => {
       });
     }
 
-    if (request.status === "approved") {
+    if (request.status === InitiateRequest.APPROVAL_STATUS.APPROVED) {
       return res.status(401).json({
         message:
           "You can no longer edit this request after the verifier has approved",
@@ -406,31 +416,25 @@ const declineRequest = async (req, res) => {
       });
     }
 
-    let duplicate = false;
-    for (let i = 0; i < request.verifiersAction.length; i++) {
-      let transaction = request.verifiersAction[i];
-      if (
-        transaction.verifierID == req.user._id &&
-        transaction.status === "rejected"
-      ) {
+    const userAction = request.verifiersAction.find(
+      ({ verifierID }) => verifierID == user._id
+    );
+
+    if (userAction) {
+      if (userAction.status === "rejected") {
         return res.status(404).json({
           message: "You have already rejected this request",
           status: "failed",
         });
-      } else if (
-        transaction.verifierID == req.user._id &&
-        transaction.status === "verified"
-      ) {
-        transaction.status = "rejected";
-        transaction.reason = req.body.reason;
-        duplicate = true;
       }
-    }
-
-    if (duplicate === false) {
+      if (userAction.status === "verified") {
+        userAction.status = "rejected";
+        userAction.reason = req.body.reason;
+      }
+    } else {
       request.verifiersAction.push({
         status: "rejected",
-        verifierID: userId,
+        verifierID: user._id,
         reason: req.body.reason,
       });
     }
@@ -440,16 +444,13 @@ const declineRequest = async (req, res) => {
         identifier: request._id,
         user: request.initiator,
         title: "Transaction Request Declined",
-        message: `A verifier has declined your transaction request for ${request.customerName}`,
-        message: `A verifier has declined your transaction request for ${request.customerName}`,
-      }
+        message: `A verifier has declined your transaction request for ${request.beneficiaryAccountName}`,
+      },
     ]);
 
-    request.status = "in progress";
+    request.status = InitiateRequest.APPROVAL_STATUS.IN_PROGRESS;
 
-    if (
-      request.verifiersAction.length === request.mandate.numberOfVerifiers
-    ) {
+    if (request.verifiersAction.length === request.mandate.numberOfVerifiers) {
       await notificationService.createNotifications([
         {
           identifier: request._id,
@@ -459,12 +460,12 @@ const declineRequest = async (req, res) => {
         },
       ]);
 
-      request.status = "awaiting authorization";
+      request.status = InitiateRequest.APPROVAL_STATUS.AWAITING_AUTHORIZATION;
 
       //send mail to authoriser
-      const authoriserInfo = await User.findById(request.mandate.authoriser).select(
-        "email firstName _id"
-      );
+      const authoriserInfo = await User.findById(
+        request.mandate.authoriser
+      ).select("email firstName _id");
 
       const subject = "Authorization Required";
 
@@ -472,25 +473,30 @@ const declineRequest = async (req, res) => {
         firstName: authoriserInfo.firstName,
         amount: request.amount,
         reference: request.transactionReference,
-        message: 'The below request requires your authorization. Kindly login to your account to review',
+        message:
+          "The below request requires your authorization. Kindly login to your account to review",
         year: new Date().getFullYear(),
       };
 
-      await sendEmail(authoriserInfo.email, subject, "transfer-request", message);
+      await sendEmail(
+        authoriserInfo.email,
+        subject,
+        "transfer-request",
+        message
+      );
     }
 
     // create audit trail
-    const user = await User.findById(req.user._id);
     let dt = new Date(new Date().toISOString());
     let date = dt.toString().slice(0, 15);
     let time = dt.toString().slice(16, 21);
 
     let audit = await AuditTrail.create({
-      user: req.user._id,
+      user: user._id,
       type: "transaction",
       transaction: request._id,
       message: `${user.firstName} rejected a transaction request on ${date} by ${time}`,
-      organization: mine.organizationId,
+      organization: user.organizationId,
     });
 
     await audit.save();
@@ -580,15 +586,13 @@ const approveRequest = async (req, res) => {
         identifier: request._id,
         user: request.initiator,
         title: "Transaction Request Approved",
-        message: `A verifier has approved your transaction request for ${request.customerName}`,
+        message: `A verifier has approved your transaction request for ${request.beneficiaryAccountName}`,
       },
     ]);
 
-    request.status = "in progress";
+    request.status = InitiateRequest.APPROVAL_STATUS.IN_PROGRESS;
 
-    if (
-      request.verifiersAction.length == request.mandate.numberOfVerifiers
-    ) {
+    if (request.verifiersAction.length == request.mandate.numberOfVerifiers) {
       await notificationService.createNotifications([
         {
           identifier: request._id,
@@ -597,12 +601,12 @@ const approveRequest = async (req, res) => {
           message: "New transaction request require your review",
         },
       ]);
-      request.status = "awaiting authorization";
+      request.status = InitiateRequest.APPROVAL_STATUS.AWAITING_AUTHORIZATION;
 
       //send mail to authoriser
-      const authoriserInfo = await User.findById(request.mandate.authoriser).select(
-        "email firstName _id"
-      );
+      const authoriserInfo = await User.findById(
+        request.mandate.authoriser
+      ).select("email firstName _id");
 
       const subject = "Authorization Required";
 
@@ -610,11 +614,17 @@ const approveRequest = async (req, res) => {
         firstName: authoriserInfo.firstName,
         amount: request.amount,
         reference: request.transactionReference,
-        message: 'The below request requires your authorization. Kindly login to your account to review',
+        message:
+          "The below request requires your authorization. Kindly login to your account to review",
         year: new Date().getFullYear(),
       };
 
-      await sendEmail(authoriserInfo.email, subject, "transfer-request", message);
+      await sendEmail(
+        authoriserInfo.email,
+        subject,
+        "transfer-request",
+        message
+      );
     }
 
     // create audit trail
@@ -649,12 +659,10 @@ const approveRequest = async (req, res) => {
 };
 
 const authoriserApproveRequest = async (req, res) => {
-  const mine = await User.findById(req.user._id);
-  const organization = await Account.findById(mine.organizationId);
+  const user = await User.findById(req.user._id);
+  const accountInfo = await Account.findById(user.organizationId);
   try {
     const _id = req.params.id;
-    const userId = req.user._id;
-
     const request = await InitiateRequest.findById(_id).populate("mandate");
 
     if (!request) {
@@ -666,7 +674,7 @@ const authoriserApproveRequest = async (req, res) => {
 
     const otpDetails = await Otp.findOne({
       otp: req.body.otp,
-      user: userId,
+      user: user._id,
       transaction: request._id,
     });
 
@@ -677,10 +685,13 @@ const authoriserApproveRequest = async (req, res) => {
       });
     }
 
-    // update and save request
-    request.status = "approved";
-    request.transferStatus = "queued";
-    request.updatedAt = new Date();
+    if (request.transferStatus !== InitiateRequest.TRANSFER_STATUS.PENDING) {
+      logger.warn({ requestId: request._id }, "Transaction not approved");
+      return;
+    }
+
+    request.status = InitiateRequest.APPROVAL_STATUS.APPROVED;
+    request.transferStatus = InitiateRequest.TRANSFER_STATUS.QUEUED;
 
     request.authoriserAction = {
       status: "approved",
@@ -688,78 +699,44 @@ const authoriserApproveRequest = async (req, res) => {
     };
     await request.save();
 
-    // notify initiator and verifiers
     const verifiers = request.mandate.verifiers;
     await notificationService.createNotifications([
       {
         identifier: request._id,
         user: request.initiator,
         title: "Request approved",
-        message: `Your transaction request for ${request.customerName} has been approved`,
+        message: `Your transaction request for ${request.beneficiaryAccountName} has been approved`,
       },
       ...verifiers.map((verifier) => ({
         transaction: request._id,
         user: verifier,
         title: "Request approved",
-        message: `Transaction request for ${request.customerName} has been approved`,
+        message: `Transaction request for ${request.beneficiaryAccountName} has been approved`,
       })),
     ]);
 
-    // create audit trail
-    const user = await User.findById(req.user._id);
     const { date, time } = getDateAndTime();
     await auditTrailService.createAuditTrail({
-      user: req.user._id,
+      user: user._id,
       type: "transaction",
       transaction: request._id,
       message: `${user.firstName} approved a transaction request on ${date} by ${time}`,
-      organization: mine.organizationId,
-      organizationLabel: mine.organizationLabel
+      organization: user.organizationId,
+      organizationLabel: user.organizationLabel,
     });
 
-    // delete otp from database
     await Otp.findByIdAndDelete(otpDetails._id);
-
-
-    // send request to queue
-    if (request.type === "inter-bank") {
-      const payload = {
-        _id: request._id,
-        Amount: request.amount * 100,
-        Payer: organization.accountName,
-        PayerAccountNumber: request.payerAccountNumber,
-        ReceiverAccountNumber: request.beneficiaryAccountNumber,
-        ReceiverAccountType: request.beneficiaryAccountType,
-        ReceiverBankCode: request.beneficiaryBankCode,
-        ReceiverPhoneNumber: request.beneficiaryPhoneNumber,
-        ReceiverName: request.beneficiaryBankName,
-        ReceiverBVN: "",
-        ReceiverKYC: "",
-        TransactionReference: request.transactionReference,
-        NIPSessionID: request.NIPSessionID,
-        Token: authToken,
-        Narration: request.narration,
-      };
-
-      QueueTransfer(payload, 'inter-bank')
-    } else {
-      const payload = {
-        _id: request._id,
-        Amount: request.amount * 100,
-        RetrievalReference: request.transactionReference,
-        FromAccountNumber: request.payerAccountNumber,
-        ToAccountNumber: request.beneficiaryAccountNumber,
-        AuthenticationKey: authToken,
-        Narration: request.narration,
-      };
-      QueueTransfer(payload, 'intra-bank')
-    }
+    await publishTransfer([
+      {
+        originatingAccount: accountInfo.accountName,
+        transactionId: request._id,
+      },
+    ]);
 
     return res.status(200).json({
       message: "Request approved successfully",
-      status: "success"
+      status: "success",
     });
-
   } catch (error) {
     console.log(error);
     res.status(500).json({
@@ -813,13 +790,13 @@ const authoriserDeclineRequest = async (req, res) => {
         identifier: request._id,
         user: request.initiator,
         title: "Request not Authorised",
-        message: `Your transaction request for ${request.customerName} has been declined`,
+        message: `Your transaction request for ${request.beneficiaryAccountName} has been declined`,
       },
       ...verifiers.map((verifier) => ({
         transaction: request._id,
         user: verifier,
         title: "Request not Authorised",
-        message: `Transaction request for ${request.customerName} has been declined`,
+        message: `Transaction request for ${request.beneficiaryAccountName} has been declined`,
       })),
     ]);
 
@@ -838,7 +815,6 @@ const authoriserDeclineRequest = async (req, res) => {
     });
   }
 };
-
 
 const getAllTransferRequests = async (req, res) => {
   const { page, perPage, search, status } = req.query;
@@ -888,9 +864,6 @@ const getAllTransferRequests = async (req, res) => {
         $unwind: "$organization",
       },
       {
-        $unwind: "$organization",
-      },
-      {
         $facet: {
           data: [
             {
@@ -920,13 +893,14 @@ const getAllTransferRequests = async (req, res) => {
         $unwind: "$meta",
       },
     ]);
+
+    const { data, meta } = request[0] || {};
     return res.status(200).json({
       message: "Request fetched successfully",
       status: "success",
       data: {
-        requests: request[0]?.data || [],
-
-        meta: request[0]?.meta || {},
+        requests: data || [],
+        meta: meta || {},
       },
     });
   } catch (error) {
@@ -939,79 +913,61 @@ const getAllTransferRequests = async (req, res) => {
 };
 
 const approveBulkRequest = async (req, res) => {
-  const mine = await User.findById(req.user._id);
   try {
-    const transactionIds = req.body.transactionIds;
-
-    const requests = await InitiateRequest.find({
-      _id: { $in: transactionIds },
-    }).populate("mandate");
-
-    const batchVerificationIds = requests.map((r) => r.batchVerificationID);
-    const allSame = batchVerificationIds.every(
-      (v) => v === batchVerificationIds[0]
-    );
-
-    if (!allSame) {
-      return res.status(400).json({
-        message: "All transactions must have the same batch verification ID",
-        status: "failed",
-      });
-    }
-
     const errors = [];
     const auditMessages = [];
     const notificationMessages = [];
     const verifierIds = [];
     const authorisers_message = [];
 
+    const transactionIds = req.body.transactionIds;
+    const requests = await InitiateRequest.find({
+      _id: { $in: transactionIds },
+    }).populate("mandate");
+
+    const otpDetails = await Otp.findOne({
+      otp: req.body.otp,
+      user: req.user._id,
+      transaction: req.body.batchVerificationID,
+    });
+
+    if (!otpDetails) {
+      errors.push({
+        message: `OTP is incorrect or used for batch verification`,
+      });
+      return res.status(400).json({
+        message: "OTP is incorrect or used for batch verification",
+        status: "failed",
+        errors,
+      });
+    }
+
     await Promise.all(
       requests.map(async (request) => {
         try {
 
-          if (request.status === "approved") {
+          if (request.status === InitiateRequest.APPROVAL_STATUS.APPROVED) {
             errors.push({
               message: `Transaction ${request._id} has already been approved`,
             });
             return;
           }
 
-          const otpDetails = await Otp.findOne({
-            otp: req.body.otp,
-            user: req.user._id,
-            transaction: mongoose.Types.ObjectId(request.batchVerificationID),
-          });
-
-          if (!otpDetails) {
-            errors.push({
-              message: `OTP is incorrect or used for transaction ${request._id}`,
-            });
-            return;
-          }
-
-          let duplicate = false;
-          for (let i = 0; i < request.verifiersAction.length; i++) {
-            let transaction = request.verifiersAction[i];
-            if (
-              transaction.verifierID == req.user._id &&
-              transaction.status === "verified"
-            ) {
+          const userAction = request.verifiersAction.find(
+            (action) => action.verifierID == req.user._id
+          );
+          if (userAction) {
+            if (userAction.status === "verified") {
               errors.push({
                 message: `You have already approved transaction ${request._id}`,
               });
-              duplicate = true;
-              break;
-            } else if (
-              transaction.verifierID == req.user._id &&
-              transaction.status === "rejected"
-            ) {
-              transaction.reason = req.body.reason;
-              transaction.status = "verified";
-              duplicate = true;
+              return;
             }
-          }
-
-          if (duplicate === false) {
+            if (userAction.status === "rejected") {
+              userAction.reason = req.body.reason;
+              userAction.status = "verified";
+            }
+          } else {
             request.verifiersAction.push({
               status: "verified",
               verifierID: req.user._id,
@@ -1021,38 +977,37 @@ const approveBulkRequest = async (req, res) => {
 
           verifierIds.push(request.mandate.authoriser);
 
-          // send notification to authorizer
           notificationMessages.push({
-            transaction: requests[0].batchVerificationID,
+            transaction: req.body.batchVerificationID,
             user: request.initiator,
             title: "Transaction Request Approved",
             message: `A verifier has approved your transaction request for ${request.mandate.accountName}`,
           });
 
-          request.status = "in progress";
+          request.status = InitiateRequest.APPROVAL_STATUS.IN_PROGRESS;
 
           if (
-            request.verifiersAction.length ==
-            request.mandate.numberOfVerifiers
+            request.verifiersAction.length == request.mandate.numberOfVerifiers
           ) {
-            // send notification to authoriser
             notificationMessages.push({
-              transaction: requests[0].batchVerificationID,
+              transaction: req.body.batchVerificationID,
               user: request.mandate.authoriser,
               title: "Authorization Required",
               message: "New transaction request requires your review",
             });
 
-            request.status = "awaiting authorization";
+            request.status =
+              InitiateRequest.APPROVAL_STATUS.AWAITING_AUTHORIZATION;
 
-            // send email to authoriser
             const authoriserInfo = await User.findById(
               request.mandate.authoriser
             ).select("email firstName _id");
+
             if (authoriserInfo) {
               const message = {
                 firstName: authoriserInfo.firstName,
-                message: 'The below request requires your authorization. Kindly login to your account to review',
+                message:
+                  "The below request requires your authorization. Kindly login to your account to review",
                 amount: request.amount,
                 reference: request.transactionReference,
                 year: new Date().getFullYear(),
@@ -1067,30 +1022,54 @@ const approveBulkRequest = async (req, res) => {
             }
           }
 
-          // create audit trail message
           auditMessages.push(
-            `${req.user.firstName} verified a transaction request for ${request.customerName}`
+            `${req.user.firstName} verified a transaction request for ${request.beneficiaryAccountName}`
           );
 
-          request.save();
-          await Otp.findByIdAndDelete(otpDetails._id);
-
+          await request.save();
         } catch (error) {
-          console.log(`Error updating status for request ${request._id}:`, error);
+          console.log(
+            `Error updating status for request ${request._id}:`,
+            error
+          );
         }
       })
     );
 
-    if (authorisers_message.length > 0) {
-      sendEmail(
-        authorisers_message[0].receiver,
-        "Authorization Required",
-        "transfer-request",
-        authorisers_message[0].message
+    await Otp.findByIdAndDelete(otpDetails._id);
+
+    const uniqueNotifications = [];
+    const notificationUserSet = new Set();
+    for (const n of notificationMessages) {
+      const key = `${n.user}`;
+      if (!notificationUserSet.has(key)) {
+        uniqueNotifications.push(n);
+        notificationUserSet.add(key);
+      }
+    }
+
+    if (uniqueNotifications.length > 0) {
+      await notificationService.createNotifications(uniqueNotifications);
+    }
+
+    const uniqueEmails = [];
+    const emailUserSet = new Set();
+    for (const e of authorisers_message) {
+      const key = `${e.receiver}`;
+      if (!emailUserSet.has(key)) {
+        uniqueEmails.push(e);
+        emailUserSet.add(key);
+      }
+    }
+    for (const email of uniqueEmails) {
+      await sendEmail(
+        email.receiver,
+        email.subject,
+        email.title,
+        email.message
       );
     }
 
-    // create audit trail message
     if (auditMessages.length > 0) {
       let dt = new Date(new Date().getTime() + 60 * 60 * 1000 * 3);
       let auditTrailMessage = {
@@ -1100,39 +1079,6 @@ const approveBulkRequest = async (req, res) => {
         type: "verification",
       };
       await AuditTrail.create(auditTrailMessage);
-    }
-
-    // send notifications
-    if (notificationMessages.length > 0) {
-      await notificationService.createNotifications([
-        {
-          identifier: notificationMessages[0].transaction,
-          user: notificationMessages[0].user,
-          title: "Authorization Required",
-          message: "New transaction request require your review",
-        },
-      ]);
-    }
-
-    // send emails
-    if (notificationMessages.length > 0) {
-      const authoriserInfo = await User.findById(
-        notificationMessages[0].user
-      ).select("email firstName _id");
-
-      const message = {
-        firstName: authoriserInfo.firstName,
-        message: 'The below request requires your authorization. Kindly login to your account to review',
-        reference: notificationMessages[0].transaction,
-        year: new Date().getFullYear(),
-      };
-
-      await sendEmail(
-        authoriserInfo.email,
-        notificationMessages[0].title,
-        "transfer-request",
-        message
-      );
     }
 
     return res.status(200).json({
@@ -1149,50 +1095,19 @@ const approveBulkRequest = async (req, res) => {
   }
 };
 
-const authoriserBulkaprove = async (req, res) => {
+const authoriserBulkApprove = async (req, res) => {
   try {
-    const mine = await User.findById(req.user._id);
-    const organization = await Account.findById(mine.organizationId);
+    const user = await User.findById(req.user._id);
+    const organization = await Account.findById(user.organizationId);
     const transactionIds = req.body.transactions;
-    const userId = req.user._id;
-    let transfer;
 
     const requests = await InitiateRequest.find({
       _id: { $in: transactionIds },
     }).populate("mandate");
 
-    const requestsByBatchVerificationId = requests.reduce(
-      (accumulator, request) => {
-        const batchVerificationId = request.batchVerificationID.toString();
-        accumulator[batchVerificationId] =
-          accumulator[batchVerificationId] || [];
-        accumulator[batchVerificationId].push(request);
-        return accumulator;
-      },
-      {}
-    );
-
-    const batchVerificationId = req.body.batchId;
-
-    if (!batchVerificationId) {
-      return res
-        .status(400)
-        .json({ message: "Batch verification ID is required", success: false });
-    }
-
-    if (!(batchVerificationId in requestsByBatchVerificationId)) {
-      return res.status(400).json({
-        message: `No transactions found for batch verification ID ${batchVerificationId}`,
-        success: false,
-      });
-    }
-
-    const requestsToApprove =
-      requestsByBatchVerificationId[batchVerificationId];
-
     const otpDetails = await Otp.findOne({
       otp: req.body.otp,
-      user: userId,
+      user: user._id,
       transaction: req.body.batchId,
     });
 
@@ -1203,88 +1118,75 @@ const authoriserBulkaprove = async (req, res) => {
       });
     }
 
-    requestsToApprove.map(async (request) => {
-      // update and save request
+    await Otp.findByIdAndDelete(otpDetails._id);
+    const transfersToQueue = [];
 
-      request.status = "approved";
-      request.updatedAt = new Date();
-      request.transferStatus = "queued";
+    await Promise.all(
+      requests.map(async (request) => {
+        if (
+          request.transferStatus !== InitiateRequest.TRANSFER_STATUS.PENDING
+        ) {
+          logger.warn(
+            { requestId: request._id },
+            "Transaction already processed"
+          );
+          return;
+        }
 
-      request.authoriserAction = {
-        status: "approved",
-        reason: req.body.reason,
-      };
-      await request.save();
+        request.status = InitiateRequest.APPROVAL_STATUS.APPROVED;
+        request.updatedAt = new Date();
+        request.transferStatus = InitiateRequest.TRANSFER_STATUS.QUEUED;
 
-      // add notification and audit trail to arrays
-      const verifiers = request.mandate.verifiers;
+        request.authoriserAction = {
+          status: "approved",
+          reason: req.body.reason,
+        };
 
-      await notificationService.createNotifications([
-        {
-          identifier: request._id,
-          user: request.initiator,
-          title: "Request approved",
-          message: `Your transaction request for ${request.mandate.accountName} has been approved`,
-        },
-        ...verifiers.map((verifier) => ({
+        await request.save();
+
+        const verifiers = request.mandate.verifiers;
+
+        await notificationService.createNotifications([
+          {
+            identifier: request._id,
+            user: request.initiator,
+            title: "Request approved",
+            message: `Your transaction request for ${request.mandate.accountName} has been approved`,
+          },
+          ...verifiers.map((verifier) => ({
+            transaction: request._id,
+            user: verifier,
+            title: "Request approved",
+            message: `Transaction request for ${request.mandate.accountName} has been approved`,
+          })),
+        ]);
+
+        const { date, time } = getDateAndTime();
+
+        await auditTrailService.createAuditTrail({
+          user: req.user._id,
+          type: "transaction",
           transaction: request._id,
-          user: verifier,
-          title: "Request approved",
-          message: `Transaction request for ${request.mandate.accountName} has been approved`,
-        })),
-      ]);
+          message: `${user.firstName} approved a transaction request on ${date} by ${time}`,
+          organization: user.organizationId,
+          organizationLabel: user.organizationLabel,
+        });
 
-      // create audit trail
-      const user = await User.findById(req.user._id);
-      const { date, time } = getDateAndTime();
-      await auditTrailService.createAuditTrail({
-        user: req.user._id,
-        type: "transaction",
-        transaction: request._id,
-        message: `${user.firstName} approved a transaction request on ${date} by ${time}`,
-        organization: mine.organizationId,
-        organizationLabel: mine.organizationLabel
-      });
-
-      // delete otp from database
-      await Otp.findByIdAndDelete(otpDetails._id);
-
-      if (request.type === "inter-bank") {
-        const payload = {
-          _id: request._id,
-          Amount: request.amount * 100,
-          Payer: organization.accountName,
-          PayerAccountNumber: request.payerAccountNumber,
-          ReceiverAccountNumber: request.beneficiaryAccountNumber,
-          ReceiverAccountType: request.beneficiaryAccountType,
-          ReceiverBankCode: request.beneficiaryBankCode,
-          ReceiverPhoneNumber: request.beneficiaryPhoneNumber,
-          ReceiverName: request.beneficiaryBankName,
-          ReceiverBVN: "",
-          ReceiverKYC: "",
-          TransactionReference: request.transactionReference,
-          NIPSessionID: request.NIPSessionID,
-          Token: authToken,
-          Narration: request.narration,
-        };
-
-        QueueTransfer(payload, 'inter-bank')
-      } else {
-        const payload = {
-          _id: request._id,
-          Amount: request.amount * 100,
-          RetrievalReference: request.transactionReference,
-          FromAccountNumber: request.payerAccountNumber,
-          ToAccountNumber: request.beneficiaryAccountNumber,
-          AuthenticationKey: authToken,
-          Narration: request.narration,
-        };
-        QueueTransfer(payload, 'intra-bank')
-      }
-    });
+        transfersToQueue.push({
+          originatingAccount: organization.accountName,
+          transactionId: request._id,
+          amount: request.amount,
+          narration: request.narration,
+          bankCode: request.beneficiaryBankCode,
+          accountName: request.beneficiaryAccountName,
+          accountNumber: request.beneficiaryAccountNumber
+        });
+      })
+    );
+    await publishTransfer(transfersToQueue);
     return res.status(200).json({
       message: "Request approved successfully",
-      status: "success"
+      status: "success",
     });
   } catch (error) {
     console.log(error);
@@ -1307,5 +1209,5 @@ module.exports = {
   authoriserDeclineRequest,
   getAllTransferRequests,
   approveBulkRequest,
-  authoriserBulkaprove,
+  authoriserBulkApprove,
 };

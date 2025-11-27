@@ -92,7 +92,7 @@ const generateOtpForBatchUpload = async (req, res) => {
     let newOtp = {}
 
     //check if the requested transactions are pending or in review
-    const checkForTransactionIds = await initiateRequestModel.find({ $or: [{ _id: { $in: transactionIds }, status: "pending" }, { _id: { $in: transactionIds }, status: "in progress" }, { _id: { $in: transactionIds }, status: "awaiting authorization" }] })
+    const checkForTransactionIds = await initiateRequestModel.find({ $or: [{ _id: { $in: transactionIds }, status: "pending" }, { _id: { $in: transactionIds }, status: "in progress" }, { _id: { $in: transactionIds }, status: "Awaiting authorization" }] })
     if (checkForTransactionIds.length !== transactionIds.length) {
       return res.status(400).send({ message: 'Some of these transactions do not exist or are not pending.' })
     }
@@ -172,7 +172,7 @@ const generateOtpForBatchUpload = async (req, res) => {
   }
 }
 
-const disableUserOtp = async(req, res) => {
+const disableUserOtp = async (req, res) => {
   try {
     const id = req.user;
     const user = await User.findById(id)
@@ -201,7 +201,7 @@ const disableUserOtp = async(req, res) => {
       // create one and send to the user
       newOtp = new Otp({
         user: user._id,
-        context:"disable user",
+        context: "disable user",
         otp,
       });
     } else {
@@ -239,7 +239,7 @@ const disableUserOtp = async(req, res) => {
   }
 }
 
-const enableUserOtp = async(req, res) => {
+const enableUserOtp = async (req, res) => {
   try {
     const id = req.user;
     const user = await User.findById(id)
@@ -268,7 +268,7 @@ const enableUserOtp = async(req, res) => {
       // create one and send to the user
       newOtp = new Otp({
         user: user._id,
-        context:"enable user",
+        context: "enable user",
         otp,
       });
     } else {
@@ -373,7 +373,7 @@ const Update_emailOTP = async (req, res) => {
   }
 };
 
-const disableAccountOtp = async(req, res) => {
+const disableAccountOtp = async (req, res) => {
   try {
     const id = req.user;
     const user = await User.findById(id)
@@ -402,7 +402,7 @@ const disableAccountOtp = async(req, res) => {
       // create one and send to the user
       newOtp = new Otp({
         user: user._id,
-        context:"disable account",
+        context: "disable account",
         otp,
       });
     } else {
@@ -440,7 +440,7 @@ const disableAccountOtp = async(req, res) => {
   }
 }
 
-const enableAccountOtp = async(req, res) => {
+const enableAccountOtp = async (req, res) => {
   try {
     const id = req.user;
     const user = await User.findById(id)
@@ -469,7 +469,7 @@ const enableAccountOtp = async(req, res) => {
       // create one and send to the user
       newOtp = new Otp({
         user: user._id,
-        context:"enable account",
+        context: "enable account",
         otp,
       });
     } else {
@@ -508,7 +508,7 @@ const enableAccountOtp = async(req, res) => {
 }
 
 module.exports = {
-  generateOTP, 
+  generateOTP,
   generateOtpForBatchUpload,
   disableUserOtp,
   enableUserOtp,

@@ -210,7 +210,6 @@ function organizationLabelAdminAuth(req, res, next) {
     }
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const arr = decoded.privileges;
-    const role = decoded.role
 
     if (!arr.includes("organizationLabelAdmin") && !arr.includes("superUser")) {
       return res.status(403).json({

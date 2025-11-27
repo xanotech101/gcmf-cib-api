@@ -5,7 +5,7 @@ const {
   getProviders,
   toggleProviderStatus,
   createProvider,
-} = require("../controller/bulkTransferProvider/bulkTransferProvider.controller");
+} = require("../controller/transferProvider/transferProvider.controller");
 
 
 const { superUserAuth } = require("../middleware/auth");

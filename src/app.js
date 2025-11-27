@@ -24,13 +24,13 @@ const settingsRoute = require("./routes/settings.route")
 const organizationRoute = require('./routes/organization')
 const externalRoute = require('./routes/external.route')
 const organizationLabelRoutes = require('./routes/organizationLabelAdmin')
-const bulkTransferProvider = require("./routes/bulkTransferProvider.route");
-const eazyPayRoutes = require("./routes/eazy-pay.routes");
+const transferProvider = require("./routes/transferProvider.route");
+const eazyPayRoutes = require("./routes/eazyPay.routes");
 
 
 const cors = require("cors");
 const connectDB = require("./config/db");
-const { setup } = require("./services/messageQueue/queueing_system");
+const { setup } = require("./services/messageQueue/queue");
 
 let URI = process.env.MONGO_URI;
 
@@ -53,10 +53,10 @@ app.use(
 );
 
 
-// todo: bring this back when rabbit mq is working
-// setup().catch((error) => {
-//   console.error(error);
-// });
+// todo: move this to a worker in the background maybe
+setup().catch((error) => {
+  console.error(error);
+});
 
 app.use('/static', express.static(path.join(__dirname, 'public')))
 
@@ -95,7 +95,7 @@ app.use("/api/settings", settingsRoute);
 app.use("/api/organization", organizationRoute);
 app.use('/api/thirdparty', externalRoute)
 app.use('/api/organizationLabel', organizationLabelRoutes)
-app.use("/api/settings/bulkTransferProviders", bulkTransferProvider);
+app.use("/api/settings/transfer_providers", transferProvider);
 app.use("/api/eazyPay", eazyPayRoutes);
 
 app.use(function (err, req, res, next) {

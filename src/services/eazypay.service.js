@@ -1,123 +1,124 @@
 const { default: axios } = require("axios");
 const eazyPayConfig = require("../config/eazy-pay");
+const qs = require("querystring");
+const CLIENT_CODE = "GROOMINGTEST";
 
 class EazyPayService {
-    async bulkTransfers(data, token) {
+    constructor() {
+        this.http = axios.create({
+            headers: {
+                "Content-Type": "application/json",
+                "clientcode": CLIENT_CODE
+            }
+        });
+    }
+
+    async openBatch(data, token) {
         try {
-            const response = await axios.post(
-                eazyPayConfig.bulk_transfer,
-                data,
-                {
-                    headers: {
-                        "Content-Type": 'application/json',
-                        "Authorization": `Bearer ${token}`
-                    }
-                }
-            )
-            return response.data
-        } catch (error) {
-            throw new Error('Error initiating bulk transfer with eazy pay');
+            const res = await this.http.post(eazyPayConfig.batch_open, data, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            return res.data;
+        } catch (err) {
+            throw new Error(`Error opening batch: ${err.message}`);
         }
     }
 
-    async balanceEnquiry(data, token) {
+    async addItemToBatch(batchId, data, token) {
         try {
-            const response = await axios.post(
-                eazyPayConfig.balance_enquiry,
-                data,
-                {
-                    headers: {
-                        "Content-Type": 'application/json',
-                        "Authorization": `Bearer ${token}`
-                    }
-                }
-            )
-            return response.data
-        } catch (error) {
-            const errorMessage =
-                error.response?.data?.message ||
-                error.response?.message ||
-                error.message ||
-                "Balance enquiry failed";
-
-            console.error("Balance enquiry Error:", errorMessage);
-
-            throw new Error(errorMessage);
+            const url = `${eazyPayConfig.add_itme_to_batch}/${batchId}`;
+            const res = await this.http.put(url, data, {
+                headers: { Authorization: `Bearer ${token}` },
+                params: { BatchId: batchId }
+            });
+            return res.data;
+        } catch (err) {
+            throw new Error(`Error adding items to batch: ${err.message}`);
         }
     }
 
-    async fundTransfer(data, token) {
+    async closeBatch(batchId, token) {
         try {
-            const response = await axios.post(
-                eazyPayConfig.fund_transfer,
-                data,
-                {
-                    headers: {
-                        "Content-Type": 'application/json',
-                        "Authorization": `Bearer ${token}`
-                    }
-                }
-            )
-            return response.data
-        } catch (error) {
-            const errorMessage =
-                error.response?.data?.message ||
-                error.response?.message ||
-                error.message ||
-                "Fund transfer failed";
-
-            console.error("Fund transfer Error:", errorMessage);
-
-            throw new Error(errorMessage);
+            const url = `${eazyPayConfig.close_batch}/${batchId}`;
+            const res = await this.http.put(url, {}, {
+                headers: { Authorization: `Bearer ${token}` },
+                params: { BatchId: batchId }
+            });
+            return res.data;
+        } catch (err) {
+            throw new Error(`Error closing batch: ${err.message}`);
         }
     }
 
-    async nameEnquiry(data, token) {
-        console.log('here')
+    async submitBatch(data, token) {
         try {
-            const response = await axios.post(
-                eazyPayConfig.name_enquiry,
-                data,
+            const res = await this.http.post(eazyPayConfig.submit_batch, data, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            return res.data;
+        } catch (err) {
+            throw new Error(`Error submitting batch: ${err.message}`);
+        }
+    }
+
+    async Tsq(batchId, token) {
+        try {
+            const url = `${eazyPayConfig.transfer_status}/${batchId}`;
+            const res = await this.http.get(url, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            return res.data;
+        } catch (err) {
+            throw new Error(`Error checking transaction status: ${err.message}`);
+        }
+    }
+
+    async TransactionDetails(batchId, transactionId, token) {
+        try {
+            const url = `${eazyPayConfig.transaction_details}/${batchId}/${transactionId}`;
+            const res = await this.http.get(url, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            return res.data;
+        } catch (err) {
+            throw new Error(`Error checking transaction details: ${err.message}`);
+        }
+    }
+
+
+    async resetToken() {
+        try {
+            const formData = {
+                client_id: process.env.MULIPAY_CLIENT_ID,
+                scope: process.env.MULIPAY_SCOPE,
+                client_secret: process.env.MULIPAY_CLIENT_SECRET,
+                grant_type: process.env.MULIPAY_GRANT_TYPE,
+            };
+
+            const res = await this.http.post(
+                eazyPayConfig.reset_token,
+                qs.stringify(formData),
                 {
                     headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${token}`,
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        "apiKey": process.env.MULIPAY_API_KEY
                     }
                 }
             );
-            return response.data;
-        } catch (error) {
-            const errorMessage =
-                error.response?.data?.message ||
-                error.response?.message ||
-                error.message ||
-                "Name enquiry failed";
 
-            console.error("Name Enquiry Error:", errorMessage);
+            const { access_token } = res.data;
 
-            throw new Error(errorMessage);
-        }
-    }
+            if (!access_token) {
+                throw new Error("No access_token returned from EazyPay");
+            }
 
+            return access_token;
 
-    async tsq(data) {
-        const token = ''
-        try {
-            const response = await axios.post(
-                eazyPayConfig.tsq,
-                data,
-                {
-                    headers: {
-                        "Content-Type": 'application/json',
-                        "Authorization": `${token}`
-                    }
-                }
-            )
-            return response.data
-        } catch (error) {
-            throw new Error('Error enquirying name with eazy pay');
+        } catch (err) {
+            throw new Error(`Error resetting token: ${err.message}`);
         }
     }
 
 }
+
 module.exports = new EazyPayService();

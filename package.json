@@ -7,7 +7,8 @@
     "start": "node src/app.js",
     "start:dev": "nodemon src/app.js",
     "seed:db": "node src/seeders/seed.js",
-    "start:cron": "node src/jobs/transferRetryJob.js",
+    "transferRetry:cron": "node src/jobs/transferRetryJob.js",
+    "processTransfer:cron": "node src/jobs/processTransferJob.js",
     "build": "npm install && node src/app.js"
   },
   "repository": {
@@ -57,6 +58,8 @@
     "nodemailer": "^6.9.0",
     "nodemailer-express-handlebars": "^6.1.0",
     "opossum": "^9.0.0",
+    "pino": "^9.9.0",
+    "pino-pretty": "^13.1.1",
     "uuid": "^9.0.0",
     "xls-to-json": "^2.1.1"
   },

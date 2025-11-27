@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const bulkTransferProvider = new mongoose.Schema({
+const transferProvider = new mongoose.Schema({
   name: {
     type: String,
     required: true,
@@ -17,9 +17,9 @@ const bulkTransferProvider = new mongoose.Schema({
   },
 });
 
-bulkTransferProvider.pre("save", async function (next) {
+transferProvider.pre("save", async function (next) {
   if (this.isModified("isActive") && this.isActive) {
-    await mongoose.model("bulkTransferProvider").updateMany(
+    await mongoose.model("transferProvider").updateMany(
       { isActive: true, _id: { $ne: this._id } },
       { $set: { isActive: false } }
     );
@@ -27,4 +27,4 @@ bulkTransferProvider.pre("save", async function (next) {
   next();
 });
 
-module.exports = mongoose.model("bulkTransferProvider", bulkTransferProvider);
+module.exports = mongoose.model("transferProvider", transferProvider);
