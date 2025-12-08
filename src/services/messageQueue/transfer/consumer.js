@@ -122,6 +122,8 @@ function getTransferStatus(status, responseCode) {
 const processSingleTransfer = async (data) => {
   logger.info(`Processing single transfer`);
   const { originatingAccountName, transactionId } = data;
+
+  const authToken = process.env.AUTHTOKEN
   const transaction = await InitiateRequest.findOneAndUpdate(
     { _id: transactionId },
     { $set: { status: "processing" } },

@@ -539,18 +539,18 @@ const approveRequest = async (req, res) => {
       });
     }
 
-    const otpDetails = await Otp.findOne({
-      otp: req.body.otp,
-      user: userId,
-      transaction: request._id,
-    });
+    // const otpDetails = await Otp.findOne({
+    //   otp: req.body.otp,
+    //   user: userId,
+    //   transaction: request._id,
+    // });
 
-    if (!otpDetails) {
-      return res.status(404).json({
-        message: "OTP is incorrect or used",
-        status: "failed",
-      });
-    }
+    // if (!otpDetails) {
+    //   return res.status(404).json({
+    //     message: "OTP is incorrect or used",
+    //     status: "failed",
+    //   });
+    // }
 
     let duplicate = false;
     for (let i = 0; i < request.verifiersAction.length; i++) {
@@ -643,7 +643,7 @@ const approveRequest = async (req, res) => {
 
     await audit.save();
     await request.save();
-    await Otp.findByIdAndDelete(otpDetails._id);
+    // await Otp.findByIdAndDelete(otpDetails._id);
 
     return res.status(200).json({
       message: "Request approved successfully",
@@ -672,18 +672,18 @@ const authoriserApproveRequest = async (req, res) => {
       });
     }
 
-    const otpDetails = await Otp.findOne({
-      otp: req.body.otp,
-      user: user._id,
-      transaction: request._id,
-    });
+    // const otpDetails = await Otp.findOne({
+    //   otp: req.body.otp,
+    //   user: user._id,
+    //   transaction: request._id,
+    // });
 
-    if (!otpDetails) {
-      return res.status(404).json({
-        message: "OTP is incorrect or used",
-        status: "failed",
-      });
-    }
+    // if (!otpDetails) {
+    //   return res.status(404).json({
+    //     message: "OTP is incorrect or used",
+    //     status: "failed",
+    //   });
+    // }
 
     if (request.transferStatus !== InitiateRequest.TRANSFER_STATUS.PENDING) {
       logger.warn({ requestId: request._id }, "Transaction not approved");
@@ -725,13 +725,13 @@ const authoriserApproveRequest = async (req, res) => {
       organizationLabel: user.organizationLabel,
     });
 
-    await Otp.findByIdAndDelete(otpDetails._id);
+    // await Otp.findByIdAndDelete(otpDetails._id);
     await publishTransfer([
       {
-        originatingAccount: accountInfo.accountName,
+        originatingAccountName: accountInfo.accountName,
         transactionId: request._id,
-      },
-    ]);
+      }
+    ], 'single');
 
     return res.status(200).json({
       message: "Request approved successfully",
