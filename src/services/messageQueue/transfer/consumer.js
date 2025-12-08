@@ -98,26 +98,26 @@ async function consumeTransfer(type = 'bulk') {
 
 
 function getTransferStatus(status, responseCode) {
-  if (status === "Successful" && responseCode === "00") {
-    return "successful";
-  }
 
-  if (status === "SuccessfulButFeeNotTaken") {
-    return "successful";
+  if ((status === "Successful" && responseCode === "00") ||
+    status === "SuccessfulButFeeNotTaken") {
+    return "approved";
   }
 
   if (
     status === "Pending" ||
     ["06", "91", "X06", "08", "09"].includes(responseCode)
   ) {
-    return "awaiting confirmation";
+    return "in progress";
   }
 
   if (status === "Reversed") {
-    return "reversed";
+    return "declined";
   }
-  return "failed";
+
+  return "declined";
 }
+
 
 const processSingleTransfer = async (data) => {
   logger.info(`Processing single transfer`);
