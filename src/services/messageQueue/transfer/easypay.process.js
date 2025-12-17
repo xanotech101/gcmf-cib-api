@@ -1,6 +1,7 @@
 const EazyPayService = require("../../eazypay.service");
 const InitiateRequest = require("../../../model/initiateRequest.model");
 const logger = require("../../../utils/logger");
+const bankOneService = require("../../bankOne.service");
 
 function generateBatchId() {
     const prefix = "AE458361787634223232381";
@@ -44,15 +45,21 @@ async function eazypayProcessor(data) {
             throw new Error("No transfer requests provided.");
         }
 
+        // ---------------------------------------
+        // 1️⃣ CALCULATE TOTAL AMOUNT
+        // ---------------------------------------
         const totalAmount = transferRequests.reduce(
             (sum, t) => sum + Number(t.amount || 0),
             0
         );
-        const itemCount = transferRequests.length;
 
+        const itemCount = transferRequests.length;
         const batchId = generateBatchId();
 
-        const items = transferRequests.map(req => {
+        // ---------------------------------------
+        // 2️⃣ PREPARE ITEMS
+        // ---------------------------------------
+        const items = transferRequests.map((req) => {
             const transactionId = generateTransactionId("PAY");
 
             return {
@@ -62,9 +69,10 @@ async function eazypayProcessor(data) {
                 bankCode: req.bankCode,
                 amount: Number(req.amount || 0),
                 narration: "Transfer request",
-                _id: req.transactionId
+                _id: req.transactionId,
             };
         });
+
         const paymentItems = items.map(({ _id, ...clean }) => clean);
 
         const submitPayload = {
@@ -77,26 +85,110 @@ async function eazypayProcessor(data) {
             paymentItems,
         };
 
+        // ---------------------------------------
+        // 3️⃣ GET BANKONE TOKEN
+        // ---------------------------------------
         const authToken = await getToken();
+        const bankOneToken = process.env.AUTHTOKEN
 
-        const submitResult = await eazyPayService.submitBatch(submitPayload, authToken);
+        // ---------------------------------------
+        // 4️⃣ CHECK BANKONE WITHDRAWABLE BALANCE
+        // ---------------------------------------
+        const accountResponse = await bankOneService.accountByAccountNo(
+            debitAccountNumber,
+            bankOneToken
+        );
 
-        for (const item of items) {
-            if (!item._id) {
-                continue;
+        if (
+            !accountResponse ||
+            !accountResponse?.WithdrawableBalance
+        ) {
+            throw new Error("Unable to retrieve account balance from BankOne");
+        }
+
+        const withdrawableBalance = Number(
+            accountResponse.WithdrawableBalance.replace(/,/g, "")
+        );
+
+        if (withdrawableBalance < totalAmount) {
+            // ❌ INSUFFICIENT BALANCE — FAIL ALL
+            for (const item of items) {
+                if (!item._id) continue;
+
+                const reqDoc = await InitiateRequest.findById(item._id);
+                if (!reqDoc) continue;
+
+                reqDoc.status = "declined";
+                reqDoc.transferStatus = "failed";
+                reqDoc.meta = {
+                    reason: "Insufficient account balance",
+                };
+
+                await reqDoc.save();
             }
-            const reqDoc = await InitiateRequest.findById(item._id);
-            if (!reqDoc) {
-                continue;
-            }
 
-            reqDoc.meta = {
-                transactionId: item.transactionId,
-                batchId: batchId,
-                transferStatus: "pending",
+            return {
+                batchId,
+                status: "failed",
+                reason: "Insufficient account balance",
             };
+        }
+
+        // ---------------------------------------
+        // 5️⃣ DEBIT CUSTOMER ACCOUNT (BANKONE)
+        // ---------------------------------------
+        const debitResponse = await bankOneService.debitCustomerAccount({
+            accountNumber: debitAccountNumber,
+            amount: totalAmount,
+            bankOneToken,
+        });
+
+        if (!debitResponse?.IsSuccessful) {
+            for (const item of items) {
+                if (!item._id) continue;
+
+                const reqDoc = await InitiateRequest.findById(item._id);
+                if (!reqDoc) continue;
+
+                reqDoc.status = "declined";
+                reqDoc.transferStatus = "failed";
+                reqDoc.meta = {
+                    reason: "BankOne debit failed",
+                };
+
+                await reqDoc.save();
+            }
+
+            return {
+                batchId,
+                status: "failed",
+                reason: "BankOne debit failed",
+            };
+        }
+
+        // ---------------------------------------
+        // 6️⃣ PROCESS WITH EAZYPAY / MULTIPAY
+        // ---------------------------------------
+        const submitResult = await eazyPayService.submitBatch(
+            submitPayload,
+            authToken
+        );
+
+        // ---------------------------------------
+        // 7️⃣ UPDATE REQUEST RECORDS
+        // ---------------------------------------
+        for (const item of items) {
+            if (!item._id) continue;
+
+            const reqDoc = await InitiateRequest.findById(item._id);
+            if (!reqDoc) continue;
 
             reqDoc.provider_type = "eazypay";
+            reqDoc.meta = {
+                transactionId: item.transactionId,
+                batchId,
+                transferStatus: "pending",
+            };
 
             await reqDoc.save();
         }
@@ -107,12 +199,12 @@ async function eazypayProcessor(data) {
             batchId,
             submitResult,
         };
-
     } catch (error) {
         console.log("❌ Error processing bulk transfer:", error);
         throw error;
     }
 }
+
 
 
 

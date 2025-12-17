@@ -300,8 +300,39 @@ class BankOneService {
       throw error.response.data;
     }
   }
-}
 
+  async debitCustomerAccount({
+    accountNumber,
+    amount,
+    narration = "Debit for bulk transfer",
+    GLCode = "1656",
+    authToken,
+  }) {
+    try {
+      const retrievalReference = Date.now().toString().slice(0, 12);
+      const payload = {
+        GLCode,
+        Token: authToken,
+        Narration: narration,
+        Amount: String(amount),
+        Fee: "53.75",
+        RetrievalReference: retrievalReference,
+        AccountNumber: accountNumber,
+      };
+
+      const response = await axios.post(
+        config.debitAccount,
+        payload
+      );
+
+      return response.data;
+    } catch (error) {
+      console.error("BankOne Debit Error:", error.response?.data || err);
+      throw error.response.data;
+    }
+  }
+
+}
 
 
 
