@@ -8,11 +8,12 @@ const {
   getAccountStatement,
   getNameEnquiry,
   interbankTransfer,
-   getAccountDetails,
+  getAccountDetails,
   getAccountInfo,
   getTransactionStatus,
   getAccountByAccountNoV2,
-  IntrabankAccountEnquiry
+  IntrabankAccountEnquiry,
+  debitAccount
 } = require("../controller/bankone/bankDetails");
 const { adminAuth, allUsersAuth, superUserAuth } = require("../middleware/auth");
 
@@ -28,6 +29,7 @@ router.post("/details", allUsersAuth, getAccountDetails);
 router.get("/info", allUsersAuth, getAccountInfo);
 router.post("/status", allUsersAuth, getTransactionStatus);
 router.post("/intra-bank/name-enquiry", allUsersAuth, IntrabankAccountEnquiry);
+router.post("/debit-account", allUsersAuth, debitAccount);
 
 
 module.exports = router;

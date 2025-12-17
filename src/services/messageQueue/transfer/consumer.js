@@ -155,7 +155,8 @@ const processSingleTransfer = async (data) => {
     const result = await bankOneService.doInterBankTransfer(interBankPayload);
 
     if (result.isSuccessful === false) {
-      transaction.status = TRANSFER_STATUS.AWAITING_CONFIRMATION;
+      transaction.status = APPROVAL_STATUS.IN_PROGRESS; // still in progress
+      transaction.transferStatus = TRANSFER_STATUS.AWAITING_CONFIRMATION;
       return await transaction.save();
     }
 
@@ -164,6 +165,8 @@ const processSingleTransfer = async (data) => {
       result.ResponseCode
     );
     transaction.status = transferstatus;
+    transaction.transferStatus = transferstatus === "approved" ? TRANSFER_STATUS.SUCCESSFUL : TRANSFER_STATUS.FAILED;
+
   }
 
   if (transaction.type === "intra-bank") {
@@ -178,7 +181,9 @@ const processSingleTransfer = async (data) => {
     const result = await bankOneService.doIntraBankTransfer(intraBankPayload);
 
     if (result.isSuccessful === false) {
-      transaction.status = TRANSFER_STATUS.AWAITING_CONFIRMATION;
+      transaction.status = APPROVAL_STATUS.IN_PROGRESS;
+      transaction.transferStatus = TRANSFER_STATUS.AWAITING_CONFIRMATION;
+
       return await transaction.save();
     }
 
@@ -187,7 +192,7 @@ const processSingleTransfer = async (data) => {
       result.ResponseCode
     );
     transaction.status = transferstatus;
-
+    transaction.transferStatus = transferstatus === "approved" ? TRANSFER_STATUS.SUCCESSFUL : TRANSFER_STATUS.FAILED;
     await transaction.save();
   }
 
@@ -222,6 +227,8 @@ const processBulkTransferWithEazyPay = async (data) => {
 const processBulkTransferWithPaystack = async (data) => {
   logger.info(`Processing ${data.length} bulk transfer with Paystack`);
 
+  const authToken = process.env.AUTHTOKEN
+
   const BATCH_SIZE = 100;
   for (let i = 0; i < data.length; i += BATCH_SIZE) {
     const batch = data.slice(i, i + BATCH_SIZE);
@@ -252,10 +259,15 @@ const processBulkTransferWithPaystack = async (data) => {
       }
     }
 
-    const preparedTransactions = [];
 
+    const bulkTransfers = [];
+    let totalAmountToDebit = 0;
+
+    // ---------------------------------------
+    // BUILD PAYSTACK PAYLOAD + CALCULATE TOTAL
+    // ---------------------------------------
     for (const transfer of interBankTransfers) {
-      const recipient = await TransferReciepient.findOne({
+      let recipient = await TransferReciepient.findOne({
         accountNumber: transfer.beneficiaryAccountNumber,
       });
 
@@ -265,20 +277,171 @@ const processBulkTransferWithPaystack = async (data) => {
             type: "nuban",
             account_number: transfer.beneficiaryAccountNumber,
             bank_code: transfer.beneficiaryBankCode,
-            ncurrency: "NGN"
+            currency: "NGN",
           });
-        console.log(newRecipient, "New Paystack recipient created");
-      } else {
-        // send to GMFB, when successful, add to preparedTransactions
-        preparedTransactions.push({
-          amount: transfer.amount * 100,
-          reference: transfer.transactionReference,
-          reason: transfer.narration,
-          recipient: recipient.reciepientCode,
+
+        recipient = await TransferReciepient.create({
+          accountNumber: transfer.beneficiaryAccountNumber,
+          reciepientCode: newRecipient.data.recipient_code,
         });
       }
+
+      bulkTransfers.push({
+        amount: transfer.amount * 100, // Paystack expects kobo
+        reference: transfer.transactionReference,
+        reason: transfer.narration,
+        recipient: recipient.reciepientCode,
+      });
+
+      totalAmountToDebit += transfer.amount;
     }
-    // Optionally: process preparedTransactions here if needed
+
+    // ---------------------------------------
+    // 1️⃣ CHECK BANKONE WITHDRAWABLE BALANCE
+    // ---------------------------------------
+    const payerAccountNo = interBankTransfers[0].payerAccountNumber;
+
+    const accountResponse = await bankOneService.accountByAccountNo(
+      payerAccountNo,
+      authToken
+    );
+
+    console.log('account balance response:', accountResponse)
+
+    if (
+      !accountResponse ||
+      !accountResponse?.WithdrawableBalance
+    ) {
+      throw new Error("Unable to retrieve account balance from BankOne");
+    }
+
+    const withdrawableBalance = Number(
+      accountResponse.WithdrawableBalance.replace(/,/g, "")
+    );
+
+    // ---------------------------------------
+    // 2️⃣ FAIL ALL TRANSFERS IF BALANCE IS LOW
+    // ---------------------------------------
+    if (withdrawableBalance < totalAmountToDebit) {
+      logger.warn(
+        `Insufficient balance. Available: ${withdrawableBalance}, Required: ${totalAmountToDebit}`
+      );
+
+      for (const transfer of interBankTransfers) {
+        transfer.status = "declined";
+        transfer.transferStatus = "failed";
+        transfer.meta = {
+          reason: "Insufficient account balance",
+        };
+        await transfer.save();
+      }
+
+      return; // ❌ STOP EXECUTION — DO NOT DEBIT OR CALL PAYSTACK
+    }
+
+    // ---------------------------------------
+    // ✅ BALANCE IS SUFFICIENT
+    // NEXT STEP: BANKONE DEBIT → PAYSTACK BULK
+    // ---------------------------------------
+
+    // ---------------------------------------
+    // 3️⃣ DEBIT CUSTOMER ACCOUNT (BANKONE)
+    // ---------------------------------------
+    const debitResponse = await bankOneService.debitCustomerAccount({
+      accountNumber: payerAccountNo,
+      amount: totalAmountToDebit,
+      authToken,
+    });
+
+    if (!debitResponse?.IsSuccessful) {
+      logger.error("BankOne debit failed:", debitResponse);
+
+      for (const transfer of interBankTransfers) {
+        transfer.status = "declined";
+        transfer.transferStatus = "failed";
+        transfer.meta = {
+          reason: "BankOne debit failed",
+        };
+        await transfer.save();
+      }
+
+      return; // ❌ STOP — DO NOT CALL PAYSTACK
+    }
+
+    logger.info("✅ BankOne debit successful");
+
+    // ---------------------------------------
+    // 4️⃣ PERFORM BULK TRANSFER TO PAYSTACK
+    // ---------------------------------------
+    const bulkTransferResponse = await paystackService.sendBulkTransferToPaystack(bulkTransfers);
+
+    logger.info("Paystack bulk transfer response", bulkTransferResponse);
+
+    if (!bulkTransferResponse?.status) {
+      logger.error("❌ Paystack bulk transfer failed");
+
+      for (const transfer of interBankTransfers) {
+        transfer.status = "declined";
+        transfer.transferStatus = "failed";
+        transfer.meta = {
+          reason: "Paystack bulk transfer failed",
+        };
+        await transfer.save();
+      }
+
+      return;
+    }
+
+    // ---------------------------------------
+    // ✅ BULK TRANSFER INITIATED SUCCESSFULLY
+    // NEXT STEP: VERIFY EACH PAYSTACK TRANSFER
+    // ---------------------------------------
+
+    // ---------------------------------------
+    // 5️⃣ VERIFY PAYSTACK TRANSFERS
+    // ---------------------------------------
+    for (const psTransfer of bulkTransferResponse.data) {
+      const { transfer_code, reference } = psTransfer;
+
+      const transaction = interBankTransfers.find(
+        (t) => t.transactionReference === reference
+      );
+
+      if (!transaction) continue;
+
+      try {
+        const statusResponse =
+          await paystackService.verifyPaystackTransfer(transfer_code);
+
+        const paystackStatus = statusResponse?.status;
+
+        transaction.meta = {
+          paystack: statusResponse,
+        };
+
+        if (paystackStatus === "success") {
+          transaction.status = "approved";
+          transaction.transferStatus = "successful";
+        } else if (paystackStatus === "failed") {
+          transaction.status = "declined";
+          transaction.transferStatus = "failed";
+        } else {
+          transaction.status = "in progress";
+          transaction.transferStatus = "pending";
+        }
+
+        await transaction.save();
+      } catch (error) {
+        transaction.status = "in progress";
+        transaction.transferStatus = "pending";
+        transaction.meta = {
+          reason: "Unable to verify Paystack transfer status",
+        };
+
+        await transaction.save();
+      }
+    }
+
   }
 };
 

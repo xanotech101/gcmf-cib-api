@@ -33,7 +33,7 @@ const getAccountByAccountNo = async (req, res) => {
 const getAccountByAccountNoV2 = async (req, res) => {
   try {
 
-    const accountDetails = await bankOneService.accountByAccountNoV2 (
+    const accountDetails = await bankOneService.accountByAccountNoV2(
       req.params.accountNo,
       authToken
     );
@@ -105,7 +105,7 @@ const getTransactionHistory = async (req, res) => {
       pageNo: req.query.pageNo || 1,
       PageSize: req.query.PageSize || 50,
     }
-  
+
     const transHistory = await bankOneService.transactionHistory(params);
 
     if (!transHistory) {
@@ -218,7 +218,7 @@ const getNameEnquiry = async (req, res) => {
   }
 };
 
-const bvnEnquiry = async (req, res) =>{
+const bvnEnquiry = async (req, res) => {
   try {
     const { bvn } = req.body;
 
@@ -239,7 +239,7 @@ const bvnEnquiry = async (req, res) =>{
       message: "BVN Enquiry retrieved successfully",
       data: enquiry,
     });
-    
+
   } catch (error) {
     console.log('controller', error)
     return res.status(500).json({
@@ -388,6 +388,36 @@ const IntrabankAccountEnquiry = async (req, res) => {
   }
 };
 
+const debitAccount = async (req, res) => {
+  try {
+    const { accountNumber, amount } = req.body
+    const DebitAccount = await bankOneService.debitCustomerAccount({
+      accountNumber,
+      amount,
+      authToken,
+    })
+    if (!DebitAccount.IsSuccessful) {
+      return res.status(500).json({
+        status: "Failed",
+        message: "Unable to get debit account",
+        data: DebitAccount,
+      });
+    }
+
+    return res.status(200).json({
+      status: "Success",
+      message: "account debit successfully",
+      data: DebitAccount,
+    });
+  } catch (error) {
+    console.log('controller', error)
+    return res.status(500).json({
+      status: "Failed",
+      message: error,
+    });
+  }
+};
+
 
 
 module.exports = {
@@ -402,7 +432,8 @@ module.exports = {
   getAccountInfo,
   getTransactionStatus,
   getAccountByAccountNoV2,
-  bvnEnquiry
+  bvnEnquiry,
+  debitAccount
 };
 
 

@@ -39,12 +39,69 @@ class PaystackService {
           },
         }
       );
+
       return response.data;
+
     } catch (error) {
-      logger.error({ error }, "Error creating Paystack transfer recipient");
-      throw new Error("Error creating Paystack transfer recipient");
+      logger.error({ error: error.response?.data || error }, "Paystack Transfer Recipient Error");
+
+      if (error.response && error.response.data) {
+        const paystackError = error.response.data;
+
+        throw {
+          status: false,
+          message: paystackError.message || "Failed to create transfer recipient",
+          code: paystackError.code || null,
+          errors: paystackError.errors || null,
+        };
+      }
+
+      throw {
+        status: false,
+        message: "Unable to reach Paystack service",
+        code: "network_error",
+      };
     }
   }
+
+  async sendBulkTransferToPaystack(transfers = []) {
+    try {
+      const payload = {
+        currency: "NGN",
+        source: "balance",
+        transfers,
+      };
+
+      const { data } = await axios.post(
+        config.bulk_transfer,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${config.secret_key}`,
+          },
+        }
+      );
+
+      return data;
+    } catch (err) {
+      logger.error("Paystack Bulk Transfer Error:", err.response?.data || err);
+      return null
+    }
+  }
+
+  async getTransferStatus(transferCode) {
+    try {
+      const { data } = await axios.get(
+        `${config.transfer_status}/${transferCode}`,
+        { headers: headers() }
+      );
+      return data;
+    } catch (err) {
+      logger.error({ err: err.response?.data || err }, 'Paystack get transfer status error');
+      throw err.response?.data || err;
+    }
+  }
+
 
   /**
    * Initiates a bulk transfer using Paystack's bulk transfer endpoint.
@@ -91,19 +148,57 @@ class PaystackService {
   *   ]
   * }
   */
-  async bulkTransfers(data) {
+  async sendBulkTransferToPaystack(transfers) {
     try {
-      const {data} = await axios.post(config.bulk_transfer, data, {
-        headers: {
-          Authorization: `Bearer ${config.secret_key}`,
-        },
-      });
+      const payload = {
+        currency: "NGN",
+        source: "balance",
+        transfers,
+      };
+
+      const { data } = await axios.post(
+        config.bulk_transfer,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.PAYSTACK_SECRET}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
       return data;
     } catch (error) {
-      logger.error({ error }, "Error initiating bulk transfer");
-      throw new Error("Error initiating bulk transfer");
+      console.error(
+        "Paystack bulk transfer error:",
+        error.response?.data || error
+      );
+      throw error.response?.data || error;
     }
   }
+
+  async verifyPaystackTransfer(transferCode) {
+    try {
+      const { data } = await axios.get(
+        `${config.transfer_status}/${transferCode}`,
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.PAYSTACK_SECRET}`,
+          },
+        }
+      );
+
+      return data;
+    } catch (error) {
+      console.error(
+        "Paystack transfer verification error:",
+        error.response?.data || error
+      );
+      throw error.response?.data || error;
+    }
+  }
+
+
 }
 
 module.exports = new PaystackService();
