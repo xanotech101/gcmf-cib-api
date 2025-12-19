@@ -1174,6 +1174,7 @@ const authoriserBulkApprove = async (req, res) => {
 
         transfersToQueue.push({
           originatingAccount: organization.accountName,
+          payerAccountNumber: request.payerAccountNumber,
           transactionId: request._id,
           amount: request.amount,
           narration: request.narration,

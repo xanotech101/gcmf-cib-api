@@ -157,7 +157,7 @@ const generateOtpForBatchUpload = async (req, res) => {
 
     return res.status(200).json({
       message: "Successfully sent otp code",
-      data: null,
+      data: otp,
       status: "success",
       batchID: newBatchverificationID
     });

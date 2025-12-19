@@ -49,6 +49,8 @@ function withBreaker(fn) {
 
 class BankOneService {
   async accountByAccountNo(accountNo, authToken) {
+
+    console.log(accountNo, authToken)
     try {
       const { data } = await axios.get(
         `${config.getAccountByAccountNo}?authtoken=${authToken}&accountNumber=${accountNo}&computewithdrawableBalance=true`
