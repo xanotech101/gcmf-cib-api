@@ -31,6 +31,8 @@ const eazyPayRoutes = require("./routes/eazyPay.routes");
 const cors = require("cors");
 const connectDB = require("./config/db");
 const { setup } = require("./services/messageQueue/queue");
+const { paystackReconciliationJob } = require("./jobs/paystackJob");
+
 
 let URI = process.env.MONGO_URI;
 
@@ -42,6 +44,7 @@ connectDB(URI, () => {
       process.env.NODE_ENV
     );
   });
+  paystackReconciliationJob.start();
 });
 
 app.use(
@@ -76,6 +79,8 @@ app.get("/health", (req, res) => {
     status: "OK"
   });
 });
+
+
 
 app.use("/api/token", tokenRoute);
 app.use("/api/auth", authRoute);

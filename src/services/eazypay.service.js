@@ -115,6 +115,7 @@ class EazyPayService {
             return access_token;
 
         } catch (err) {
+            console.log(err)
             throw new Error(`Error resetting token: ${err.message}`);
         }
     }
