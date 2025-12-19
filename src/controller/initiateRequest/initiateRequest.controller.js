@@ -672,18 +672,18 @@ const authoriserApproveRequest = async (req, res) => {
       });
     }
 
-    // const otpDetails = await Otp.findOne({
-    //   otp: req.body.otp,
-    //   user: user._id,
-    //   transaction: request._id,
-    // });
+    const otpDetails = await Otp.findOne({
+      otp: req.body.otp,
+      user: user._id,
+      transaction: request._id,
+    });
 
-    // if (!otpDetails) {
-    //   return res.status(404).json({
-    //     message: "OTP is incorrect or used",
-    //     status: "failed",
-    //   });
-    // }
+    if (!otpDetails) {
+      return res.status(404).json({
+        message: "OTP is incorrect or used",
+        status: "failed",
+      });
+    }
 
     if (request.transferStatus !== InitiateRequest.TRANSFER_STATUS.PENDING) {
       logger.warn({ requestId: request._id }, "Transaction not approved");
@@ -925,10 +925,27 @@ const approveBulkRequest = async (req, res) => {
       _id: { $in: transactionIds },
     }).populate("mandate");
 
+
+    const OtptransactionId = mongoose.Types.ObjectId.isValid(
+      req.body.batchVerificationID
+    )
+      ? new mongoose.Types.ObjectId(req.body.batchVerificationID)
+      : null;
+
+
+    if (!OtptransactionId) {
+      return res.status(400).json({
+        status: "failed",
+        message: "Invalid batchVerificationID",
+      });
+    }
+
+
+
     const otpDetails = await Otp.findOne({
       otp: req.body.otp,
       user: req.user._id,
-      transaction: req.body.batchVerificationID,
+      transaction: OtptransactionId,
     });
 
     if (!otpDetails) {
@@ -1101,6 +1118,20 @@ const authoriserBulkApprove = async (req, res) => {
     const organization = await Account.findById(user.organizationId);
     const transactionIds = req.body.transactions;
 
+
+    const OtptransactionId = mongoose.Types.ObjectId.isValid(
+      req.body.batchId
+    )
+      ? new mongoose.Types.ObjectId(req.body.batchId)
+      : null;
+
+    if (!OtptransactionId) {
+      return res.status(400).json({
+        status: "failed",
+        message: "Invalid batchVerificationID",
+      });
+    }
+
     const requests = await InitiateRequest.find({
       _id: { $in: transactionIds },
     }).populate("mandate");
@@ -1108,7 +1139,7 @@ const authoriserBulkApprove = async (req, res) => {
     const otpDetails = await Otp.findOne({
       otp: req.body.otp,
       user: user._id,
-      transaction: req.body.batchId,
+      transaction: OtptransactionId,
     });
 
     if (!otpDetails) {
