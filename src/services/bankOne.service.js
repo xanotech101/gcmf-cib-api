@@ -316,7 +316,7 @@ class BankOneService {
         GLCode,
         Token: authToken,
         Narration: narration,
-        Amount: String(amount),
+        Amount: String(Math.round(Number(amount) * 100)),
         Fee: "53.75",
         RetrievalReference: retrievalReference,
         AccountNumber: accountNumber,
