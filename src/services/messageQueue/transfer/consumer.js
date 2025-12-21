@@ -226,7 +226,7 @@ const processBulkTransferWithEazyPay = async (data) => {
 
 const processBulkTransferWithPaystack = async (data) => {
   try {
-    console.log("📥 Paystack queue job received");
+    console.log("📥 Paystack queue job received...s");
     logger.info(`📥 Processing Paystack bulk transfer | Total items: ${data.length}`);
 
     const authToken = process.env.AUTHTOKEN;
