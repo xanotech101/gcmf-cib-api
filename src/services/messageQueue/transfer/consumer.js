@@ -284,58 +284,27 @@ const processBulkTransferWithPaystack = async (data) => {
             continue;
           }
 
-          // -------------------------------
-          // 2️⃣ DEBIT PAYER ACCOUNT
-          // -------------------------------
-          const debitResponse = await bankOneService.debitCustomerAccount({
-            accountNumber: transfer.payerAccountNumber,
-            amount: transfer.amount,
-            authToken,
-          });
-
-          console.log(`🏦 Debit response for ${transfer.payerAccountNumber}:`, debitResponse);
-
-          if (!debitResponse?.IsSuccessful) {
-            console.error(`❌ BankOne debit failed for ${transfer.payerAccountNumber}`);
-
-            transfer.transferStatus = TRANSFER_STATUS.FAILED;
-            transfer.provider_type = "paystack";
-            transfer.meta = {
-              ...transfer.meta,
-              reason: "BankOne debit failed",
-              payerAccountNumber: transfer.payerAccountNumber,
-              debitResponse,
-            };
-            await transfer.save();
-            continue;
-          }
-
-          console.log(`✅ Debit successful for ${transfer.payerAccountNumber}`);
 
           // -------------------------------
           // 3️⃣ PREPARE PAYSTACK RECIPIENT
           // -------------------------------
-          let recipient = await TransferReciepient.findOne({
-            accountNumber: transfer.beneficiaryAccountNumber,
+
+          console.log(`👤 Creating Paystack recipient for ${transfer.beneficiaryAccountNumber}`);
+
+          const newRecipient = await paystackService.createPaystackTransferReceipient({
+            type: "nuban",
+            account_number: transfer.beneficiaryAccountNumber,
+            bank_code: transfer.beneficiaryBankCode,
+            currency: "NGN",
           });
 
-          if (!recipient) {
-            console.log(`👤 Creating Paystack recipient for ${transfer.beneficiaryAccountNumber}`);
+          console.log("📨 Paystack recipient creation response:", newRecipient.data.recipient_code);
 
-            const newRecipient = await paystackService.createPaystackTransferReceipient({
-              type: "nuban",
-              account_number: transfer.beneficiaryAccountNumber,
-              bank_code: transfer.beneficiaryBankCode,
-              currency: "NGN",
-            });
+          const recipient = await TransferReciepient.create({
+            accountNumber: transfer.beneficiaryAccountNumber,
+            reciepientCode: newRecipient.data.recipient_code,
+          });
 
-            console.log("📨 Paystack recipient creation response:", newRecipient);
-
-            recipient = await TransferReciepient.create({
-              accountNumber: transfer.beneficiaryAccountNumber,
-              reciepientCode: newRecipient.data.recipient_code,
-            });
-          }
 
           // -------------------------------
           // 4️⃣ PREPARE UNIQUE PAYSTACK TRANSFER
@@ -355,7 +324,6 @@ const processBulkTransferWithPaystack = async (data) => {
             ...transfer.meta,
             payerAccountNumber: transfer.payerAccountNumber,
             debitedAmount: transfer.amount,
-            bankOneReference: debitResponse.Reference || null,
             paystackReference: uniqueReference,
           };
           await transfer.save();
