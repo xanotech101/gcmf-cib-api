@@ -284,6 +284,33 @@ const processBulkTransferWithPaystack = async (data) => {
             continue;
           }
 
+          // -------------------------------
+          // 2️⃣ DEBIT PAYER ACCOUNT
+          // -------------------------------
+          const debitResponse = await bankOneService.debitCustomerAccount({
+            accountNumber: transfer.payerAccountNumber,
+            amount: transfer.amount,
+            authToken: process.env.AUTHTOKEN,
+          });
+
+          console.log(`🏦 Debit response for ${transfer.payerAccountNumber}:`, debitResponse);
+
+          if (!debitResponse?.IsSuccessful) {
+            console.error(`❌ BankOne debit failed for ${transfer.payerAccountNumber}`);
+
+            transfer.meta = {
+              ...transfer.meta,
+              reason: "Paystack successful but BankOne debit failed",
+              payerAccountNumber: transfer.payerAccountNumber,
+              bankOneReference: debitResponse.Reference || null,
+              debitResponse,
+            };
+            await transfer.save();
+            continue;
+          }
+
+          console.log(`✅ Debit successful for ${transfer.payerAccountNumber}`);
+
 
           // -------------------------------
           // 3️⃣ PREPARE PAYSTACK RECIPIENT

@@ -45,32 +45,6 @@ const paystackReconciliationJob = new CronJob("*/1 * * * *", async () => {
 
                 if (paystackStatus === "success") {
                     transaction.transferStatus = InitiateRequest.TRANSFER_STATUS.SUCCESSFUL;
-                    // -------------------------------
-                    // 2️⃣ DEBIT PAYER ACCOUNT
-                    // -------------------------------
-                    const debitResponse = await bankOneService.debitCustomerAccount({
-                        accountNumber: transaction.payerAccountNumber,
-                        amount: transaction.amount,
-                        authToken: process.env.AUTHTOKEN,
-                    });
-
-                    console.log(`🏦 Debit response for ${transaction.payerAccountNumber}:`, debitResponse);
-
-                    if (!debitResponse?.IsSuccessful) {
-                        console.error(`❌ BankOne debit failed for ${transaction.payerAccountNumber}`);
-
-                        transaction.meta = {
-                            ...transaction.meta,
-                            reason: "Paystack successful but BankOne debit failed",
-                            payerAccountNumber: transaction.payerAccountNumber,
-                            bankOneReference: debitResponse.Reference || null,
-                            debitResponse,
-                        };
-                        await transaction.save();
-                        continue;
-                    }
-
-                    console.log(`✅ Debit successful for ${transaction.payerAccountNumber}`);
                 } else if (paystackStatus === "failed" || paystackStatus === "reversed") {
                     transaction.transferStatus = InitiateRequest.TRANSFER_STATUS.FAILED;
                 } else {
