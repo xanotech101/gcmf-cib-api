@@ -14,6 +14,8 @@ class EazyPayService {
     }
 
     async openBatch(data, token) {
+        console.log(data)
+        console.log(token)
         try {
             const res = await this.http.post(eazyPayConfig.batch_open, data, {
                 headers: { Authorization: `Bearer ${token}` }
