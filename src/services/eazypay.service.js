@@ -149,7 +149,7 @@ class EazyPayService {
             if (err.response) {
                 throw {
                     status: err.response.status,
-                    provider: "EazyPay / NIBSS",
+                    provider: "Multipay / NIBSS",
                     data: err.response.data,
                     headers: err.response.headers,
                 };
