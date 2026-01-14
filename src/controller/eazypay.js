@@ -1,14 +1,39 @@
 const eazypayService = require("../services/eazypay.service")
 
 
-const resetToken = async (req, res) => {
-    const response = await eazypayService.resetToken()
+// const resetToken = async (req, res) => {
+//     const response = await eazypayService.resetToken()
 
-    return res.status(200).send({
-        message: 'reset token fectched successfully',
-        data: response
-    })
-}
+//     if (!response)
+
+//         return res.status(200).send({
+//             message: 'reset token fectched successfully',
+//             data: response
+//         })
+// }
+
+const resetToken = async (req, res) => {
+    try {
+        const response = await eazypayService.resetToken();
+
+        return res.status(200).send({
+            message: "reset token fetched successfully",
+            data: response,
+        });
+    } catch (err) {
+        return res.status(err.status || 500).send({
+            message: "reset token failed",
+            provider: err.provider,
+            error: err.data?.error,
+            reason: err.data?.error_description,
+            trace_id: err.data?.trace_id,
+            correlation_id: err.data?.correlation_id,
+            raw: err.data, // 🔥 full provider payload
+        });
+    }
+};
+
+
 
 const openBatch = async (req, res) => {
     const authHeader = req.headers.authorization
