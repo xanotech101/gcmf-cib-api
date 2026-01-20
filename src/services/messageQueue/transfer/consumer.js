@@ -224,25 +224,261 @@ const processBulkTransferWithEazyPay = async (data) => {
   eazypayProcessor(transferData);
 };
 
+// const processBulkTransferWithPaystack = async (data) => {
+//   try {
+//     console.log("📥 Paystack queue job received...s");
+//     logger.info(`📥 Processing Paystack bulk transfer | Total items: ${data.length}`);
+
+//     const authToken = process.env.AUTHTOKEN;
+//     const BATCH_SIZE = 100;
+
+//     for (let i = 0; i < data.length; i += BATCH_SIZE) {
+
+//       const batch = data.slice(i, i + BATCH_SIZE);
+
+
+//       console.log(`📦 Processing Paystack batch ${i / BATCH_SIZE + 1}`);
+
+//       const transactions = await InitiateRequest.find({
+//         _id: { $in: batch.map((item) => item.transactionId) },
+//         type: "inter-bank",
+//       });
+
+//       if (transactions.length === 0) {
+//         console.warn("⚠️ No inter-bank transfers in this batch");
+//         continue;
+//       }
+
+//       const eligibleTransfers = [];
+//       const paystackPayload = [];
+
+//       for (const transfer of transactions) {
+//         console.log(`➡️ Processing transfer ${transfer._id} | Payer: ${transfer.payerAccountNumber} | Amount: ${transfer.amount}`);
+
+//         try {
+//           // -------------------------------
+//           // 1️⃣ CHECK BALANCE
+//           // -------------------------------
+//           const accountResponse = await bankOneService.accountByAccountNo(
+//             transfer.payerAccountNumber,
+//             authToken
+//           );
+
+//           console.log(`💰 Balance response for ${transfer.payerAccountNumber}:`, accountResponse);
+
+//           if (!accountResponse?.WithdrawableBalance) {
+//             throw new Error("Withdrawable balance not returned");
+//           }
+
+//           const withdrawableBalance = Number(accountResponse.WithdrawableBalance.replace(/,/g, ""));
+
+//           if (withdrawableBalance < transfer.amount) {
+//             console.warn(`❌ Insufficient funds | ${transfer.payerAccountNumber}`);
+
+//             transfer.transferStatus = TRANSFER_STATUS.FAILED;
+//             transfer.provider_type = "paystack";
+//             transfer.meta = {
+//               ...transfer.meta,
+//               reason: "Insufficient funds",
+//               payerAccountNumber: transfer.payerAccountNumber,
+//               withdrawableBalance,
+//             };
+//             await transfer.save();
+//             continue;
+//           }
+
+//           // -------------------------------
+//           // 2️⃣ DEBIT PAYER ACCOUNT
+//           // -------------------------------
+//           const debitResponse = await bankOneService.debitCustomerAccount({
+//             accountNumber: transfer.payerAccountNumber,
+//             amount: transfer.amount,
+//             authToken: process.env.AUTHTOKEN,
+//           });
+
+//           console.log(`🏦 Debit response for ${transfer.payerAccountNumber}:`, debitResponse);
+
+//           if (!debitResponse?.IsSuccessful) {
+//             console.error(`❌ BankOne debit failed for ${transfer.payerAccountNumber}`);
+
+//             transfer.meta = {
+//               ...transfer.meta,
+//               reason: "Paystack successful but BankOne debit failed",
+//               payerAccountNumber: transfer.payerAccountNumber,
+//               bankOneReference: debitResponse.Reference || null,
+//               debitResponse,
+//             };
+//             await transfer.save();
+//             continue;
+//           }
+
+//           console.log(`✅ Debit successful for ${transfer.payerAccountNumber}`);
+
+
+//           // -------------------------------
+//           // 3️⃣ PREPARE PAYSTACK RECIPIENT
+//           // -------------------------------
+
+//           console.log(`👤 Creating Paystack recipient for ${transfer.beneficiaryAccountNumber}`);
+
+//           const newRecipient = await paystackService.createPaystackTransferReceipient({
+//             type: "nuban",
+//             account_number: transfer.beneficiaryAccountNumber,
+//             bank_code: transfer.beneficiaryBankCode,
+//             currency: "NGN",
+//           });
+
+//           console.log("📨 Paystack recipient creation response:", newRecipient.data.recipient_code);
+
+//           const recipient = await TransferReciepient.create({
+//             accountNumber: transfer.beneficiaryAccountNumber,
+//             reciepientCode: newRecipient.data.recipient_code,
+//           });
+
+
+//           // -------------------------------
+//           // 4️⃣ PREPARE UNIQUE PAYSTACK TRANSFER
+//           // -------------------------------
+//           const uniqueReference = `${transfer.transactionReference}-${Date.now()}`;
+
+//           paystackPayload.push({
+//             amount: Math.round(Number(transfer.amount) * 100),
+//             reference: uniqueReference,
+//             reason: transfer.narration,
+//             recipient: recipient.reciepientCode,
+//           });
+
+//           transfer.transferStatus = TRANSFER_STATUS.PROCESSING;
+//           transfer.provider_type = "paystack";
+//           transfer.meta = {
+//             ...transfer.meta,
+//             payerAccountNumber: transfer.payerAccountNumber,
+//             debitedAmount: transfer.amount,
+//             paystackReference: uniqueReference,
+//           };
+//           await transfer.save();
+
+//           eligibleTransfers.push(transfer);
+//         } catch (err) {
+//           console.error(`🔥 Error processing transfer ${transfer._id}`, err);
+
+//           transfer.transferStatus = TRANSFER_STATUS.FAILED;
+//           transfer.provider_type = "paystack";
+//           transfer.meta = {
+//             ...transfer.meta,
+//             reason: err.message,
+//           };
+//           await transfer.save();
+//         }
+//       }
+
+//       // -------------------------------
+//       // 5️⃣ SEND ELIGIBLE TRANSFERS TO PAYSTACK
+//       // -------------------------------
+//       console.log(`📊 Eligible Paystack transfers: ${eligibleTransfers.length}`);
+
+//       if (paystackPayload.length === 0) {
+//         console.warn("⚠️ No eligible Paystack transfers in this batch");
+//         continue;
+//       }
+
+//       console.log(`🚀 Sending ${paystackPayload.length} transfers to Paystack`, paystackPayload);
+
+//       const bulkTransferResponse = await paystackService.sendBulkTransferToPaystack(paystackPayload);
+
+//       console.log("📨 Paystack bulk transfer response:", bulkTransferResponse);
+
+//       if (!bulkTransferResponse?.status) {
+//         console.error("❌ Paystack bulk transfer failed");
+
+//         for (const transfer of eligibleTransfers) {
+//           transfer.transferStatus = TRANSFER_STATUS.FAILED;
+//           transfer.provider_type = "paystack";
+//           transfer.meta = {
+//             ...transfer.meta,
+//             reason: "Paystack bulk transfer failed",
+//           };
+//           await transfer.save();
+//         }
+//         continue;
+//       }
+
+//       // -------------------------------
+//       // 6️⃣ VERIFY PAYSTACK TRANSFERS
+//       // -------------------------------
+//       for (const psTransfer of bulkTransferResponse.data) {
+//         const { transfer_code, reference } = psTransfer;
+
+//         const transaction = eligibleTransfers.find(
+//           (t) => t.meta.paystackReference === reference
+//         );
+
+//         if (!transaction) continue;
+
+//         try {
+//           console.log(`🔍 Verifying Paystack transfer ${reference}`);
+
+//           const statusResponse = await paystackService.verifyPaystackTransfer(transfer_code);
+
+//           console.log(`📨 Paystack verification response for ${reference}:`, statusResponse);
+
+//           const paystackStatus = statusResponse?.data?.status;
+
+//           transaction.meta = {
+//             ...transaction.meta,
+//             paystack: statusResponse,
+//           };
+
+//           if (paystackStatus === "success") {
+//             transaction.transferStatus = TRANSFER_STATUS.SUCCESSFUL;
+//           } else if (paystackStatus === "failed") {
+//             transaction.transferStatus = TRANSFER_STATUS.FAILED;
+//           } else {
+//             transaction.transferStatus = TRANSFER_STATUS.AWAITING_CONFIRMATION;
+//           }
+
+//           await transaction.save();
+//         } catch (error) {
+//           console.error(`⚠️ Unable to verify Paystack transfer ${reference}`, error);
+
+//           transaction.transferStatus = TRANSFER_STATUS.AWAITING_CONFIRMATION;
+//           transaction.meta = {
+//             ...transaction.meta,
+//             reason: "Unable to verify Paystack transfer",
+//           };
+//           await transaction.save();
+//         }
+//       }
+
+//       console.log(`🎉 Paystack batch ${i / BATCH_SIZE + 1} processing completed`);
+//     }
+//   } catch (error) {
+//     console.error("💥 Fatal Paystack bulk processing error", error);
+//   }
+// };
+
 const processBulkTransferWithPaystack = async (data) => {
   try {
-    console.log("📥 Paystack queue job received...s");
-    logger.info(`📥 Processing Paystack bulk transfer | Total items: ${data.length}`);
+    console.log("📥 Paystack queue job received...");
+    logger.info(
+      `📥 Processing bulk transfer | Total items: ${data.length}`
+    );
 
     const authToken = process.env.AUTHTOKEN;
     const BATCH_SIZE = 100;
 
     for (let i = 0; i < data.length; i += BATCH_SIZE) {
       const batch = data.slice(i, i + BATCH_SIZE);
-      console.log(`📦 Processing Paystack batch ${i / BATCH_SIZE + 1}`);
+
+      console.log(`📦 Processing batch ${i / BATCH_SIZE + 1}`);
 
       const transactions = await InitiateRequest.find({
         _id: { $in: batch.map((item) => item.transactionId) },
-        type: "inter-bank",
+        type: { $in: ["inter-bank", "intra-bank"] },
       });
 
       if (transactions.length === 0) {
-        console.warn("⚠️ No inter-bank transfers in this batch");
+        console.warn("⚠️ No transfers in this batch");
         continue;
       }
 
@@ -250,92 +486,139 @@ const processBulkTransferWithPaystack = async (data) => {
       const paystackPayload = [];
 
       for (const transfer of transactions) {
-        console.log(`➡️ Processing transfer ${transfer._id} | Payer: ${transfer.payerAccountNumber} | Amount: ${transfer.amount}`);
+        console.log(
+          `➡️ Processing transfer ${transfer._id} | Type: ${transfer.type} | Amount: ${transfer.amount}`
+        );
 
         try {
-          // -------------------------------
-          // 1️⃣ CHECK BALANCE
-          // -------------------------------
-          const accountResponse = await bankOneService.accountByAccountNo(
-            transfer.payerAccountNumber,
-            authToken
-          );
+          // =====================================================
+          // 🏦 INTRA-BANK TRANSFER (BANKONE ONLY)
+          // =====================================================
+          if (transfer.type === "intra-bank") {
+            console.log(`🏦 Intra-bank transfer ${transfer._id}`);
 
-          console.log(`💰 Balance response for ${transfer.payerAccountNumber}:`, accountResponse);
+            const intraBankPayload = {
+              Amount: transfer.amount * 100,
+              RetrievalReference: transfer.transactionReference,
+              FromAccountNumber: transfer.payerAccountNumber,
+              ToAccountNumber: transfer.beneficiaryAccountNumber,
+              AuthenticationKey: authToken,
+              Narration: transfer.narration,
+            };
+
+            const result =
+              await bankOneService.doIntraBankTransfer(intraBankPayload);
+
+            console.log("🏦 Intra-bank response:", result);
+
+            if (result?.isSuccessful === false) {
+              transfer.status = APPROVAL_STATUS.IN_PROGRESS;
+              transfer.transferStatus =
+                TRANSFER_STATUS.AWAITING_CONFIRMATION;
+              transfer.provider_type = "bankone";
+              transfer.meta = {
+                ...transfer.meta,
+                reason: "Intra-bank transfer pending confirmation",
+                bankOneResponse: result,
+              };
+
+              await transfer.save();
+              continue;
+            }
+
+            const transferStatus = getTransferStatus(
+              result.Status,
+              result.ResponseCode
+            );
+
+            transfer.status = transferStatus;
+            transfer.transferStatus =
+              transferStatus === "approved"
+                ? TRANSFER_STATUS.SUCCESSFUL
+                : TRANSFER_STATUS.FAILED;
+
+            transfer.provider_type = "bankone";
+            transfer.meta = {
+              ...transfer.meta,
+              bankOneResponse: result,
+            };
+
+            await transfer.save();
+            continue;
+          }
+
+          // =====================================================
+          // 🌍 INTER-BANK TRANSFER (PAYSTACK)
+          // =====================================================
+
+          // 1️⃣ CHECK BALANCE
+          const accountResponse =
+            await bankOneService.accountByAccountNo(
+              transfer.payerAccountNumber,
+              authToken
+            );
 
           if (!accountResponse?.WithdrawableBalance) {
             throw new Error("Withdrawable balance not returned");
           }
 
-          const withdrawableBalance = Number(accountResponse.WithdrawableBalance.replace(/,/g, ""));
+          const withdrawableBalance = Number(
+            accountResponse.WithdrawableBalance.replace(/,/g, "")
+          );
 
           if (withdrawableBalance < transfer.amount) {
-            console.warn(`❌ Insufficient funds | ${transfer.payerAccountNumber}`);
+            console.warn(
+              `❌ Insufficient funds | ${transfer.payerAccountNumber}`
+            );
 
             transfer.transferStatus = TRANSFER_STATUS.FAILED;
             transfer.provider_type = "paystack";
             transfer.meta = {
               ...transfer.meta,
               reason: "Insufficient funds",
-              payerAccountNumber: transfer.payerAccountNumber,
               withdrawableBalance,
             };
+
             await transfer.save();
             continue;
           }
 
-          // -------------------------------
-          // 2️⃣ DEBIT PAYER ACCOUNT
-          // -------------------------------
-          const debitResponse = await bankOneService.debitCustomerAccount({
-            accountNumber: transfer.payerAccountNumber,
-            amount: transfer.amount,
-            authToken: process.env.AUTHTOKEN,
-          });
-
-          console.log(`🏦 Debit response for ${transfer.payerAccountNumber}:`, debitResponse);
+          // 2️⃣ DEBIT CUSTOMER
+          const debitResponse =
+            await bankOneService.debitCustomerAccount({
+              accountNumber: transfer.payerAccountNumber,
+              amount: transfer.amount,
+              authToken,
+            });
 
           if (!debitResponse?.IsSuccessful) {
-            console.error(`❌ BankOne debit failed for ${transfer.payerAccountNumber}`);
-
+            transfer.transferStatus = TRANSFER_STATUS.FAILED;
+            transfer.provider_type = "paystack";
             transfer.meta = {
               ...transfer.meta,
-              reason: "Paystack successful but BankOne debit failed",
-              payerAccountNumber: transfer.payerAccountNumber,
-              bankOneReference: debitResponse.Reference || null,
+              reason: "BankOne debit failed",
               debitResponse,
             };
+
             await transfer.save();
             continue;
           }
 
-          console.log(`✅ Debit successful for ${transfer.payerAccountNumber}`);
-
-
-          // -------------------------------
-          // 3️⃣ PREPARE PAYSTACK RECIPIENT
-          // -------------------------------
-
-          console.log(`👤 Creating Paystack recipient for ${transfer.beneficiaryAccountNumber}`);
-
-          const newRecipient = await paystackService.createPaystackTransferReceipient({
-            type: "nuban",
-            account_number: transfer.beneficiaryAccountNumber,
-            bank_code: transfer.beneficiaryBankCode,
-            currency: "NGN",
-          });
-
-          console.log("📨 Paystack recipient creation response:", newRecipient.data.recipient_code);
+          // 3️⃣ CREATE PAYSTACK RECIPIENT
+          const newRecipient =
+            await paystackService.createPaystackTransferReceipient({
+              type: "nuban",
+              account_number: transfer.beneficiaryAccountNumber,
+              bank_code: transfer.beneficiaryBankCode,
+              currency: "NGN",
+            });
 
           const recipient = await TransferReciepient.create({
             accountNumber: transfer.beneficiaryAccountNumber,
             reciepientCode: newRecipient.data.recipient_code,
           });
 
-
-          // -------------------------------
-          // 4️⃣ PREPARE UNIQUE PAYSTACK TRANSFER
-          // -------------------------------
+          // 4️⃣ PREPARE PAYSTACK PAYLOAD
           const uniqueReference = `${transfer.transactionReference}-${Date.now()}`;
 
           paystackPayload.push({
@@ -349,48 +632,47 @@ const processBulkTransferWithPaystack = async (data) => {
           transfer.provider_type = "paystack";
           transfer.meta = {
             ...transfer.meta,
-            payerAccountNumber: transfer.payerAccountNumber,
-            debitedAmount: transfer.amount,
             paystackReference: uniqueReference,
+            debitedAmount: transfer.amount,
           };
-          await transfer.save();
 
+          await transfer.save();
           eligibleTransfers.push(transfer);
         } catch (err) {
           console.error(`🔥 Error processing transfer ${transfer._id}`, err);
 
           transfer.transferStatus = TRANSFER_STATUS.FAILED;
-          transfer.provider_type = "paystack";
           transfer.meta = {
             ...transfer.meta,
             reason: err.message,
           };
+
           await transfer.save();
         }
       }
 
-      // -------------------------------
-      // 5️⃣ SEND ELIGIBLE TRANSFERS TO PAYSTACK
-      // -------------------------------
-      console.log(`📊 Eligible Paystack transfers: ${eligibleTransfers.length}`);
-
+      // =====================================================
+      // 🚀 SEND BULK PAYSTACK TRANSFERS
+      // =====================================================
       if (paystackPayload.length === 0) {
         console.warn("⚠️ No eligible Paystack transfers in this batch");
         continue;
       }
 
-      console.log(`🚀 Sending ${paystackPayload.length} transfers to Paystack`, paystackPayload);
+      console.log(
+        `🚀 Sending ${paystackPayload.length} transfers to Paystack`
+      );
 
-      const bulkTransferResponse = await paystackService.sendBulkTransferToPaystack(paystackPayload);
-
-      console.log("📨 Paystack bulk transfer response:", bulkTransferResponse);
+      const bulkTransferResponse =
+        await paystackService.sendBulkTransferToPaystack(
+          paystackPayload
+        );
 
       if (!bulkTransferResponse?.status) {
         console.error("❌ Paystack bulk transfer failed");
 
         for (const transfer of eligibleTransfers) {
           transfer.transferStatus = TRANSFER_STATUS.FAILED;
-          transfer.provider_type = "paystack";
           transfer.meta = {
             ...transfer.meta,
             reason: "Paystack bulk transfer failed",
@@ -400,9 +682,9 @@ const processBulkTransferWithPaystack = async (data) => {
         continue;
       }
 
-      // -------------------------------
-      // 6️⃣ VERIFY PAYSTACK TRANSFERS
-      // -------------------------------
+      // =====================================================
+      // 🔍 VERIFY PAYSTACK TRANSFERS
+      // =====================================================
       for (const psTransfer of bulkTransferResponse.data) {
         const { transfer_code, reference } = psTransfer;
 
@@ -413,11 +695,10 @@ const processBulkTransferWithPaystack = async (data) => {
         if (!transaction) continue;
 
         try {
-          console.log(`🔍 Verifying Paystack transfer ${reference}`);
-
-          const statusResponse = await paystackService.verifyPaystackTransfer(transfer_code);
-
-          console.log(`📨 Paystack verification response for ${reference}:`, statusResponse);
+          const statusResponse =
+            await paystackService.verifyPaystackTransfer(
+              transfer_code
+            );
 
           const paystackStatus = statusResponse?.data?.status;
 
@@ -427,18 +708,20 @@ const processBulkTransferWithPaystack = async (data) => {
           };
 
           if (paystackStatus === "success") {
-            transaction.transferStatus = TRANSFER_STATUS.SUCCESSFUL;
+            transaction.transferStatus =
+              TRANSFER_STATUS.SUCCESSFUL;
           } else if (paystackStatus === "failed") {
-            transaction.transferStatus = TRANSFER_STATUS.FAILED;
+            transaction.transferStatus =
+              TRANSFER_STATUS.FAILED;
           } else {
-            transaction.transferStatus = TRANSFER_STATUS.AWAITING_CONFIRMATION;
+            transaction.transferStatus =
+              TRANSFER_STATUS.AWAITING_CONFIRMATION;
           }
 
           await transaction.save();
         } catch (error) {
-          console.error(`⚠️ Unable to verify Paystack transfer ${reference}`, error);
-
-          transaction.transferStatus = TRANSFER_STATUS.AWAITING_CONFIRMATION;
+          transaction.transferStatus =
+            TRANSFER_STATUS.AWAITING_CONFIRMATION;
           transaction.meta = {
             ...transaction.meta,
             reason: "Unable to verify Paystack transfer",
@@ -447,13 +730,14 @@ const processBulkTransferWithPaystack = async (data) => {
         }
       }
 
-      console.log(`🎉 Paystack batch ${i / BATCH_SIZE + 1} processing completed`);
+      console.log(
+        `🎉 Batch ${i / BATCH_SIZE + 1} processing completed`
+      );
     }
   } catch (error) {
-    console.error("💥 Fatal Paystack bulk processing error", error);
+    console.error("💥 Fatal bulk transfer error", error);
   }
 };
-
 
 const processBulkTransferWithBankOne = async (data) => {
   logger.info(`Processing ${data.length} bulk transfer with BankOne`);

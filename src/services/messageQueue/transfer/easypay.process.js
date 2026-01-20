@@ -67,6 +67,7 @@ async function eazypayProcessor(data) {
                 amount: Number(req.amount || 0),
                 narration: "Transfer request",
                 _id: req.transactionId,
+                type: req.type, // 👈 needed for intra-bank check
             };
         });
 
@@ -95,6 +96,69 @@ async function eazypayProcessor(data) {
                 : null;
 
             try {
+                // =====================================================
+                // 🏦 INTRA-BANK TRANSFER (BANKONE ONLY)
+                // =====================================================
+                if (item.type === "intra-bank") {
+                    console.log(
+                        `🏦 Processing intra-bank transfer for ${item.payerAccountNumber}`
+                    );
+
+                    const intraBankPayload = {
+                        Amount: item.amount * 100,
+                        RetrievalReference: item.transactionId,
+                        FromAccountNumber: item.payerAccountNumber,
+                        ToAccountNumber: item.accountNumber,
+                        AuthenticationKey: bankOneToken,
+                        Narration: item.narration,
+                    };
+
+                    const result =
+                        await bankOneService.doIntraBankTransfer(
+                            intraBankPayload
+                        );
+
+                    console.log("🏦 Intra-bank response:", result);
+
+                    if (result?.isSuccessful === false) {
+                        if (reqDoc) {
+                            reqDoc.transferStatus =
+                                TRANSFER_STATUS.AWAITING_CONFIRMATION;
+                            reqDoc.provider_type = "bankone";
+                            reqDoc.meta = {
+                                reason: "Intra-bank transfer pending",
+                                bankOneResponse: result,
+                            };
+                            await reqDoc.save();
+                        }
+                        continue;
+                    }
+
+                    const transferStatus = getTransferStatus(
+                        result.Status,
+                        result.ResponseCode
+                    );
+
+                    if (reqDoc) {
+                        reqDoc.status = transferStatus;
+                        reqDoc.transferStatus =
+                            transferStatus === "approved"
+                                ? TRANSFER_STATUS.SUCCESSFUL
+                                : TRANSFER_STATUS.FAILED;
+                        reqDoc.provider_type = "bankone";
+                        reqDoc.meta = {
+                            bankOneResponse: result,
+                        };
+                        await reqDoc.save();
+                    }
+
+                    continue; // 🚨 VERY IMPORTANT: do not go to eazypay
+                }
+
+                // =====================================================
+                // 🌍 INTER-BANK (EXISTING FLOW UNCHANGED)
+                // =====================================================
+
                 // 🔍 CHECK BALANCE
                 console.log(
                     `🔍 Checking balance for ${item.payerAccountNumber}`
@@ -284,9 +348,7 @@ async function eazypayProcessor(data) {
             await reqDoc.save();
         }
 
-        console.log(
-            `🎉 Batch ${batchId} completed successfully`
-        );
+        console.log(`🎉 Batch ${batchId} completed successfully`);
 
         return {
             batchId,
@@ -299,6 +361,7 @@ async function eazypayProcessor(data) {
         );
     }
 }
+
 
 
 
