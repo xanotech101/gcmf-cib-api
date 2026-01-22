@@ -154,6 +154,7 @@ const processSingleTransfer = async (data) => {
     };
     const result = await bankOneService.doInterBankTransfer(interBankPayload);
 
+    console.log('Bankone single transfer service logs inter-bank: ', result)
     if (result.IsSuccessful === false) {
       transaction.status = APPROVAL_STATUS.IN_PROGRESS; // still in progress
       transaction.transferStatus = TRANSFER_STATUS.AWAITING_CONFIRMATION;
@@ -172,6 +173,8 @@ const processSingleTransfer = async (data) => {
       bankOneResponse: result,
     };
 
+    await transaction.save();
+
   }
 
   if (transaction.type === "intra-bank") {
@@ -184,7 +187,7 @@ const processSingleTransfer = async (data) => {
       Narration: transaction.narration,
     };
     const result = await bankOneService.doIntraBankTransfer(intraBankPayload);
-
+    console.log('Bankone single transfer service logs intra-bank: ', result)
     if (result.IsSuccessful === false) {
       transaction.status = APPROVAL_STATUS.IN_PROGRESS;
       transaction.transferStatus = TRANSFER_STATUS.AWAITING_CONFIRMATION;
