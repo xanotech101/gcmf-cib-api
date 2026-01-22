@@ -4,7 +4,7 @@ const logger = require("../../../utils/logger");
 const transferProviderService = require("../../transferProvider.service");
 const bankOneService = require("../../bankOne.service");
 const InitiateRequest = require("../../../model/initiateRequest.model");
-const { TRANSFER_STATUS } = require("../../../model/initiateRequest.model");
+const { TRANSFER_STATUS, APPROVAL_STATUS } = require("../../../model/initiateRequest.model");
 const { eazypayProcessor } = require("./easypay.process");
 const TransferReciepient = require("../../../model/transferReciepient");
 const paystackService = require("../../paystack.service");
@@ -99,7 +99,7 @@ async function consumeTransfer(type = 'bulk') {
 
 function getTransferStatus(status, responseCode) {
 
-  if ((status === "Successful" && responseCode === "00") ||
+  if ((status === true && responseCode === "00") ||
     status === "SuccessfulButFeeNotTaken") {
     return "approved";
   }
@@ -154,18 +154,23 @@ const processSingleTransfer = async (data) => {
     };
     const result = await bankOneService.doInterBankTransfer(interBankPayload);
 
-    if (result.isSuccessful === false) {
+    if (result.IsSuccessful === false) {
       transaction.status = APPROVAL_STATUS.IN_PROGRESS; // still in progress
       transaction.transferStatus = TRANSFER_STATUS.AWAITING_CONFIRMATION;
       return await transaction.save();
     }
 
     const transferstatus = getTransferStatus(
-      result.Status,
+      result.IsSuccessful,
       result.ResponseCode
     );
+
     transaction.status = transferstatus;
     transaction.transferStatus = transferstatus === "approved" ? TRANSFER_STATUS.SUCCESSFUL : TRANSFER_STATUS.FAILED;
+    transaction.meta = {
+      ...transaction.meta,
+      bankOneResponse: result,
+    };
 
   }
 
@@ -180,7 +185,7 @@ const processSingleTransfer = async (data) => {
     };
     const result = await bankOneService.doIntraBankTransfer(intraBankPayload);
 
-    if (result.isSuccessful === false) {
+    if (result.IsSuccessful === false) {
       transaction.status = APPROVAL_STATUS.IN_PROGRESS;
       transaction.transferStatus = TRANSFER_STATUS.AWAITING_CONFIRMATION;
 
@@ -188,11 +193,15 @@ const processSingleTransfer = async (data) => {
     }
 
     const transferstatus = getTransferStatus(
-      result.Status,
+      result.IsSuccessful,
       result.ResponseCode
     );
     transaction.status = transferstatus;
     transaction.transferStatus = transferstatus === "approved" ? TRANSFER_STATUS.SUCCESSFUL : TRANSFER_STATUS.FAILED;
+    transaction.meta = {
+      ...transaction.meta,
+      bankOneResponse: result,
+    };
     await transaction.save();
   }
 
@@ -511,7 +520,7 @@ const processBulkTransferWithPaystack = async (data) => {
 
             console.log("🏦 Intra-bank response:", result);
 
-            if (result?.isSuccessful === false) {
+            if (result?.IsSuccessful === false) {
               transfer.status = APPROVAL_STATUS.IN_PROGRESS;
               transfer.transferStatus =
                 TRANSFER_STATUS.AWAITING_CONFIRMATION;
@@ -527,7 +536,7 @@ const processBulkTransferWithPaystack = async (data) => {
             }
 
             const transferStatus = getTransferStatus(
-              result.Status,
+              result.IsSuccessful,
               result.ResponseCode
             );
 

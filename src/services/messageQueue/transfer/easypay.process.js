@@ -2,6 +2,7 @@ const EazyPayService = require("../../eazypay.service");
 const InitiateRequest = require("../../../model/initiateRequest.model");
 const logger = require("../../../utils/logger");
 const bankOneService = require("../../bankOne.service");
+const { TRANSFER_STATUS, APPROVAL_STATUS } = require("../../../model/initiateRequest.model");
 
 function generateBatchId() {
     const prefix = "AE458361787634223232381";
@@ -13,6 +14,28 @@ function generateTransactionId(prefix = "TXN") {
     const random = Math.floor(100000 + Math.random() * 900000);
     return `${prefix}${random}`;
 }
+
+function getTransferStatus(status, responseCode) {
+
+    if ((status === true && responseCode === "00") ||
+        status === "SuccessfulButFeeNotTaken") {
+        return "approved";
+    }
+
+    if (
+        status === "Pending" ||
+        ["06", "91", "X06", "08", "09"].includes(responseCode)
+    ) {
+        return "in progress";
+    }
+
+    if (status === "Reversed") {
+        return "declined";
+    }
+
+    return "declined";
+}
+
 
 let cachedToken = null;
 let tokenExpiry = 0;
@@ -120,7 +143,7 @@ async function eazypayProcessor(data) {
 
                     console.log("🏦 Intra-bank response:", result);
 
-                    if (result?.isSuccessful === false) {
+                    if (result?.IsSuccessful === false) {
                         if (reqDoc) {
                             reqDoc.transferStatus =
                                 TRANSFER_STATUS.AWAITING_CONFIRMATION;
@@ -135,7 +158,7 @@ async function eazypayProcessor(data) {
                     }
 
                     const transferStatus = getTransferStatus(
-                        result.Status,
+                        result.IsSuccessful,
                         result.ResponseCode
                     );
 
@@ -143,7 +166,7 @@ async function eazypayProcessor(data) {
                         reqDoc.status = transferStatus;
                         reqDoc.transferStatus =
                             transferStatus === "approved"
-                                ? TRANSFER_STATUS.SUCCESSFUL
+                                ? InitiateRequest.TRANSFER_STATUS.SUCCESSFUL
                                 : TRANSFER_STATUS.FAILED;
                         reqDoc.provider_type = "bankone";
                         reqDoc.meta = {

@@ -1,3 +1,4 @@
+const InitiateRequest = require("../../model/initiateRequest.model");
 const bankOneService = require("../../services/bankOne.service");
 const authToken = process.env.AUTHTOKEN;
 
@@ -419,6 +420,22 @@ const debitAccount = async (req, res) => {
 };
 
 
+const updateFailedTransfer = async (req, res) => {
+  const checkTransfer = await InitiateRequest.find({ provider_type: 'bankone', "meta.bankOneResponse.ResponseCode": "00" })
+  if (!checkTransfer) {
+    return console.log('no failed transfer for bankone')
+  }
+
+  for (const transfer of checkTransfer) {
+    transfer.status = InitiateRequest.APPROVAL_STATUS.APPROVED
+    transfer.transferStatus = InitiateRequest.TRANSFER_STATUS.SUCCESSFUL
+
+    await transfer.save()
+    console.log('updated transfer')
+  }
+  console.log('fnished updating transfers')
+}
+
 
 module.exports = {
   IntrabankAccountEnquiry,
@@ -433,7 +450,8 @@ module.exports = {
   getTransactionStatus,
   getAccountByAccountNoV2,
   bvnEnquiry,
-  debitAccount
+  debitAccount,
+  updateFailedTransfer
 };
 
 

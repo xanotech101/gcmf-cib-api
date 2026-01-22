@@ -82,7 +82,7 @@ app.get("/health", (req, res) => {
 
 
 
-app.use("/api/token", tokenRoute);
+app.use("/api/token", tokenRoute)
 app.use("/api/auth", authRoute);
 app.use("/api/users", userRoute);
 app.use("/api/account", accountRoute);
