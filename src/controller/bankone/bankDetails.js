@@ -421,14 +421,14 @@ const debitAccount = async (req, res) => {
 
 
 const updateFailedTransfer = async (req, res) => {
-  const checkTransfer = await InitiateRequest.find({ provider_type: 'bankone', "meta.bankOneResponse.ResponseCode": "00" })
+  const checkTransfer = await InitiateRequest.find({ "meta.bankOneResponse.ResponseCode": "06", "meta.bankOneResponse.Status": 'Reversed' })
   if (!checkTransfer) {
     return console.log('no failed transfer for bankone')
   }
 
   for (const transfer of checkTransfer) {
     transfer.status = InitiateRequest.APPROVAL_STATUS.APPROVED
-    transfer.transferStatus = InitiateRequest.TRANSFER_STATUS.SUCCESSFUL
+    transfer.transferStatus = InitiateRequest.TRANSFER_STATUS.REVERSED
 
     await transfer.save()
     console.log('updated transfer')

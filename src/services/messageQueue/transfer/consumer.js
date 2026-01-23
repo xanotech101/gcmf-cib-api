@@ -97,21 +97,21 @@ async function consumeTransfer(type = 'bulk') {
 }
 
 
-function getTransferStatus(status, responseCode) {
+function getTransferStatus(status, responseCode, bankOneStatus) {
 
-  if ((status === true && responseCode === "00") ||
-    status === "SuccessfulButFeeNotTaken") {
+  if ((responseCode === "00") ||
+    bankOneStatus === "SuccessfulButFeeNotTaken") {
     return "approved";
   }
 
   if (
-    status === "Pending" ||
-    ["06", "91", "X06", "08", "09"].includes(responseCode)
+    bankOneStatus === "Pending" ||
+    ["91", "X06", "08", "09"].includes(responseCode)
   ) {
     return "in progress";
   }
 
-  if (status === "Reversed") {
+  if (bankOneStatus === "Reversed") {
     return "declined";
   }
 
@@ -155,7 +155,7 @@ const processSingleTransfer = async (data) => {
     const result = await bankOneService.doInterBankTransfer(interBankPayload);
 
     console.log('Bankone single transfer service logs inter-bank: ', result)
-    if (result.IsSuccessful === false) {
+    if (result.IsSuccessful === false || result.IsSuccessFul === false) {
       transaction.status = APPROVAL_STATUS.IN_PROGRESS; // still in progress
       transaction.transferStatus = TRANSFER_STATUS.AWAITING_CONFIRMATION;
       return await transaction.save();
@@ -163,11 +163,14 @@ const processSingleTransfer = async (data) => {
 
     const transferstatus = getTransferStatus(
       result.IsSuccessful,
-      result.ResponseCode
+      result.ResponseCode,
+      result.Status
     );
 
     transaction.status = transferstatus;
-    transaction.transferStatus = transferstatus === "approved" ? TRANSFER_STATUS.SUCCESSFUL : TRANSFER_STATUS.FAILED;
+    transaction.provider_type = 'bankone'
+    transaction.transferStatus = transferstatus === "approved" ? TRANSFER_STATUS.SUCCESSFUL : transferstatus === 'reversed' ?
+      TRANSFER_STATUS.REVERSED : TRANSFER_STATUS.FAILED
     transaction.meta = {
       ...transaction.meta,
       bankOneResponse: result,
@@ -197,10 +200,13 @@ const processSingleTransfer = async (data) => {
 
     const transferstatus = getTransferStatus(
       result.IsSuccessful,
-      result.ResponseCode
+      result.ResponseCode,
+      result.Status
     );
     transaction.status = transferstatus;
-    transaction.transferStatus = transferstatus === "approved" ? TRANSFER_STATUS.SUCCESSFUL : TRANSFER_STATUS.FAILED;
+    transaction.transferStatus = transferstatus === "approved" ? TRANSFER_STATUS.SUCCESSFUL : transferstatus === 'reversed' ?
+      TRANSFER_STATUS.REVERSED : TRANSFER_STATUS.FAILED;
+    transaction.provider_type = 'bankone'
     transaction.meta = {
       ...transaction.meta,
       bankOneResponse: result,
@@ -540,14 +546,17 @@ const processBulkTransferWithPaystack = async (data) => {
 
             const transferStatus = getTransferStatus(
               result.IsSuccessful,
-              result.ResponseCode
+              result.ResponseCode,
+              result.Status
             );
 
             transfer.status = transferStatus;
             transfer.transferStatus =
               transferStatus === "approved"
                 ? TRANSFER_STATUS.SUCCESSFUL
-                : TRANSFER_STATUS.FAILED;
+                : transferStatus === 'reversed' ?
+                  TRANSFER_STATUS.REVERSED :
+                  TRANSFER_STATUS.FAILED;
 
             transfer.provider_type = "bankone";
             transfer.meta = {
