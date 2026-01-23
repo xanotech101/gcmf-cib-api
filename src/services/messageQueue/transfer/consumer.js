@@ -111,8 +111,8 @@ function getTransferStatus(status, responseCode, bankOneStatus) {
     return "in progress";
   }
 
-  if (bankOneStatus === "Reversed") {
-    return "declined";
+  if (bankOneStatus === "Reversed" || responseCode === '06') {
+    return "reversed";
   }
 
   return "declined";
@@ -155,11 +155,11 @@ const processSingleTransfer = async (data) => {
     const result = await bankOneService.doInterBankTransfer(interBankPayload);
 
     console.log('Bankone single transfer service logs inter-bank: ', result)
-    if (result.IsSuccessful === false || result.IsSuccessFul === false) {
-      transaction.status = APPROVAL_STATUS.IN_PROGRESS; // still in progress
-      transaction.transferStatus = TRANSFER_STATUS.AWAITING_CONFIRMATION;
-      return await transaction.save();
-    }
+    // if (result.IsSuccessful === false || result.IsSuccessFul === false) {
+    //   transaction.status = APPROVAL_STATUS.IN_PROGRESS; // still in progress
+    //   transaction.transferStatus = TRANSFER_STATUS.AWAITING_CONFIRMATION;
+    //   return await transaction.save();
+    // }
 
     const transferstatus = getTransferStatus(
       result.IsSuccessful,
@@ -191,12 +191,12 @@ const processSingleTransfer = async (data) => {
     };
     const result = await bankOneService.doIntraBankTransfer(intraBankPayload);
     console.log('Bankone single transfer service logs intra-bank: ', result)
-    if (result.IsSuccessful === false) {
-      transaction.status = APPROVAL_STATUS.IN_PROGRESS;
-      transaction.transferStatus = TRANSFER_STATUS.AWAITING_CONFIRMATION;
+    // if (result.IsSuccessful === false || result?.IsSuccessFul === false) {
+    //   transaction.status = APPROVAL_STATUS.IN_PROGRESS;
+    //   transaction.transferStatus = TRANSFER_STATUS.AWAITING_CONFIRMATION;
 
-      return await transaction.save();
-    }
+    //   return await transaction.save();
+    // }
 
     const transferstatus = getTransferStatus(
       result.IsSuccessful,
@@ -529,20 +529,20 @@ const processBulkTransferWithPaystack = async (data) => {
 
             console.log("🏦 Intra-bank response:", result);
 
-            if (result?.IsSuccessful === false) {
-              transfer.status = APPROVAL_STATUS.IN_PROGRESS;
-              transfer.transferStatus =
-                TRANSFER_STATUS.AWAITING_CONFIRMATION;
-              transfer.provider_type = "bankone";
-              transfer.meta = {
-                ...transfer.meta,
-                reason: "Intra-bank transfer pending confirmation",
-                bankOneResponse: result,
-              };
+            // if (result?.IsSuccessful === false || result?.IsSuccessFul === false) {
+            //   transfer.status = APPROVAL_STATUS.IN_PROGRESS;
+            //   transfer.transferStatus =
+            //     TRANSFER_STATUS.AWAITING_CONFIRMATION;
+            //   transfer.provider_type = "bankone";
+            //   transfer.meta = {
+            //     ...transfer.meta,
+            //     reason: "Intra-bank transfer pending confirmation",
+            //     bankOneResponse: result,
+            //   };
 
-              await transfer.save();
-              continue;
-            }
+            //   await transfer.save();
+            //   continue;
+            // }
 
             const transferStatus = getTransferStatus(
               result.IsSuccessful,

@@ -15,22 +15,22 @@ function generateTransactionId(prefix = "TXN") {
     return `${prefix}${random}`;
 }
 
-function getTransferStatus(status, responseCode) {
+function getTransferStatus(status, responseCode, bankOneResponse) {
 
-    if ((status === true && responseCode === "00") ||
-        status === "SuccessfulButFeeNotTaken") {
+    if ((responseCode === "00") ||
+        bankOneResponse === "SuccessfulButFeeNotTaken") {
         return "approved";
     }
 
     if (
-        status === "Pending" ||
+        bankOneResponse === "Pending" ||
         ["06", "91", "X06", "08", "09"].includes(responseCode)
     ) {
         return "in progress";
     }
 
-    if (status === "Reversed") {
-        return "declined";
+    if (bankOneResponse === "Reversed" || responseCode === "06") {
+        return "reversed";
     }
 
     return "declined";
@@ -143,31 +143,32 @@ async function eazypayProcessor(data) {
 
                     console.log("🏦 Intra-bank response:", result);
 
-                    if (result?.IsSuccessful === false) {
-                        if (reqDoc) {
-                            reqDoc.transferStatus =
-                                TRANSFER_STATUS.AWAITING_CONFIRMATION;
-                            reqDoc.provider_type = "bankone";
-                            reqDoc.meta = {
-                                reason: "Intra-bank transfer pending",
-                                bankOneResponse: result,
-                            };
-                            await reqDoc.save();
-                        }
-                        continue;
-                    }
+                    // if (result?.IsSuccessful === false || result?.IsSuccessFul === false) {
+                    //     if (reqDoc) {
+                    //         reqDoc.transferStatus =
+                    //             TRANSFER_STATUS.AWAITING_CONFIRMATION;
+                    //         reqDoc.provider_type = "bankone";
+                    //         reqDoc.meta = {
+                    //             reason: "Intra-bank transfer pending",
+                    //             bankOneResponse: result,
+                    //         };
+                    //         await reqDoc.save();
+                    //     }
+                    //     continue;
+                    // }
 
                     const transferStatus = getTransferStatus(
                         result.IsSuccessful,
-                        result.ResponseCode
+                        result.ResponseCode,
+                        result.Status
                     );
 
                     if (reqDoc) {
                         reqDoc.status = transferStatus;
                         reqDoc.transferStatus =
                             transferStatus === "approved"
-                                ? InitiateRequest.TRANSFER_STATUS.SUCCESSFUL
-                                : TRANSFER_STATUS.FAILED;
+                                ? InitiateRequest.TRANSFER_STATUS.SUCCESSFUL : transferStatus === 'reversed' ? TRANSFER_STATUS.REVERSED
+                                    : TRANSFER_STATUS.FAILED;
                         reqDoc.provider_type = "bankone";
                         reqDoc.meta = {
                             bankOneResponse: result,
