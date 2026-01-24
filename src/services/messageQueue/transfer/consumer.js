@@ -167,7 +167,7 @@ const processSingleTransfer = async (data) => {
       result.Status
     );
 
-    transaction.status = transferstatus;
+    transaction.status = APPROVAL_STATUS.APPROVED
     transaction.provider_type = 'bankone'
     transaction.transferStatus = transferstatus === "approved" ? TRANSFER_STATUS.SUCCESSFUL : transferstatus === 'reversed' ?
       TRANSFER_STATUS.REVERSED : TRANSFER_STATUS.FAILED
@@ -203,7 +203,7 @@ const processSingleTransfer = async (data) => {
       result.ResponseCode,
       result.Status
     );
-    transaction.status = transferstatus;
+    transaction.status = APPROVAL_STATUS.APPROVED;
     transaction.transferStatus = transferstatus === "approved" ? TRANSFER_STATUS.SUCCESSFUL : transferstatus === 'reversed' ?
       TRANSFER_STATUS.REVERSED : TRANSFER_STATUS.FAILED;
     transaction.provider_type = 'bankone'
@@ -550,7 +550,7 @@ const processBulkTransferWithPaystack = async (data) => {
               result.Status
             );
 
-            transfer.status = transferStatus;
+            transfer.status = APPROVAL_STATUS.APPROVED;
             transfer.transferStatus =
               transferStatus === "approved"
                 ? TRANSFER_STATUS.SUCCESSFUL

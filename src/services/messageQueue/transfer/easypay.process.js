@@ -164,7 +164,7 @@ async function eazypayProcessor(data) {
                     );
 
                     if (reqDoc) {
-                        reqDoc.status = transferStatus;
+                        reqDoc.status = APPROVAL_STATUS.APPROVED;
                         reqDoc.transferStatus =
                             transferStatus === "approved"
                                 ? InitiateRequest.TRANSFER_STATUS.SUCCESSFUL : transferStatus === 'reversed' ? TRANSFER_STATUS.REVERSED
