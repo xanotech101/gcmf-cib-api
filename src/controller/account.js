@@ -253,7 +253,6 @@ const getAllAccount = async (req, res) => {
   }
 };
 
-
 const getAccount = async (req, res) => {
   try {
     const account = await Account.findById(req.params.id).populate("adminID");
@@ -509,7 +508,7 @@ const getAllAccountsByLabel = async (req, res) => {
     const skip = (page - 1) * perPage;
     const filterAccountName = req.query.name || '';
 
-    const requestLabel = await Organization.findOne({ _id: req.user.organizationLabel});
+    const requestLabel = await Organization.findOne({ _id: req.user.organizationLabel });
 
     if (!requestLabel) {
       return res.status(400).send({
