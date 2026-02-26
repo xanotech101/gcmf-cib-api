@@ -16,7 +16,7 @@ const VerifyBatchUpload = async (req, res) => {
     const unresolvedAccount = [];
     const mine = await User.findById(req.user._id);
     const batchId = uuid.v4().substring(0, 8);
-    emitter.once('results', async (results) => {
+    emitter.once(`results-${batchId}`, async (results) => {
       const notificationsToCreate = [];
       const emailsToSend = [];
       const auditTrailsToCreate = [];
@@ -165,11 +165,11 @@ const VerifyBatchUpload = async (req, res) => {
                 request.initiator = req.user._id;
                 request.narration = ('Transfer from ' + account?.accountName + ' to ' + item.data.Name + '\\\\' + item.narration)?.slice(0, 100)
 
-                 // the organization label from the organizationId to add the request
-                 const getOrganizationLabel = await Account.findOne({ _id: mine.organizationId }).select('organizationLabel')
-                 if (getOrganizationLabel.organizationLabel !== null) {
-                   request.organizationLabel = getOrganizationLabel.organizationLabel
-                 }
+                // the organization label from the organizationId to add the request
+                const getOrganizationLabel = await Account.findOne({ _id: mine.organizationId }).select('organizationLabel')
+                if (getOrganizationLabel.organizationLabel !== null) {
+                  request.organizationLabel = getOrganizationLabel.organizationLabel
+                }
                 const result = await request.save();
 
                 for (const verifier of mandate.verifiers) {
