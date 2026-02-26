@@ -128,7 +128,7 @@ const uuid = require('uuid');
 
 async function Verify_Account(req, res, next) {
     try {
-        const batchId = uuidv4().substring(0, 8); // unique per request
+        const batchId = uuid.v4().substring(0, 8); // unique per request
 
         const excelDocs = ["xlsx", "xls"];
         const csvDocs = ["csv"];
