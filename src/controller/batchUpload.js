@@ -15,7 +15,7 @@ const VerifyBatchUpload = async (req, res) => {
     const unresolvedMandates = [];
     const unresolvedAccount = [];
     const mine = await User.findById(req.user._id);
-    const batchId = uuid.v4().substring(0, 8);
+    const batchId = req.batchId || uuid.v4().substring(0, 8);
     emitter.once(`results-${batchId}`, async (results) => {
       const notificationsToCreate = [];
       const emailsToSend = [];
