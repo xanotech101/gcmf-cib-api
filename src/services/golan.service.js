@@ -174,7 +174,7 @@ async function Verify_Account(req, res, next) {
 
                 formattedData = transformedData.map(obj => ({
                     payerAccountNumber: req.body.originatorAccountNumber,
-                    amount: obj.AMOUNT,
+                    amount: obj.AMOUNT ? Number(obj.AMOUNT).toFixed(2) : '',
                     bankName: obj.BANKNAME ? obj.BANKNAME.trim() : '',
                     accountNumber: obj.ACCOUNTNUMBER ? String(obj.ACCOUNTNUMBER).trim() : '',
                     banktype: obj.TYPE && obj.TYPE.trim() === 'GMFB' ? 'intra-bank' : 'inter-bank',
@@ -193,7 +193,7 @@ async function Verify_Account(req, res, next) {
                 data = csvToJson.fieldDelimiter(',').getJsonFromCsv(file.path);
                 formattedData = formattedData.concat(data.map(obj => ({
                     payerAccountNumber: req.body.originatorAccountNumber,
-                    amount: obj.AMOUNT ? parseInt(obj.AMOUNT.trim()) : '',
+                    amount: obj.AMOUNT ? Number(obj.AMOUNT).toFixed(2) : '',
                     bankName: obj.BANKNAME ? obj.BANKNAME.trim() : '',
                     accountNumber: obj.ACCOUNTNUMBER ? String(obj.ACCOUNTNUMBER).trim() : '',
                     banktype: obj.TYPE && obj.TYPE.trim() === 'GMFB' ? 'intra-bank' : 'inter-bank',
