@@ -17,6 +17,7 @@ const {
   publishTransfer,
 } = require("../../services/messageQueue/transfer/publisher");
 const logger = require("../../utils/logger");
+const { verifyMFAToken } = require('../../utils/mfa');
 
 const initiateRequest = async (req, res) => {
   try {
@@ -383,6 +384,7 @@ const getRequestById = async (req, res) => {
 };
 
 const declineRequest = async (req, res) => {
+  const { mfaToken } = req.body;
   const user = await User.findById(req.user._id);
   try {
     const _id = req.params.id;
@@ -395,15 +397,10 @@ const declineRequest = async (req, res) => {
       });
     }
 
-    const otpDetails = await Otp.findOne({
-      otp: req.body.otp,
-      user: user._id,
-      transaction: request._id,
-    });
-
-    if (!otpDetails) {
-      return res.status(404).json({
-        message: "OTP is incorrect or used",
+    const isValidMFA = verifyMFAToken(mfaToken, user.mfaSecret);
+    if (!isValidMFA) {
+      return res.status(401).json({
+        message: "Invalid MFA code",
         status: "failed",
       });
     }
@@ -517,6 +514,7 @@ const declineRequest = async (req, res) => {
 };
 
 const approveRequest = async (req, res) => {
+  const { mfaToken } = req.body;
   const mine = await User.findById(req.user._id);
   try {
     const _id = req.params.id;
@@ -539,18 +537,13 @@ const approveRequest = async (req, res) => {
       });
     }
 
-    // const otpDetails = await Otp.findOne({
-    //   otp: req.body.otp,
-    //   user: userId,
-    //   transaction: request._id,
-    // });
-
-    // if (!otpDetails) {
-    //   return res.status(404).json({
-    //     message: "OTP is incorrect or used",
-    //     status: "failed",
-    //   });
-    // }
+    const isValidMFA = verifyMFAToken(mfaToken, mine.mfaSecret);
+    if (!isValidMFA) {
+      return res.status(401).json({
+        message: "Invalid MFA code",
+        status: "failed",
+      });
+    }
 
     let duplicate = false;
     for (let i = 0; i < request.verifiersAction.length; i++) {
@@ -659,6 +652,7 @@ const approveRequest = async (req, res) => {
 };
 
 const authoriserApproveRequest = async (req, res) => {
+  const { mfaToken } = req.body;
   const user = await User.findById(req.user._id);
   const accountInfo = await Account.findById(user.organizationId);
   try {
@@ -672,15 +666,10 @@ const authoriserApproveRequest = async (req, res) => {
       });
     }
 
-    const otpDetails = await Otp.findOne({
-      otp: req.body.otp,
-      user: user._id,
-      transaction: request._id,
-    });
-
-    if (!otpDetails) {
-      return res.status(404).json({
-        message: "OTP is incorrect or used",
+    const isValidMFA = verifyMFAToken(mfaToken, user.mfaSecret);
+    if (!isValidMFA) {
+      return res.status(401).json({
+        message: "Invalid MFA code",
         status: "failed",
       });
     }
@@ -748,8 +737,9 @@ const authoriserApproveRequest = async (req, res) => {
 
 const authoriserDeclineRequest = async (req, res) => {
   try {
+    const { mfaToken } = req.body;
     const _id = req.params.id;
-    const userId = req.user._id;
+    const user = await User.findById(req.user._id);
 
     const request = await InitiateRequest.findById(_id).populate("mandate");
 
@@ -761,16 +751,10 @@ const authoriserDeclineRequest = async (req, res) => {
       });
     }
 
-    // find and validate otp
-    const otpDetails = await Otp.findOne({
-      otp: req.body.otp,
-      user: userId,
-      transaction: request._id,
-    });
-
-    if (!otpDetails) {
-      return res.status(404).json({
-        message: "OTP is incorrect or used",
+    const isValidMFA = verifyMFAToken(mfaToken, user.mfaSecret);
+    if (!isValidMFA) {
+      return res.status(401).json({
+        message: "Invalid MFA code",
         status: "failed",
       });
     }
@@ -914,6 +898,9 @@ const getAllTransferRequests = async (req, res) => {
 
 const approveBulkRequest = async (req, res) => {
   try {
+    const { mfaToken } = req.body;
+    const user = await User.findById(req.user._id);
+
     const errors = [];
     const auditMessages = [];
     const notificationMessages = [];
@@ -925,6 +912,14 @@ const approveBulkRequest = async (req, res) => {
       _id: { $in: transactionIds },
     }).populate("mandate");
 
+
+    const isValidMFA = verifyMFAToken(mfaToken, user.mfaSecret);
+    if (!isValidMFA) {
+      return res.status(401).json({
+        message: "Invalid MFA code",
+        status: "failed",
+      });
+    }
 
     const OtptransactionId = mongoose.Types.ObjectId.isValid(
       req.body.batchVerificationID
@@ -939,7 +934,6 @@ const approveBulkRequest = async (req, res) => {
         message: "Invalid batchVerificationID",
       });
     }
-
 
 
     const otpDetails = await Otp.findOne({
@@ -1118,6 +1112,15 @@ const authoriserBulkApprove = async (req, res) => {
     const organization = await Account.findById(user.organizationId);
     const transactionIds = req.body.transactions;
 
+    const { mfaToken } = req.body;
+
+    const isValidMFA = verifyMFAToken(mfaToken, user.mfaSecret);
+    if (!isValidMFA) {
+      return res.status(401).json({
+        message: "Invalid MFA code",
+        status: "failed",
+      });
+    }
 
     const OtptransactionId = mongoose.Types.ObjectId.isValid(
       req.body.batchId

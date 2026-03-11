@@ -26,6 +26,7 @@ const externalRoute = require('./routes/external.route')
 const organizationLabelRoutes = require('./routes/organizationLabelAdmin')
 const transferProvider = require("./routes/transferProvider.route");
 const eazyPayRoutes = require("./routes/eazyPay.routes");
+const mfaRoutes = require("./routes/mfa.routes");
 
 
 const cors = require("cors");
@@ -102,6 +103,7 @@ app.use('/api/thirdparty', externalRoute)
 app.use('/api/organizationLabel', organizationLabelRoutes)
 app.use("/api/settings/transfer_providers", transferProvider);
 app.use("/api/eazyPay", eazyPayRoutes);
+app.use('/api/mfa', mfaRoutes);
 
 app.use(function (err, req, res, next) {
   console.error(err.stack);

@@ -54,10 +54,31 @@ const userSchema = new mongoose.Schema(
       default: false
     },
     verificationToken: String,
+    
+    // ==========================================
+    // EXISTING: Secret Questions 2FA (keep as is)
+    // ==========================================
     is2FAEnabled: {
       type: Boolean,
       default: false,
     },
+    
+    // ==========================================
+    // NEW: Authenticator App MFA (separate field)
+    // ==========================================
+    isMFAEnabled: {
+      type: Boolean,
+      default: false,  // true = authenticator MFA is set up
+    },
+    mfaSecret: {
+      type: String,    // base32 secret for TOTP
+      default: null,
+    },
+    mfaBackupCodes: [{
+      type: String,    // hashed backup codes
+    }],
+    // ==========================================
+    
     secretQuestions: [
       {
         question: {
@@ -92,7 +113,6 @@ userSchema.methods.generateAuthToken = async function () {
     firstName: this.firstName,
   };
 
-  // Only add organizationLabel if organization is found
   if (organization && organization.organizationLabel) {
     tokenPayload.organizationLabel = organization.organizationLabel;
   }
@@ -101,7 +121,6 @@ userSchema.methods.generateAuthToken = async function () {
     expiresIn: "1d",
   });
 
-  // TODO: Encrypt token
   return token;
 };
 
@@ -111,8 +130,13 @@ userSchema.methods.toJSON = function () {
   delete user.password;
   delete user.secrets;
   delete user.__v;
+  // ==========================================
+  // HIDE MFA SECRETS FROM API RESPONSES
+  // ==========================================
+  delete user.mfaSecret;
+  delete user.mfaBackupCodes;
+  // ==========================================
   return user;
 };
 
 module.exports = mongoose.model("User", userSchema);
-

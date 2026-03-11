@@ -7,7 +7,6 @@ const { getDateAndTime, toISOLocal } = require("../../utils/utils");
 const auditTrailService = require("../../services/auditTrail.service");
 const Account = require("../../model/account");
 
-
 const preLogin = async (req, res) => {
   const { email, password } = req.body;
   try {
@@ -147,13 +146,20 @@ const login = async (req, res) => {
       organizationLabel: user.organizationLabel
     });
 
+    // ==========================================
+    // CHECK IF AUTHENTICATOR MFA IS SETUP
+    // ==========================================
+    const requiresMFASetup = !user.isMFAEnabled; // true if NOT set up, false if set up
+
     res.json({
       message: "User Logged in Successfully",
       data: {
         user,
         token,
+        requiresMFASetup: requiresMFASetup, // true = force setup, false = all good
       },
     });
+
   } catch (error) {
     console.log("🚀 ~ file: auth.controller.js:136 ~ login ~ error:", error);
     res.status(500).json({
