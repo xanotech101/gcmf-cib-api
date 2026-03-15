@@ -194,10 +194,84 @@ const verifyMFALogin = async (req, res) => {
       data: null
     });
   }
+
+
+};
+
+const disableMFA = async (req, res) => {
+  try {
+    const userId = req.user._id || req.user.id;
+    const isEmergency = req.isEmergencySession;
+
+    const user = await User.findById(userId);
+
+    if (!user || !user.isMFAEnabled) {
+      return res.status(400).json({
+        status: 'failed',
+        message: 'MFA not enabled',
+        data: null
+      });
+    }
+
+    // If NOT emergency session, require MFA verification
+    if (!isEmergency) {
+      const { mfaToken } = req.body;
+
+      if (!mfaToken) {
+        return res.status(400).json({
+          status: 'failed',
+          message: 'MFA token required',
+          data: null
+        });
+      }
+
+      const isValid = verifyMFAToken(mfaToken, user.mfaSecret);
+      if (!isValid) {
+        return res.status(401).json({
+          status: 'failed',
+          message: 'Invalid MFA code',
+          data: null
+        });
+      }
+    }
+
+    // Clear MFA fields
+    user.isMFAEnabled = false;
+    user.mfaSecret = null;
+    user.mfaBackupCodes = [];
+    await user.save();
+
+    // If emergency session, force logout by returning special flag
+    if (isEmergency) {
+      return res.json({
+        status: 'success',
+        message: 'MFA disabled successfully. Please log in again to set up MFA on your new device.',
+        data: {
+          forceLogout: true,
+          reason: 'emergency_mfa_reset_complete'
+        }
+      });
+    }
+
+    res.json({
+      status: 'success',
+      message: 'MFA disabled successfully',
+      data: null
+    });
+
+  } catch (error) {
+    console.error('Disable MFA Error:', error);
+    res.status(500).json({
+      status: 'failed',
+      message: 'Failed to disable MFA',
+      data: null
+    });
+  }
 };
 
 module.exports = {
   setupMFA,
   verifyMFASetup,
-  verifyMFALogin
+  verifyMFALogin,
+  disableMFA
 };

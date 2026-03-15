@@ -162,16 +162,26 @@ function authoriserAuth(req, res, next) {
 function allUsersAuth(req, res, next) {
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(" ")[1];
+
   try {
     if (!token) {
-      return res.sendStatus(401).send({
+      return res.status(401).send({
         message: "Access denied. No token provided.",
         data: null,
         status: "failed",
       });
     }
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
+    // Check if emergency MFA token (skip privilege check)
+    if (decoded.emergencyMFA) {
+      req.user = decoded;
+      req.isEmergencySession = true;
+      return next();
+    }
+
+    // Regular token - check privileges
     const arr = decoded.privileges;
     if (
       !arr.includes("verifier") &&
@@ -189,8 +199,8 @@ function allUsersAuth(req, res, next) {
     }
 
     req.user = decoded;
-
     next();
+
   } catch (ex) {
     console.log(ex);
     return res.status(401).send("Invalid token.");
@@ -241,7 +251,7 @@ async function validateThirdPartyAuthorization(req, res, next) {
 
     req.user = decoded;
     next();
-    
+
   } catch (error) {
     return res.status(400).json('Invalid token.');
   }
@@ -249,13 +259,13 @@ async function validateThirdPartyAuthorization(req, res, next) {
 
 async function recordRequestCount(req, res, next) {
   try {
-    
+
     const requestType =
       req.body.requestType === "bvn"
         ? "Bvn"
         : req.body.requestType === "transferRequest"
-        ? "TransferRequest"
-        : "NameEnquiry";
+          ? "TransferRequest"
+          : "NameEnquiry";
 
     console.log(requestType.toLowerCase());
 
@@ -266,7 +276,7 @@ async function recordRequestCount(req, res, next) {
       }),
     ]).catch(console.error);
 
-    next(); 
+    next();
   } catch (err) {
     console.error(err);
     return res.status(400).json("Invalid request.");
